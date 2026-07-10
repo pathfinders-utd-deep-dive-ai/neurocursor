@@ -5,4 +5,4 @@ A new biometric identification method that uses variations in mouse movement to 
 - Shaurya
 - Shreehan
 - Hamid Mossa
-- Chetan
+- Chetan Gangireddy
