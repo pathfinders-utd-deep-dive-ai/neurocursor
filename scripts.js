@@ -1,8 +1,8 @@
 var currentX = 0
 var currentY = 0
 var isClicked = 0
-var buttonX = 100
-var buttonY = 100
+var buttonX = 0
+var buttonY = 0
 var buttonsClicked = 0
 var data = []
 
@@ -11,9 +11,6 @@ const ctx = canvas.getContext("2d");
 function drawRect(x, y, width, height) {
     ctx.fillRect(x-(width/2), y-(height/2), width, height);
 }
-
-ctx.fillStyle = 'color';
-drawRect(buttonX, buttonY, 50, 50);
 
 // Taken from Google AI Overview
 function getRandomInt(min, max) {
@@ -47,16 +44,37 @@ function downloadToFile(content, filename, contentType = 'text/plain') {
 
 
 window.addEventListener('pointerrawupdate', e => {
-  currentX = e.clientX;
-  currentY = e.clientY;
-}); // Taken from Google AI Mode
+  const rect = canvas.getBoundingClientRect();
+  
+  // 1. Subtract the canvas's left/top offset on the page
+  // 2. Multiply by the ratio of internal canvas width vs layout width to fix scaling
+  currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+  currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+}); // Taken from Gemini
 
 window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
 window.addEventListener('pointerup', e => { if (e.buttons === 0) isClicked = 0; }); // Taken from Google AI Mode
 
 const sleep = ms => new Promise(res => setTimeout(res, ms)); // Taken from Google AI Mode
 
-async function loop() {
+async function startLoop() {
+    distToStartX = 9999
+    distToStartY = 9999
+    drawRect(700, 300, 100, 50);
+    while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
+        console.log(["before start data:", isClicked, distToStartX, distToStartY])
+        distToStartX = currentX - 700;
+        distToStartY = currentY - 300;
+        await sleep(1000 / 60);
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    buttonX = getRandomInt(200, 1200);
+    buttonY = getRandomInt(200, 400);
+    drawRect(buttonX, buttonY, 50, 50);
+    mainLoop();
+}
+
+async function mainLoop() {
   while(buttonsClicked < 5) {
     console.log("X:", currentX);
     console.log("Y: ", currentY);
@@ -70,7 +88,7 @@ async function loop() {
         coords: [distToButtonX, distToButtonY, isClicked]
     });
     console.log(data);
-    if (isClicked == 1) {
+    if (isClicked == 1 && Math.abs(distToButtonX) < 25 && Math.abs(distToButtonY) < 25) {
         while (isClicked == 1) {
             await sleep(1000 / 60);
             distToButtonX = currentX - buttonX;
@@ -85,11 +103,10 @@ async function loop() {
         buttonY = getRandomInt(200, 400);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawRect(buttonX, buttonY, 50, 50);
-        // Find a way to not spam buttons generated, like contineu on click up
     }
     await sleep(1000 / 60);
   }
   downloadToFile(JSON.stringify(data), "data.json", "application/json")
 }
 
-loop();
+startLoop();
