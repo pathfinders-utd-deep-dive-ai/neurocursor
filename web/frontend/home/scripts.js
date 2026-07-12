@@ -5,17 +5,141 @@ var buttonX = 0
 var buttonY = 0
 var buttonsClicked = 0
 var data = []
+let distToStartX = 9999;
+let distToStartY = 9999;
+let distToButtonX = 9999;
+let distToButtonY = 9999;
+var activeButton = null;
 
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
-function drawRect(x, y, width, height) {
-    ctx.fillRect(x-(width/2), y-(height/2), width, height);
+
+const colorBackground = "#FFFFFF";
+const gridColor = "rgba(15, 150, 150, 0.1)";
+const dotColor = "#0E9594";
+const dotColorTwo = "#D64545";
+const LABEL_INK = "#FFFFFF";
+const shadowMain = "rgba(15,150,150,0.5)"
+const shadowStart = "rgba(215,70,70,0.5)"
+
+function paintBackdrop() {
+    ctx.fillStyle = colorBackground;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    const step = 40;
+    for (let x = 0.5; x <= canvas.width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0.5; y <= canvas.height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
 }
+function isHover(button) {
+    if(!button) return false;
+    let distX = Math.abs(currentX - button.x);
+    let distY = Math.abs(currentY - button.y);
+    let maxWidthDist = button.width/2;
+    let maxHeightDist = button.height/2;
+    if(maxWidthDist > distX) {
+        if(maxHeightDist > distY) {
+            return true;
+        }
+    }
+    return false;
+}
+function drawRect(x, y, width, height, color, label) {
+    ctx.fillStyle = color;
+    const rx = x - (width / 2), ry = y - (height / 2);
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, width, height, 12);
+        ctx.fill();
+    } else {
+        ctx.fillRect(rx, ry, width, height);
+    }
+    if (label) {
+        ctx.fillStyle = LABEL_INK;
+        ctx.font = "600 20px Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, x, y + 1);
+    }
+}
+
+function renderTheFrame() {
+    paintBackdrop();
+    let hovering = isHover(activeButton)
+    ctx.save();
+    if(hovering && activeButton) {
+        if(activeButton.color == dotColorTwo) {
+            ctx.shadowColor = shadowStart;
+        }
+        else {
+            ctx.shadowColor = shadowMain;
+        }
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetX = 2;
+    }
+    if(activeButton) {
+        drawRect(activeButton.x, 
+                activeButton.y, 
+                activeButton.width, 
+                activeButton.height, 
+                activeButton.color, 
+                activeButton.label
+            );
+    }
+        
+        ctx.restore();
+    //Taken from Google AI Mode Overview- Instructs browser you want to animate something
+    requestAnimationFrame(renderTheFrame);
+}
+renderTheFrame();
+
+//Taken from AI
+const positionElements = {
+    x: document.getElementById('readX'),
+    y: document.getElementById('readY'),
+    click: document.getElementById('readClick'),
+};
+
+function refreshPositionBars() {
+    if (positionElements.x) {
+        let roundedX = Math.round(currentX);
+        positionElements.x.textContent = String(roundedX).padStart(4, '0');
+    }
+    if (positionElements.y) {
+        let roundedY = Math.round(currentY);
+        positionElements.y.textContent = String(roundedY).padStart(4, '0');
+    }
+    if (positionElements.click) {
+        positionElements.click.textContent = isClicked ? 'Down' : 'Idle';
+    }
+    requestAnimationFrame(refreshPositionBars);
+}
+refreshPositionBars();
+
 
 // Taken from Google AI Overview
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+//Taken from Google AI Overview- Forces program to "wait" to prevent crashing
+function sleep(milliseconds) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
 
 // Taken from Google AI Overview
 function downloadToFile(content, filename, contentType = 'text/plain') {
@@ -53,24 +177,24 @@ window.addEventListener('pointerrawupdate', e => {
 }); // Taken from Gemini
 
 window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
-window.addEventListener('pointerup', e => { if (e.buttons === 0) isClicked = 0; }); // Taken from Google AI Mode
+window.addEventListener('pointerup', () => { isClicked = 0; }); // Taken from Google AI Mode
 
-const sleep = ms => new Promise(res => setTimeout(res, ms)); // Taken from Google AI Mode
 
 async function startLoop() {
     distToStartX = 9999
     distToStartY = 9999
-    drawRect(700, 300, 100, 50);
+    paintBackdrop();
+    drawRect(700, 300, 100, 50, dotColor, "START");
     while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
         console.log(["before start data:", isClicked, distToStartX, distToStartY])
         distToStartX = currentX - 700;
         distToStartY = currentY - 300;
         await sleep(1000 / 60);
     }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    paintBackdrop();
     buttonX = getRandomInt(200, 1200);
     buttonY = getRandomInt(200, 400);
-    drawRect(buttonX, buttonY, 50, 50);
+    drawRect(buttonX, buttonY, 50, 50, dotColorTwo, String(buttonsClicked + 1));
     mainLoop();
 }
 
@@ -101,12 +225,11 @@ async function mainLoop() {
         buttonsClicked += 1;
         buttonX = getRandomInt(200, 1200);
         buttonY = getRandomInt(200, 400);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawRect(buttonX, buttonY, 50, 50);
+        paintBackdrop();
+        drawRect(buttonX, buttonY, 50, 50, dotColorTwo, String(buttonsClicked + 1));
     }
     await sleep(1000 / 60);
   }
   downloadToFile(JSON.stringify(data), "data.json", "application/json")
 }
-
 startLoop();
