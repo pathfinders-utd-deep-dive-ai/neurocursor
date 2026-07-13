@@ -9,7 +9,7 @@ let distToStartX = 9999;
 let distToStartY = 9999;
 let distToButtonX = 9999;
 let distToButtonY = 9999;
-var activeButton = null;
+var activeButton = {};
 
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
@@ -77,7 +77,7 @@ function renderTheFrame() {
     paintBackdrop();
     let hovering = isHover(activeButton)
     ctx.save();
-    if(hovering && activeButton) {
+    if(hovering && activeButton.x != null) {
         if(activeButton.color == dotColorTwo) {
             ctx.shadowColor = shadowStart;
         }
@@ -88,7 +88,7 @@ function renderTheFrame() {
         ctx.shadowOffsetY = 3;
         ctx.shadowOffsetX = 2;
     }
-    if(activeButton) {
+    if(activeButton.x != null) {
         drawRect(activeButton.x, 
                 activeButton.y, 
                 activeButton.width, 
@@ -102,7 +102,6 @@ function renderTheFrame() {
     //Taken from Google AI Mode Overview- Instructs browser you want to animate something
     requestAnimationFrame(renderTheFrame);
 }
-renderTheFrame();
 
 //Taken from AI
 const positionElements = {
@@ -191,15 +190,18 @@ async function startLoop() {
         distToStartY = currentY - 300;
         await sleep(1000 / 60);
     }
-    paintBackdrop();
-    buttonX = getRandomInt(200, 1200);
-    buttonY = getRandomInt(200, 400);
-    drawRect(buttonX, buttonY, 50, 50, dotColorTwo, String(buttonsClicked + 1));
+    activeButton.x = getRandomInt(200, 1200);
+    activeButton.y = getRandomInt(200, 400);
+    activeButton.width = 50;
+    activeButton.height = 50;
+    activeButton.color = dotColor;
+    activeButton.label = String(buttonsClicked + 1);
     mainLoop();
 }
 
 async function mainLoop() {
   while(buttonsClicked < 5) {
+    renderTheFrame();
     console.log("X:", currentX);
     console.log("Y: ", currentY);
     console.log("isClicked: ", isClicked);
@@ -212,7 +214,7 @@ async function mainLoop() {
         coords: [distToButtonX, distToButtonY, isClicked]
     });
     console.log(data);
-    if (isClicked == 1 && Math.abs(distToButtonX) < 25 && Math.abs(distToButtonY) < 25) {
+    if (isClicked == 1 && isHover(activeButton)) {
         while (isClicked == 1) {
             await sleep(1000 / 60);
             distToButtonX = currentX - buttonX;
@@ -223,10 +225,12 @@ async function mainLoop() {
             });
         }
         buttonsClicked += 1;
-        buttonX = getRandomInt(200, 1200);
-        buttonY = getRandomInt(200, 400);
-        paintBackdrop();
-        drawRect(buttonX, buttonY, 50, 50, dotColorTwo, String(buttonsClicked + 1));
+        activeButton.x = getRandomInt(200, 1200);
+        activeButton.y = getRandomInt(200, 400);
+        activeButton.width = 50;
+        activeButton.height = 50;
+        activeButton.color = dotColor;
+        activeButton.label = String(buttonsClicked + 1);
     }
     await sleep(1000 / 60);
   }
