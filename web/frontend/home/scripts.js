@@ -103,24 +103,29 @@ function renderTheFrame() {
     requestAnimationFrame(renderTheFrame);
 }
 
-//Taken from AI
-const positionElements = {
-    x: document.getElementById('readX'),
-    y: document.getElementById('readY'),
-    click: document.getElementById('readClick'),
-};
+window.addEventListener('pointerrawupdate', e => {
+  const rect = canvas.getBoundingClientRect();
+  
+  // 1. Subtract the canvas's left/top offset on the page
+  // 2. Multiply by the ratio of internal canvas width vs layout width to fix scaling
+  currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+  currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+}); // Taken from Gemini
+
+window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
+window.addEventListener('pointerup', () => { isClicked = 0; }); // Taken from Google AI Mode
 
 function refreshPositionBars() {
-    if (positionElements.x) {
+    if (currentX) {
         let roundedX = Math.round(currentX);
         positionElements.x.textContent = String(roundedX).padStart(4, '0');
     }
-    if (positionElements.y) {
+    if (currentY) {
         let roundedY = Math.round(currentY);
         positionElements.y.textContent = String(roundedY).padStart(4, '0');
     }
-    if (positionElements.click) {
-        positionElements.click.textContent = isClicked ? 'Down' : 'Idle';
+    if (isClicked) {
+        positionElements.click.textContent = isClicked == 1 ? 'Down' : 'Idle';
     }
     requestAnimationFrame(refreshPositionBars);
 }
@@ -166,26 +171,18 @@ function downloadToFile(content, filename, contentType = 'text/plain') {
 }
 
 
-window.addEventListener('pointerrawupdate', e => {
-  const rect = canvas.getBoundingClientRect();
-  
-  // 1. Subtract the canvas's left/top offset on the page
-  // 2. Multiply by the ratio of internal canvas width vs layout width to fix scaling
-  currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
-}); // Taken from Gemini
-
-window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
-window.addEventListener('pointerup', () => { isClicked = 0; }); // Taken from Google AI Mode
-
-
 async function startLoop() {
     distToStartX = 9999
     distToStartY = 9999
-    paintBackdrop();
-    drawRect(700, 300, 100, 50, dotColor, "START");
+    activeButton.x = 700;
+    activeButton.y = 300;
+    activeButton.width = 100;
+    activeButton.height = 50;
+    activeButton.color = dotColorTwo;
+    activeButton.label = "START";
     while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
-        console.log(["before start data:", isClicked, distToStartX, distToStartY])
+        console.log(["before start data:", isClicked, distToStartX, distToStartY]);
+        renderTheFrame();
         distToStartX = currentX - 700;
         distToStartY = currentY - 300;
         await sleep(1000 / 60);
