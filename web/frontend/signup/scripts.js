@@ -11,7 +11,11 @@ document.getElementById('signup').addEventListener('submit', function(event) {
     })
     .then(response => response.text())
     .then(result => {
-        console.log(result);
+        if (result == "True") {
+            alert("Signup succeeded! Please proceed to login.")
+        } else {
+            alert("Signup failed")
+        }
     })
     .catch(error => {
         console.error('Error:', error);
