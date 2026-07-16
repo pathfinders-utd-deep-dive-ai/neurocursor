@@ -4,8 +4,7 @@ if (localStorage.getItem("username")) {
 
 document.getElementById('login').addEventListener('submit', function(event) {
     event.preventDefault();
-    const formData = new FormData(this);
-    const dataObject = Object.fromEntries(formData.entries());
+    // TODO: Reimplement data, but my way (prob just a massive line in JSON.stringify())
     fetch('/api/login/', {
         method: 'POST',
         headers: {
@@ -22,7 +21,4 @@ document.getElementById('login').addEventListener('submit', function(event) {
             alert("Login failed");
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-    });
 });
