@@ -1,3 +1,14 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:venv"
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/paper.aux": true,
+        "**/paper.log": true,
+        "**/paper.gz": true,
+        "**/paper.out": true
+    }
 }
