@@ -103,21 +103,14 @@ function renderTheFrame() {
     }
         
         ctx.restore();
-    //Taken from Google AI Mode Overview- Instructs browser you want to animate something
     requestAnimationFrame(renderTheFrame);
 }
 
 window.addEventListener('pointerrawupdate', e => {
-  const rect = canvas.getBoundingClientRect();
-  
-  // 1. Subtract the canvas's left/top offset on the page
-  // 2. Multiply by the ratio of internal canvas width vs layout width to fix scaling
-  currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
-}); // Taken from Gemini
-
-window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
-window.addEventListener('pointerup', () => { isClicked = 0; }); // Taken from Google AI Mode
+  currentX = 0// TODO: reimplement
+  currentY = 0// TODO: reimplement
+});
+// TODO: isClicked reimplement
 
 function refreshPositionBars() {
     if (currentX) {
@@ -136,42 +129,13 @@ function refreshPositionBars() {
 refreshPositionBars();
 
 
-// Taken from Google AI Overview
 function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  // TODO: Reimplement
 }
 
 //Taken from Google AI Overview- Forces program to "wait" to prevent crashing
 function sleep(milliseconds) {
-    return new Promise(function(resolve) {
-        setTimeout(resolve, milliseconds);
-    });
-}
-
-
-// Taken from Google AI Overview
-function downloadToFile(content, filename, contentType = 'text/plain') {
-  // 1. Create a Blob object with the variable's content
-  const blob = new Blob([content], { type: contentType });
-  
-  // 2. Create an invisible anchor element
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  
-  // 3. Create a temporary URL pointing to the Blob object
-  const url = window.URL.createObjectURL(blob);
-  
-  // 4. Set the download destination and filename
-  a.href = url;
-  a.download = filename;
-  
-  // 5. Trigger the download automatically
-  a.click();
-  
-  // 6. Clean up the DOM and memory
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+    // TODO: Reimplement
 }
 
 
@@ -235,6 +199,6 @@ async function mainLoop() {
     }
     await sleep(1000 / 60);
   }
-  downloadToFile(JSON.stringify(data), "data.json", "application/json")
+  // TODO: Post data to server
 }
 startLoop();

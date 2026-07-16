@@ -1,7 +1,6 @@
 document.getElementById('signup').addEventListener('submit', function(event) {
     event.preventDefault();
-    const formData = new FormData(this);
-    const dataObject = Object.fromEntries(formData.entries());
+    // TODO: Reimplement data, but my way (prob just a massive line in JSON.stringify())
     fetch('/api/signup/', {
         method: 'POST',
         headers: {
