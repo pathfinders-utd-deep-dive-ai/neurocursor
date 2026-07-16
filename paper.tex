@@ -304,6 +304,109 @@ NeuroCursor differs from long-window monitoring systems in the sense that it acq
 
 \subsection{Deep Learning for Time-Series Biometrics}
 
+Mouse movement follows a sequential pattern, where the current state of the cursor is influenced by earlier positions, and many potentially informative behaviors can be exhibited by the cursor trajectory over various time durations. Traditional classifiers typically do not explicitly handle trajectories directly and require conversion of the trajectory into a fixed-dimensional vector that contains engineered features that albeit may be interpretable, may be suboptimal for classification as they may not capture the full temporal structure of the data. Deep learning techniques, by contrast, can take inputs in the form of sequential data or multivariate data and learn hierarchical representations of the data that are optimized for the classification task without the need to convert them into engineered. In a recent survey by Foumani \textit{et al.}, distinct deep time-series classification methods are categorized into convolutional, recurrent, attention-based, hybrid, and other architectural families \cite{foumaniTimeSeriesSurvey}. Based on the findings of Foumani, hybrid architectures that combine convolutional and recurrent components are particularly popular because they utilize the complementary strengths of both components. Convolutional layers are effective at learning local patterns and features, while recurrent layers are adept at capturing long-term dependencies and temporal dynamics.
+
+For a one-dimensional temporal convolution, the activation of output channel $k$ at time $t$ can be expressed as
+
+\begin{equation}
+h_{t,k}
+=
+\phi
+\left(
+\sum_{c=1}^{C}
+\sum_{j=0}^{m-1}
+W_{j,c,k}x_{t+j,c}
++
+b_k
+\right),
+\label{eq:temporal_convolution}
+\end{equation}
+
+where $m$ is the convolution kernel length, $C$ is the number of input channels, and $\phi$ is a nonlinear activation function. In cursor data, such filters may respond to short patterns involving acceleration, directional correction, pauses, deceleration, target approach, and other local behaviors. 
+
+Recurrent neural networks (RNNs) instead update a hideen representation as the sequence itself is processed. Standard RNNs are prone to vanishing and exploding gradients, which can make it difficult to learn long-term dependencies. Gated recurrent units (GRUs) are a type of RNN that use gating mechanisms to control the flow of previous and new information and mitigate the vanishing gradient problem. A GRU uses an update gate
+
+\begin{equation}
+\mathbf{z}_t
+=
+\sigma
+\left(
+W_z\mathbf{x}_t
++
+U_z\mathbf{h}_{t-1}
++
+\mathbf{b}_z
+\right),
+\end{equation}
+
+a reset gate 
+
+\begin{equation}
+\mathbf{r}_t
+=
+\sigma
+\left(
+W_r\mathbf{x}_t
++
+U_r\mathbf{h}_{t-1}
++
+\mathbf{b}_r
+\right),
+\end{equation}
+
+and a candidate hidden state
+
+\begin{equation}
+widetilde{\mathbf{h}}_t
+=
+\tanh
+\left(
+W_h\mathbf{x}_t
++
+U_h
+\left(
+\mathbf{r}_t \odot \mathbf{h}_{t-1}
+\right)
++
+\mathbf{b}_h
+\right).
+\end{equation}
+
+The final hidden state is then updated as
+
+\begin{equation}
+\mathbf{h}_t
+=
+(1-\mathbf{z}_t) \odot \mathbf{h}_{t-1}
++
+\mathbf{z}_t\odot\widetilde{\mathbf{h}}_t.
+\label{eq:gru_hidden_state}
+\end{equation}
+
+Elsayed \textit{et al.} explicated that a GRU and fully convolutional network (FCN) can together be combined as a hybrid architecture that can provide effective time-series classification while simultaneously necessitating a simpler recurrent structure than an LSTM-based equivalent architecture \cite{elsayedGRUFCN}. Hyrbrid CNN--GRU designs have also been utilized in other biometric and physiological sequence domains to distinguish local feature extraction from temporal modeling \cite{bangCNNGRU}. These findings do not guarantee refined performance in the context of mouse-dynamics authentication, but they do suggest that a hybrid CNN--GRU architecture may be a promising approach for learning user-specific patterns from cursor trajectories and provide a basis for experimentally comparing a hybrid architecture with less intricate basleines.
+
+Within the context of NeuroCursor, the convolution neural network is intended to learn local movement patterns, such as micro-corrections, pauses, and deceleration near the target. The GRU component is designed to capture the temporal dependencies across the entire cursor trajectory, allowing the model to understand how these local patterns evolve over time. For example, a user may exhibit a characteristic pattern of slowing down and making small adjustments as they approach a target, which may be captured by the convolutional layers. The GRU layers can then model how this behavior unfolds over the course of the entire movement, providing a richer representation of the user's unique interaction style. A model that combines both convolutional and recurrent components may therefore be better equipped to capture the complex, multi-scale nature of mouse dynamics, potentially distinguishing such cases more effectively than one that relies solely on summary statistics. 
+
+\subsection{Research Gap}
+
+Prior work establishes that mouse interaction can possess information useful for the purpose of behavioral recognition and user authentication. However, the field is still in its early stages, and several limitations and gaps tenaciously remain relevant to the proposed system. First, many mouse-dynamics systems depend on extended observation windows or unconstrained activity. Such systems may requiure a prolonged duration of time to collect sufficient data, which can be intrusive and inconvenient for users. 
+
+Second, a significant portion of prior work relies primarily on manually engineered features, which may not capture the full complexity of user behavior. While these features can be interpretable, they may not be optimal for classification tasks, especially when compared to deep learning approaches that can learn hierarchical representations directly from raw data. features such as mean velocity, path length, or click duration are fruitful, but they compress the overall temporal structure of the cursor trajectory into a single value, potentially losing important information about the dynamics of the movement. Two sequences can share similar summary statistics but differ in their temporal patterns (such as the ordering and shape of their movements), which may be crucial for distinguishing between different users.
+
+Third, evaluation procedures are not necessarily always consistent across studies. Randomly assigning highly related samples from the same recording session to both training and testing data can inflate measured performance metrics. Device settings and input hardware masy also function as unintended identifying signals, which can confound the evaluation of user-specific patterns. These issues make session-aware splitting, hardware validation, normalization, and leakage prevention crucial for credible evaluation.
+
+Finally, relatively few studies have truly focused on the combination of three specific elements considered in NeuroCursor: (1) a short, randomized point-and-click task, (2) a hybrid CNN--GRU architecture for learning local and temporal patterns, and (3) multichannel kinematic trajectory representation. NeuroCursor is designed to address these gaps by investigating whether such a combination can extract sufficient user-specific information from a brief sequence of cursor movements to support reliable authentication while maintaining a simple and minimally intrusive user experience.
+\begin{enumerate}
+    \item collecting cursor trajectories under randomized point-and-click conditions to ensure that the model learns user-specific patterns rather than memorizing fixed trajectories;
+    \item representing cursor trajectories as multivariate time series that include both raw positional data and derived kinematic features, allowing the model to capture a richer set of behavioral characteristics;
+    \item combining convolutional and recurrent neural network components to learn both local movement patterns and temporal dependencies, potentially improving classification performance over single-component architectures;
+    \item comparing the proposed hybrid model to traditional CNN-only and GRU-only architectures, as well as to classical machine-learning baselines, to evaluate the contribution of each component to the overall performance;
+    \item evaluating the system using biometric error measures such as false acceptance rate, false rejection rate, and equal error rate, in addition to conventional classification metrics, to provide a more comprehensive assessment of the system's effectiveness in a real-world authentication context;
+    \item testing how authentication performance varies with the number of cursor interactions, interaction accuracy, and interaction latency, to determine the optimal balance between security and user convenience;
+\end{enumerate}
+
+Ultimately, the resulting investigation is designed to determine not only whether NeuroCursor can classify collected smaples, but also whether its performance is adequately robust, statistically supported, and operationally efficient in order to justify further development as an additional authentication factor. 
+
 \section*{Acknowledgment}
 The authors appreciate Dr. Anurag Nagar for his guidance and mentorship throughout this research process. The authors also thank Hamid Rouhani, a concurrent Ph.D. student in computer science at The University of Texas at Dallas, for his valuable technical guidance, research support, feedback, and contributions to the development and evaluation of NeuroCursor. 
 
