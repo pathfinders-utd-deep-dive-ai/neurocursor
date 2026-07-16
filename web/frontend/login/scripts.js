@@ -1,3 +1,7 @@
+if (localStorage.getItem("username")) {
+    window.location.href = "/home/";
+}
+
 document.getElementById('login').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);
@@ -11,7 +15,12 @@ document.getElementById('login').addEventListener('submit', function(event) {
     })
     .then(response => response.text())
     .then(result => {
-        console.log(result);
+        if (result == "True") {
+            localStorage.setItem("username", dataObject.username);
+            window.location.href = "/home/";
+        } else {
+            alert("Login failed");
+        }
     })
     .catch(error => {
         console.error('Error:', error);

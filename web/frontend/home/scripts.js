@@ -1,3 +1,7 @@
+if (!localStorage.getItem("username")) {
+    window.location.href = "/login/";
+}
+
 var currentX = 0
 var currentY = 0
 var isClicked = 0
