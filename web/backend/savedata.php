@@ -1,4 +1,9 @@
 <?php
+// Copied from Stackify display PHP errors
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $raw_input = file_get_contents("php://input");
     $username = htmlspecialchars(json_decode($raw_input, true)["username"]);
