@@ -28,6 +28,24 @@ const LABEL_INK = "#FFFFFF";
 const shadowMain = "rgba(15,150,150,0.5)"
 const shadowStart = "rgba(215,70,70,0.5)"
 
+function updateProgress() {
+    fetch('/api/data/get/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username": username})
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log(result);
+        document.getElementById("progress-text").innerText = result.length + "/20 Sessions Complete";
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    })
+}
+
 function paintBackdrop() {
     ctx.fillStyle = colorBackground;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -132,6 +150,11 @@ function wait(ms) {
 
 
 async function startLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    buttonsClicked = 0;
+    data = [];
+    await wait(500);
+    updateProgress();
     distToStartX = 9999
     distToStartY = 9999
     activeButton.x = 700;
@@ -152,6 +175,7 @@ async function startLoop() {
     activeButton.height = 50;
     activeButton.color = dotColor;
     activeButton.label = String(buttonsClicked + 1);
+    timeOffset = performance.now();
     mainLoop();
 }
 
@@ -165,7 +189,7 @@ async function mainLoop() {
     console.log("DistX: ", distToButtonX);
     console.log("DistY :", distToButtonY);
     data.push({
-        time: performance.now(),
+        time: performance.now() - timeOffset,
         coords: [distToButtonX, distToButtonY, isClicked]
     });
     console.log(data);
@@ -175,7 +199,7 @@ async function mainLoop() {
             distToButtonX = currentX - buttonX;
             distToButtonY = currentY - buttonY;
             data.push({
-                time: performance.now(),
+                time: performance.now() - timeOffset,
                 coords: [distToButtonX, distToButtonY, isClicked]
             });
         }
@@ -189,7 +213,7 @@ async function mainLoop() {
     }
     await wait(1000 / 60);
   }
-  fetch('/api/data/', {
+  fetch('/api/data/save/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -203,5 +227,6 @@ async function mainLoop() {
     .catch(error => {
         console.error('Error:', error);
     });
+    startLoop();
 }
 startLoop();
