@@ -1,19 +1,18 @@
 document.getElementById('signup').addEventListener('submit', function(event) {
     event.preventDefault();
-    const formData = new FormData(this);
-    const dataObject = Object.fromEntries(formData.entries());
     fetch('/api/signup/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataObject)
+        body: JSON.stringify(Object.fromEntries(new FormData(this).entries()))
     })
     .then(response => response.text())
     .then(result => {
         if (result == "True") {
             alert("Signup succeeded! Please proceed to login.")
         } else {
+            console.log(result)
             alert("Signup failed")
         }
     })
