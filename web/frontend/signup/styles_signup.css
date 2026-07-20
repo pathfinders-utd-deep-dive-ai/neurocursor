@@ -124,9 +124,9 @@ h2 {
 }
 @keyframes animateBlink {
     0% {
-        background: rgb(35, 232, 35);
+        background: rgb(0, 255, 0);
     }
     25% {
-        background: #349a38;
+        background: #0a270b;
     }
 }
