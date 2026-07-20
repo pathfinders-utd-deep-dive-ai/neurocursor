@@ -1,7 +1,9 @@
+// Used MDN Docs in various places
 if (!localStorage.getItem("username")) {
     window.location.href = "/login/";
 }
 
+var username = localStorage.getItem("username")
 var currentX = 0
 var currentY = 0
 var isClicked = 0
@@ -107,10 +109,13 @@ function renderTheFrame() {
 }
 
 window.addEventListener('pointerrawupdate', e => {
-  currentX = 0// TODO: reimplement
-  currentY = 0// TODO: reimplement
+    // Stack Overflow: "Real mouse position in canvas"
+    var rect = canvas.getBoundingClientRect();
+    currentX = e.clientX - rect.left
+    currentY = e.clientY - rect.top
 });
-// TODO: isClicked reimplement
+window.addEventListener("mousedown", e => {isClicked = 1});
+window.addEventListener("mouseup", e => {isClicked = 0});
 
 function refreshPositionBars() {
     if (currentX) {
@@ -128,14 +133,16 @@ function refreshPositionBars() {
 }
 refreshPositionBars();
 
-
+// Copied from MDN "Math.random()"
 function getRandomInt(min, max) {
-  // TODO: Reimplement
+  const minCeiled = Math.ceil(min);
+  const maxFloored = Math.floor(max);
+  return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
 }
 
-//Taken from Google AI Overview- Forces program to "wait" to prevent crashing
-function sleep(milliseconds) {
-    // TODO: Reimplement
+// Adapted from Medium "JavaScript loops — how to handle async/await"
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
@@ -153,7 +160,7 @@ async function startLoop() {
         renderTheFrame();
         distToStartX = currentX - 700;
         distToStartY = currentY - 300;
-        await sleep(1000 / 60);
+        await wait(1000 / 60);
     }
     activeButton.x = getRandomInt(200, 1200);
     activeButton.y = getRandomInt(200, 400);
@@ -181,7 +188,7 @@ async function mainLoop() {
     console.log(data);
     if (isClicked == 1 && isHover(activeButton)) {
         while (isClicked == 1) {
-            await sleep(1000 / 60);
+            await wait(1000 / 60);
             distToButtonX = currentX - buttonX;
             distToButtonY = currentY - buttonY;
             data.push({
@@ -197,8 +204,21 @@ async function mainLoop() {
         activeButton.color = dotColor;
         activeButton.label = String(buttonsClicked + 1);
     }
-    await sleep(1000 / 60);
+    await wait(1000 / 60);
   }
-  // TODO: Post data to server
+  fetch('/api/data/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({username: data})
+    })
+    .then(response => response.text())
+    .then(result => {
+        console.log(result)
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 startLoop();
