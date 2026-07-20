@@ -4,25 +4,21 @@ if (localStorage.getItem("username")) {
 
 document.getElementById('login').addEventListener('submit', function(event) {
     event.preventDefault();
-    const formData = new FormData(this);
-    const dataObject = Object.fromEntries(formData.entries());
     fetch('/api/login/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataObject)
+        body: JSON.stringify(Object.fromEntries(new FormData(this).entries()))
     })
     .then(response => response.text())
     .then(result => {
         if (result == "True") {
-            localStorage.setItem("username", dataObject.username);
+            localStorage.setItem("username", Object.fromEntries(new FormData(this).entries()).username);
             window.location.href = "/home/";
         } else {
+            console.log(result)
             alert("Login failed");
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-    });
 });
