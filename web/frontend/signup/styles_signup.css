@@ -96,7 +96,7 @@ h2 {
     color: #1f293a;
     font-weight: 600;
 }
-.-link {
+.login-link {
     margin: 20px 0 10px;
     text-align: center;
 }
@@ -105,6 +105,7 @@ h2 {
     color: #0ef;
     text-decoration: none;
     font-weight: 600;
+
 }
 .login-link a:hover {
     text-decoration: underline;
@@ -115,7 +116,7 @@ h2 {
     left: 0;
     width: 32px;
     height: 6px;
-    background: #3ee646;
+    background: #2c4766;
     border-radius: 8px;
     transform-origin: 128px;
     transform: scale(2.2) rotate(calc(var(--i) * (360deg / 50)));
@@ -124,9 +125,9 @@ h2 {
 }
 @keyframes animateBlink {
     0% {
-        background: rgb(11, 46, 11);
+        background: #0ef;
     }
     25% {
-        background: #02ff0b;
+        background: #2c4766;
     }
 }
