@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $raw_input = file_get_contents("php://input");
-    $username = hash_hmac(json_decode($raw_input, true)["username"]);
+    $username = hash_hmac("sha256", json_decode($raw_input, true)["username"], file_get_contents("../.env"));
     $data = json_decode($raw_input, true)["data"];
     $the_mouse_data = json_decode(file_get_contents("../data.json"), true);
 
