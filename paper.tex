@@ -7,6 +7,7 @@
 \usepackage{cite}
 \usepackage{url}
 \usepackage{multirow}
+\usepackage{booktabs}
 
 \title{NeuroCursor: A Behavioral Biometric Framework for Mouse-Based User Authentication}
 
@@ -18,9 +19,10 @@ Shreehan Aalok Pathak,
 and Hamid Abdul Mossa
 }
 \IEEEauthorblockA{
-%Date
+July 2026\\
 Computer Science Department\\
-The University of Texas at Dallas, Richardson, Texas, United States\\
+The University of Texas at Dallas\\
+Richardson, Texas, United States
 %ORCID
 }
 }
@@ -31,22 +33,25 @@ The University of Texas at Dallas, Richardson, Texas, United States\\
 \maketitle
 
 \begin{abstract}
-    Behavioral biometrics offer a promising alternative to conventional authentication methods and processes by identifying users through patterns with respect to their interactions with digital devices and software. This paper presents NeuroCursor, a mouse-dynamics-based biometric authentication system that analyzes the subtle variations in cursor movement over a certain duration where a user engages in an iterated point-and-click task. During enrollment, users complete a sequence of interactions with cursor targets appearing at arbitrary screen locations. The system records behavioral features such as cursor trajectory, movement duration, velocity, acceleration, path efficiency, curvature, click timing, and directional changes. These features are processed and analyzed using machine learning models to differentiate between legitimate users and potential imposters. The proposed system is designed to evaluate whether a small number of cursor interactions can provide an adequate amount of behavioral information for reliable identity verification while simultaneously maintaining a simple and minimally intrusive user experience. We examine the effectiveness of different sets of features and classification models using various metrics, such as accuracy, precision, recall, F1-score, false acceptance rate, and false rejection rate. Preliminary results indicate that mouse movement patterns contain measurable user-specific characteristics, likely suggesting that NeuroCursor may serve as an additional authentication layer for desktop applications and other cursor-based systems with a purpose similar to multi-factor authentication. The study also discusses challenges involving behavioral variability, data collection processes, model generalization, and resistance to imitation and overfitting. Ultimately, NeuroCursor demonstrates the potential implications of machine-learning-based mouse dynamics as an accessible form of behavioral biometric authentication. 
+    Behavioral biometrics offer a promising alternative to conventional authentication methods and processes by identifying users through patterns in their interactions with digital devices and software. This paper presents NeuroCursor, a mouse-dynamics-based biometric authentication system that analyzes the subtle variations in cursor movement over a certain duration where a user engages in a repeated point-and-click task. During enrollment, users complete a sequence of interactions with cursor targets appearing at arbitrary screen locations. The system records behavioral features such as cursor trajectory, movement duration, velocity, acceleration, path efficiency, curvature, click timing, and directional changes. These features are processed and analyzed using machine learning models to differentiate between legitimate users and potential impostors. A hybrid convolutional neural network and gated recurrent unit architecture is utilized to learn localized movement patternsd and longer-range temporal dependencies. The proposed system is designed to evaluate whether a small number of cursor interactions can provide an adequate amount of behavioral information for reliable identity verification while simultaneously maintaining a simple and minimally intrusive user experience. We examine the effectiveness of different sets of features and classification models using various metrics, such as accuracy, precision, recall, F1-score, false acceptance rate, and false rejection rate. The study investigates whether mouse-movement behaviorial patterns have measurable user-specific characteristics and traits that can further support an additional authentication layer for desktop and other cursor-based systems. The study also discusses challenges involving behavioral variability, data collection processes, model generalization, overfitting, and vulnerability to intentional imitation. The contribution of this work lies in the controlled evaluation and analysis of a randomized short-form challenge, target-relative movement features, and verification processes using one, three, and five cursor movements that the system analyzes independantly. Ultimately, NeuroCursor demonstrates the potential implications of machine-learning-based mouse dynamics as an accessible form of behavioral biometric authentication. 
 \end{abstract}
 
 \begin{IEEEkeywords}
-behavioral biometrics, mouse dynamics, cursor trajectory analysis, user authentication, machine learning, human-computer interaction, cybersecurity, biometric security, feature extraction, convolutional neural network, gated recurrent unit, spatiotemporal feature learning, deep learning 
+behavioral biometrics, mouse dynamics, cursor trajectory analysis, user authentication, human--computer interaction, biometric verification,  convolutional neural networks, gated recurrent units, spatiotemporal feature learning
 \end{IEEEkeywords}
 
 \section{Introduction}
+
 \subsection{Background and Motivation}
 Authentication systems are fundamental to protecting digital accounts, devices, and information systems. Conventional authentication customarily relies on knowledge-based credentials, such as passwords and personal identification codes, or possession-based credentials for validation, such as security tokens and mobile devices. Albeit these mechanisms may be profound, they primarily verify that a user possesses the correct credential rather than verifying whether the person interacting with a given system is the legitimate account holder. Credentials may also be forgotten, shared, investigated, or compromised, facilitating the development of authentication methods that incorporate measurable characteristics unique to the user. 
 
-Biometric authentication recognizes or validates individuals utilizing physiological or behavioral characteristics. Physiological biometrics--including fingerprints, facial features, and iris patterns--are associated with the physical attributes of an individual. Behavioral characteristics, by contrast, characterize patterns in how a specific individual performs an act or interacts with a system in an environment. Examples of such behavioral characteristics include keystroke timing and duration, touchscreen gestures, gait, signature dynamics, and mouse movement behavior\cite{nistBiometrics, khanMouseSurvey}. Because behavioral signals can oftentimes be obtained through existing input devices, they may provide an additional authentication method without the need for further specialized biometric hardware. 
+Biometric authentication recognizes or validates individuals utilizing physiological or behavioral characteristics. Physiological biometrics--including fingerprints, facial features, and iris patterns--are associated with the physical attributes of an individual. Behavioral characteristics, by contrast, characterize patterns in how a specific individual performs an act or interacts with a system in an environment. Examples of such behavioral characteristics include keystroke timing and duration, touchscreen gestures, gait, signature dynamics, and mouse movement behavior \cite{nistBiometrics, khanMouseSurvey}. Because behavioral signals can oftentimes be obtained through existing input devices, they may provide an additional authentication method without the need for further specialized biometric hardware. 
 
-Mouse dynamics is a behavioral biometric modality that is based on measurable properties and metrics of cursor interaction between a user and a software environment. A cursor trajectory contains more information than its mere starting and ending positions. It may also encode movement duration, changes in direction, path length, velocity, acceleration, curvature, pauses, corrective motion, overshoot, and click timing. Such characteristics are influenced by an individual's motor control, reaction patterns, hand-eye coordination, and interaction habits. Even though no single mouse is expected to uniquely identify a person, a series of movements may contain patterns that are statistically significant for distinguishing genuine users from imposters \cite{khanMouseSurvey,deutschmannContinuousAuthentication}.
+Mouse dynamics is a behavioral biometric modality that is based on measurable properties and metrics of cursor interaction between a user and a software environment. A cursor trajectory contains more information than its mere starting and ending positions. It may also encode movement duration, changes in direction, path length, velocity, acceleration, curvature, pauses, corrective motion, overshoot, and click timing. Such characteristics are influenced by an individual's motor control, reaction patterns, hand-eye coordination, and interaction habits. Even though no single mouse movement is expected to uniquely identify a person, a series of movements may contain patterns that are statistically significant for distinguishing genuine users from impostors \cite{khanMouseSurvey,deutschmannContinuousAuthentication}.
 
-This paper presents \textit{NeuroCursor}, a behavioral biometric authentication and validation system based on a randomized point-and-click task. During an authentication attempt, targets are displayed at varying positions within the user interface of the platform. Then, the user moves the cursor to each target and selects it, while the system records the resulting trajectory as a multivariate time series. Randomization changes the required movement direction and distance between the consecutive interactions, thereby encouraging the model to learn characteristics of how a user moves rather than merely memorizing one fixed trajectory and overfitting. 
+Mouse-dyanmics authentication has previously been investigated utilizing engineered features, convolutional networks and systems, recurrent models, and hybrid architechtures \cite{antalfejer2020, wang2025Mouse}. Commercial platforms such as Graboxy also apply cursor behavior to non-discrete or step up authenticational processes \cite{graboxyContinuous}. Therefore, NeuroCursor does not claim to intrdouce a cursor-based behavioral biometric verification system. Rather, the study focuses on a controlled randomized challenge, target-relative features, and verification across a small number of deliberate movements.
+
+This paper presents \textit{NeuroCurso}, a behavioral biometric authentication and validation system based on a randomized point-and-click task. During an authentication attempt, targets are displayed at varying positions within the user interface. The user moves the cursor to each target and selects it, while the system records the resulting trajectory as a multivariate time series. Randomization changes the required movement direction and distance across consecutive interactions, thereby encouraging the model to learn characteristics of how a user moves rather than merely memorizing one fixed trajectory. 
 
 Each recorded trajectory may be represented as 
 
@@ -67,7 +72,7 @@ Each recorded trajectory may be represented as
 where $T$ denotes the number of sampled time steps, $d$ denotes the number of recorded or derived variables, and 
 
 \begin{equation}
-\mathbf{x}_T = 
+\mathbf{x}_t = 
 \begin{bmatrix}
 x_t &
 y_t &
@@ -76,30 +81,34 @@ v_{x,t} &
 v_{y,t} & 
 a_{x,t} & 
 a_{y,t}
-\end{bmatrix}^{\top}
+\end{bmatrix}^{\top},
 \label{eq:trajectory_vector}
 \end{equation}
 
-is one possible feature representation at time $t$. Additional variables--such as jerk, curvature, movement angle, button state, and distance from target--may be incorporated depending on the final implementation. 
+where $\mathbf{x}_t$ is one possible feature representation at time $t$. Additional variables--such as jerk, curvature, movement angle, button state, and distance from target--may be incorporated depending on the final implementation. 
 
-NeuroCursor uses a hybrid Convolutional Neural Network (CNN) and Gated Recurrent Unit (GRU) architecture. The convolution component is intended to learn short-range movement structures, including local velocity changes, micro-corrections, and deceleration patterns. The GRU component processes the order convolution representations to model dependencies across the recorded trajectories. This division is motivated by prior research pertaining to time series, which shows that convolutional and recurrent components can provide complementary forms of representation \cite{foumaniTimeSeriesSurvey, elsayedGRUFCN}.
+%look at the portion of text above and remove any features that we do NOT implement for the final draft.
 
-Fundamentally, the intended purpose of NeuroCursor is not necessarily to replace passwords or established authentication methods and processes. Rather, mouse behavior may function as an additional validation signal in a layered security framework. For instance, a low-confidence behavioral score could trigger an additional authentication process, whereas a high confidence signal could support a less obtrusive login experience for users. Such an approach recognizes that behavioral biometrics are probabilistic and may vary with fatigue, injury, hardware, the local environment, or changes in user behavior.   
+NeuroCursor uses a hybrid convolutional neural network (CNN) and gated recurrent unit (GRU) architecture. The convolutional component is intended to learn short-range movement structures, including local velocity changes, micro-corrections, and deceleration patterns. The GRU component processes the ordered convolutional representations to model dependencies across the recorded trajectories. This division is motivated by prior research pertaining to time series, which shows that convolutional and recurrent components can provide complementary forms of representation \cite{foumaniTimeSeriesSurvey, elsayedGRUFCN}. Because similar convolutional--recurrent approaches have been previously utilized for mouse authentication and validation processes, the architecture is treated and perceived as an evaluated modeling choice rather than the primary novelty of NeuroCursor. 
+
+Albeit reCAPTCHA also evaluates interactions and contextual signals, it differs in the sense that its primary objective is human--bot and abuse detection rather than verification of a specific asserted user \cite{googleRecaptchaV3}. A human impostor could therefore pass a CAPTCHA while still invalidating a user-specific biometric verification test. 
+
+Fundamentally, the intended purpose of NeuroCursor is not necessarily to replace passwords or established authentication methods and processes. Rather, mouse behavior may function as an additional verification signal in a layered security framework. For instance, a low-confidence behavioral score could trigger an additional authentication process, whereas a high-confidence score could support a less intrusive login experience for users. Such an approach recognizes that behavioral biometrics are probabilistic and may vary with fatigue, injury, hardware, the local environment, or changes in user behavior.   
 
 \subsection{Problem Statement}
 
-The central problem addressed in this work is whether a short sequence of randomized cursor movements contains the sufficient user-specific information to support and validate biometric verification. In contrast to identification, validation tests whether an observed sample is consistent with a claimed category--the respective account for the intended user. 
+The central problem addressed in this work is whether a short sequence of randomized cursor movements contains sufficient user-specific information to support and validate biometric verification. In contrast to identification, verification processes test whether an observed sample is consistent with a claimed identity--the respective account for the intended user. 
 
 Let $u$ denote a claimed user and let $\mathbf{X}$ denote an observed cursor sequence. The authentication model estimates 
 
 \begin{equation}
 s(\mathbf{X},u)
 =
-P(Y=1 \mid \mathbf{X}, u), 
+Pr(Y=1 \mid \mathbf{X},u), 
 \label{eq:auth_probability}
 \end{equation}
 
-where $Y=1$ indicates that the sequence was generated by the claimed anticipated user, and $Y=0$ indicates that it was generated by an imposter. Given an authentication threshold $\tau$, the predicted decision is 
+where $Y=1$ indicates that the sequence was generated by the claimed user, and $Y=0$ indicates that it was generated by an imposter. Given an authentication threshold $\tau$, the predicted decision is 
 
 \begin{equation}
 \widehat{Y}
@@ -111,7 +120,7 @@ where $Y=1$ indicates that the sequence was generated by the claimed anticipated
 \label{eq:threshold_decision}
 \end{equation}
 
-However, the threshold introduces a tradeoff in terms of security and utility. Increasing $\tau$ generally results the system being more conservative, which potentially reduces unauthorized acceptances while simultaneously increasing the number of legitimate users who are rejected. Decreasing $\tau$ may allow for augmented convenience, but it also increases security risk and vulnerability. Consequently, NeuroCursor may be evaluated using biometric error measure such as the false acceptance rate and false rejection rate, rather than merely relying exclusively on classification accuracy. 
+However, the threshold introduces security-usability tradeoff. Increasing $\tau$ generally results in a more conservative system, which potentially reduces unauthorized acceptances while simultaneously increasing the number of legitimate users who are rejected. Decreasing $\tau$ may allow for augmented convenience, but it also increases security risk and vulnerability. Consequently, NeuroCursor may be evaluated using biometric error measures such as the false acceptance rate and false rejection rate, rather than merely relying exclusively on classification accuracy. 
 
 For an authentication attempt containing $K$ point-and-click movements, let
 
@@ -127,7 +136,7 @@ For an authentication attempt containing $K$ point-and-click movements, let
 \label{eq:challenge_set}
 \end{equation}
 
-represent the complete challenge sequence. An aggregate authentication score may be defined as 
+represent the complete challenge sequence. If per-movement scores are aggregated using an arithmetic mean, the attempt-level score is defined as  
 
 \begin{equation}
 S(\mathcal{Q},u)
@@ -140,7 +149,7 @@ s\left(\mathbf{X}^{(k)},u\right).
 
 For the proposed NeuroCursor interaction, the intended value is $K=5$. Nevertheless, distinct experiments comparing different values of $K$ can determine whether incorporating additional movements yields a statistically significant improvement in the authentication method's reliability or merely prolongs the interaction time, thereby curtailing the overall efficiency of the authentication process. 
 
-Several technical challenges arise. Cursor trajectories vary in terms of duration and number of recorded samples, hence requiring resampling, padding, masking, or another methodology for handling unequal sequence lengths. Movement behavior can also be impacted by mouse sensitivity, DPI, acceleration settings, screen resolution, target geometry, input hardware, and the collection environment. Recent empirical research has corroborated that mouse configuration parameters may substantially alter prevalent mouse-dynamics features, resulting in device control and normalization being crucial for credible evaluation \cite{kuricMouseCredibility}. The restrained size of a student-collected dataset may additionally amplify the risk of potentially overfitting, especially for a deep neural network. 
+Several technical challenges arise. Cursor trajectories vary in terms of duration and number of recorded samples,requiring resampling, padding, masking, or another methodology for handling unequal sequence lengths. Movement behavior can also be impacted by mouse sensitivity, DPI, acceleration settings, screen resolution, target geometry, input hardware, and the collection environment. Recent empirical research has corroborated that mouse configuration parameters may substantially alter prevalent mouse-dynamics features, resulting in device control and normalization being crucial for credible evaluation \cite{kuricMouseCredibility}. The restrained size of a student-collected dataset may additionally amplify the risk of potentially overfitting, especially for a deep neural network. A further concern is data leakage. Cursor movements from the same trial or session must not be divided across training and test sets, as highly related samples could result in inflated performance metrics, exacerbating the true system's evaluation.
 
 The research problem can therefore be summarized as the design of a model that learns user-discriminative patterns while constraining the model's sensitivity to irrelevant variation in such patterns. The system must discern between variation that reflects identity and variation caused by target placement, sequence length, sampling rate, device settings, and transient behavioral changes.
 
@@ -148,38 +157,42 @@ The research problem can therefore be summarized as the design of a model that l
 This study is guided by the following research questions:
 
 \begin{enumerate}
-    \item Does the proposed CNN--GRU model outperform traditional machine-learning models and single-component neural architectures that exist?
+    \item Does the proposed CNN--GRU model outperform traditional machine-learning models and single-component neural architectures?
 
     \item How does authentication performance change when one, three, or five cursor movements are aggregated into a single decision?
 
-    \item Which spatial, temporal, and kinematic features contribute the most strongly to user authentication and validation processes?
+    \item Which spatial, temporal, and kinematic features contribute the most strongly to user verification?
 
     \item How does the authentication threshold impact the false acceptance rate, false rejection rate, and equal error rate?
 
-    \item To what extent does the model's performance remain stable across discrete collection trials and user sessions?
+    \item To what extent does the model's performance remain stable across seperate collection trials and user sessions?
 
     \item How sensitive is the model to variation in target distance, movement direction, hardware conditions, and sampling characteristics?
+    
+    %Only keep the last question (6) if we actually test for device hardware. 
 \end{enumerate}
 
 The primary statistical hypothesis concerns the separation between genuine and imposter authentication scores. Let $S_G$ and $S_I$ denote the random variable representing scores from genuine attempts and the corresponding variable for imposter attempts, respectively. The null and alternative hypotheses are 
 
 \begin{equation}
-H_0:
+H_0:\quad
 \mathbb{E}[S_G]
 \leq
-\mathbb{E}[S_I]
+\mathbb{E}[S_I],
 \label{eq:null_hypothesis}
 \end{equation}
 
+and
+
 \begin{equation}
-H_1:
+H_A:\quad
 \mathbb{E}[S_G]
 >
-\mathbb{E}[S_I]
+\mathbb{E}[S_I].
 \label{eq:alternative_hypothesis}
 \end{equation}
 
-Failure to accept $H_0$ would suggest that the model yields higher scores to genuine samples systematically. Despite this, the statistical separation alone would not evince the pragmatic effectiveness of such an authentication method. The magnitude of the separation, confidence intervals, effect size, and resulting biometric error rates must also be taken into consideration when evaluating the biometric system. 
+Rejecting $H_0$ would indicate that the model systematically yields higher scores to genuine samples than when compared to impostor samples. Failing to reject $H_0$ would suggest insufficient evidence for such score distinction and seperation. Despite this, the statistical separation alone would not evince the pragmatic effectiveness of such an authentication method. The magnitude of the separation, confidence intervals, effect size, and resulting biometric error rates must also be taken into consideration when evaluating the biometric system. 
 
 The following model-level hypotheses are additionally proposed:
 
@@ -190,42 +203,44 @@ The following model-level hypotheses are additionally proposed:
 
 \item \textbf{H3:} The usage of derived kinematic features--such as velocity, acceleration, curvature, jerk, and path efficiency--will demonstrate better performance relative to raw cursor coordinates alone. 
 
-\item \textbf{H4:} Session-separated model validation will result in lower performance than a random sample-level split because it more accurately measures generalization to new authentication attempts.
+\item \textbf{H4:} Performance under session-seperated evaluation will be lower than performance under random-sample evaluation, reflecting the overall greater difficulty of generalizing to unseen sessions.
 \end{itemize}
 
-However, these hypotheses should only be retained if proven by the experiments. Particularly, any statements regarding the superiority of the proposed hybrid model should be confirmed with proper baselines and ablation experiments. 
+However, these hypotheses should only be retained if corroborated by the experiments. Particularly, any statements regarding the superiority of the proposed hybrid model should be confirmed with proper baselines and ablation experiments. 
 
 \subsection{Contributions}
 \begin{itemize}
-    \item We introduce NeuroCursor, a randomized point-and-click system for garnering mouse dynamics authentication sequences. 
+    \item We present NeuroCursor, a randomized point-and-click system for garnering brief, challenge-based mouse dynamics verification and authentication sequences. 
 
-    \item We represent cursor behavior as a multivariate time series that encompasses both raw positional data and higher-order features--such as spatial, temporal, geometric, and kinematics. 
+    \item We represent cursor behavior as a multivariate time series that encompasses both raw positional data and higher-order features--such as spatial, temporal, geometric, and kinematic features. 
 
-    \item We propose a hybrid CNN--GRU model where the convolution layers are used to acquire localized movement patterns and the recurrent layers learn the temporal structure of such patterns. 
+    \item We evaluate a hybrid CNN--GRU model in which convolutional layers learn localized movement patterns and recurrent layers model their temporal structure. 
 
-    \item We evaluate the system as a biometric verification problem using a false acceptance rate, false rejection rate, receiver operating characteristic analysis, area under the curve, and equal error rate in addition to conventional classification metrics. 
+    \item We evaluate the system as a biometric verification problem using false acceptance rate, false rejection rate, receiver operating characteristic analysis, area under the curve, and equal error rate in addition to conventional classification metrics. 
 
-    \item We examine the relationship between the number of cursor interactions, interaction accuracy, and interaction latency. 
+    \item We examine the relationship between the number of cursor interactions, authentication performance, and interaction latency. 
 
-    \item We compare the complete model to classical machine-learning baselines--such as CNN-only and GRU-only architectures, as well as limited feature configurations--to determine the value of each component to informative signals. 
+    \item We compare the complete model with classical machine-learning baselines, as well as CNN-only and GRU-only neural architectures and limited feature configurations, to determine the value of each component to the system's overall performance. 
+    
+    \item We document the challenge-generation procedure, feature definitions, data splits, and evaluation protol to support future reproducibility.
 \end{itemize}
 
 \section{Related Work}
 \subsection{Behavioral Biometrics}
 
-Biometric technologies include physiological and behavioral types. Physiological biometrics are used to acquire identity information from physical attributes, whereas behavioral biometrics depend on patterns in actions or interactions. According to NIST, a biometric refers to any measurable physiological or behavioral characteristics that can be used to identify or validate a claimed identity \cite{nistBiometrics}. It should be noted that this definition implies that mouse dynamics is placed within the broader field of biometric authentication while underscoring the distinction between identification and verification. 
+Biometric technologies include physiological and behavioral modalities. Physiological biometrics are used to derive identity information from physical attributes, whereas behavioral biometrics depend on patterns in actions or interactions. According to NIST, a biometric refers to any measurable physiological or behavioral characteristic that can be used to identify or validate a claimed identity \cite{nistBiometrics}. It should be noted that this definition implies that mouse dynamics is placed within the broader field of biometric authentication while underscoring the distinction between identification and verification. 
 
-Various behavioral biometric systems have been developed using keystroke dynamics, handwriting, touchscreen gestures, gait, voice behavior, and patterns of computer interaction. The principal advantage of using such behavioral signals is that numerous behavioral signals can be captured through devices that are already used during primary interactions, allowing passive or minimally invasive verification. However, behavioral characteristics are not perfectly invariant; user behavior varies depending on physical condition, emotional state, familiarity with tasks, posture, device type, and environmental conditions. Therefore, behavioral biometric matching is generally probabilistic in nature rather than deterministic. 
+Various behavioral biometric systems have been developed using keystroke dynamics, handwriting, touchscreen gestures, gait, voice behavior, and patterns of computer interaction. The principal advantage of using such behavioral signals is that such signals can be captured through devices that are already used during primary interactions, allowing passive or minimally invasive verification. However, behavioral characteristics are not perfectly invariant; user behavior varies depending on physical condition, emotional state, familiarity with tasks, posture, device type, and environmental conditions. Therefore, behavioral biometric matching is generally probabilistic in nature rather than deterministic. 
 
 The behavioral authentication process can be performed either as a discrete checkpoint or continuously after the initial login. Discrete authentication evaluates a specific interaction created for verification, whereas continuous authentication monitors behavior during an active session. Deutschmann et al. studied continuous behavioral authentication using keystroke and mouse data collected from ninety-nine participants over a ten-week period, exemplifying both the potential and longitudinal difficulty of behaviometric verification \cite{deutschmannContinuousAuthentication}. Continuous authentication methods may help detect account takeover after login, but they oftentimes require a prolonged duration of time and involve additional privacy risks related to the ongoing collection of user activity throughout sessions. 
 
-NeuroCursor employs challenge-based authentication rather than unrestrained, continuous monitoring. Users intentionally execute a short sequence of randomized point-and-click actions at the authentication stage. This overall structure allows for  greater control over task conditions and a clear beginning and end for each sample. Moreover, this methodology also communicates the authentication intent more directly rather than passively monitoring ordinary cursor activity and trajectory. 
+NeuroCursor employs challenge-based authentication rather than unconstrained, continuous monitoring. Users intentionally execute a short sequence of randomized point-and-click actions at the authentication stage. This structure allows for greater control over task conditions and a clear beginning and end for each sample. Moreover, this approach to user verification also communicates the authentication intent more directly rather than passively monitoring ordinary cursor activity and trajectory. 
 
 \subsection{Mouse-Dynamics Authentication}
 
-Mouse dynamics refers to the analysis of cursor trajectories and mouse-button interactions for the ultimate purpose of characterizing user behavior. Recorded characteristics may include, for instance, cursor coordinates, timestamps, movement direction, distance, velocity, acceleration, curvature, pause duration, clicks, double-clicks, drag events, and interactions with graphical interface elements. Features can be extracted either from an individual user's actions or from a longer sequences of activity. 
+Mouse dynamics refers to the analysis of cursor trajectories and mouse-button interactions for the ultimate purpose of characterizing user behavior. Recorded characteristics may include, for instance, cursor coordinates, timestamps, movement direction, distance, velocity, acceleration, curvature, pause duration, clicks, double-clicks, drag events, and interactions with graphical interface elements. Features can be extracted either from an individual user's actions or from longer sequences of activity. 
 
-Task design in existing mouse-dynamics research varies substantially. Some systems, for instance, acquire unconstrained cursor activity while a user performs typical computer tasks. Other systems use constrained tasks--such as target selection, drag operation, object trace drawing, or interaction with predefined interface widgets. Although unconstrained collection may be more relevant to the representation of normal behavior in users, differences in the content of applications and tasks can augment variability. Constrained tasks improve comparability but may be more intrusive and less relevant to natural user experiences. 
+Task design in existing mouse-dynamics research varies substantially. Some systems, for instance, acquire unconstrained cursor activity while a user performs typical computer tasks. Other systems use constrained tasks--such as target selection, drag-and-drop tasks, shape tracing, or interaction with predefined interface widgets. Although unconstrained collection may be more relevant and representative of normal behavior in users, differences in the content of applications and tasks can introduces variability. Constrained tasks improve comparability but may be more intrusive and less relevant to natural user experiences. 
 
 Khan \textit{et al.} surveyed mouse dynamics and closely related widget interaction, classifying prior work by data collection tasks, feature definitions, datasets, algorithms, fusion methods, and limitations \cite{khanMouseSurvey}. Their review demonstrates that the field has utilized various statistical techniques, classical machine learning classifiers, and deep-learning algorithms. It also identifies tenacious challenges involving discrepant experimental protocols, a paucity of publicly available data, hardware variance, and difficulty comparing results across studies. 
 
@@ -238,6 +253,7 @@ Geometrically, the cursor trajectory is a sampled planar curve. Given cursor pos
 x(t)\\
 y(t)
 \end{bmatrix},
+\label{eq:cursor_position}
 \end{equation}
 
 its velocity and acceleration vectors are 
@@ -250,6 +266,7 @@ its velocity and acceleration vectors are
 \mathbf{a}(t)
 =
 \frac{d^2\mathbf{r}(t)}{dt^2}.
+\label{velocity_acceleration}
 \end{equation}
 
 In terms of the continuous formulation, the cursor's trajectory length is defined as
@@ -268,15 +285,15 @@ L
 Since NeuroCursor registers cursor positions at distinct, discrete timestamps, the trajectory length is computed numerically as 
 
 \begin{equation}
-L=
+\widehat{L}=
 \sum_{i=2}^{T}
 \left\|
 \mathbf{r}_i-\mathbf{r}_{i-1}
 \right\|_2.
-\label{discrete_path_length}
+\label{eq:discrete_path_length}
 \end{equation}
 
-The path efficiency between starting position $\mathbf{r}(t_0)$ and the target $\mathbf{q}$ can be expressed as 
+The path efficiency from the starting position $\mathbf{r}(t_0)$ to the target $\mathbf{q}$ is defined as 
 
 \begin{equation}
 \eta
@@ -295,13 +312,36 @@ L
 
 These quantities capture different aspects and properties of user behavior. Two different users may reach the same target point in similar amounts of time but differ in path curvature, acceleration profile, corrective motion, or deceleration near the target element. 
 
-One major concern about the methodology pertaining to measuring the mouse-dynamics is the question of whether or not the measured behaviors are due to either the user or the hardware itself. Kuric \textit{et al.} investigated the dependence of mouse-dynamics variables on mouse configuration parameter configurations and discovered that commonly analyzed mouse-dynamics features can be substantially impacted by configuration differences \cite{kuricMouseCredibility}. Accordingly, an authentication performance on one fixed system may not generalize to another mouse, trackpad, sensitivity setting, or screen configuration. This concern motivates the recording of experimental circumstances and conditions, normalizing spatial data, and distinguishing claims about same-device verification from claims regarding cross-device verification. 
+One major concern about the methodology pertaining to mouse-dynamics measurement is the question of whether the measured behaviors are due to the user or the hardware. Kuric \textit{et al.} investigated the dependence of mouse-dynamics variables on mouse configuration parameter and discovered that configuration differences can significantly impact commonly analyzed mouse-dynamics features \cite{kuricMouseCredibility}. Accordingly, authentication performance on one fixed system may not generalize to another mouse, trackpad, sensitivity setting, or screen configuration. This concern motivates the recording of experimental circumstances and conditions, normalizing spatial data, and distinguishing claims about same-device verification from claims regarding cross-device verification. 
 
-NeuroCursor differs from long-window monitoring systems in the sense that it acquires and aggregates a small, predefined number of directed movement. For further elaboration, NeuroCursor differs from a fixed gesture as target points in NeuroCursor are randomly generated. Consequently, the model receives multiple movement directions and distances while the interaction remains brief enough to function as an authentication challenge. 
+NeuroCursor differs from long-window monitoring systems in the sense that it acquires and aggregates a small, predefined number of directed movements. For further elaboration, NeuroCursor differs from a fixed gesture as target points in NeuroCursor are randomized. Consequently, the model receives multiple movement directions and distances while the interaction remains brief enough to function as an authentication challenge. 
+
+\subsection{Commercial Systems and Bot Detection}
+
+Comercial behavioral-biometric systems evince that cursor-based identify verification systems and identity scoring processes have pragmatic applications beyond mere academic prototypes and theoretical implications. Graboxy states that its continuous-authentication platform monitors cursor activity and typing behavior, creates biometric profiles, computes identity scores, and can flag or re-verify suspicious sessions \cite{gravboxyContinuous, graboxyMFA}. These publicly-released descriptions are relevant to NeuroCursor's motivation, but they do not disclose enough technical details about the underlying architecture, training data, featuyre representation, or biometric error to butress a direct scientific comparison. 
+
+reCAPTCHA is related as well as it also evaluates interactions and returns a risk score, but it is primarily utilized to address bot and abuse detection rather than claimed-user identity verification \cite{googleRecaptchaV3}. BeCAPTCHA-Mouse provides a closer and more relevant academic comparison because it classifies human and synthetic mouse trajectories \cite{acien2020BeCAPTCHA}. The two tasks, as a result, remain distinct in their own respective manner:
+
+\begin{equation}
+\underbrace{
+\Pr(Y_{\mathrm{human}}=1 \mid \mathbf{X})
+}_{\text{human--bot classification}}
+\neq
+\underbrace{
+\Pr(Y_{\mathrm{genuine}}=1 \mid \mathbf{X},u)
+}_{\text{user verification}}.
+\label{eq:captcha_verification_distinction}
+\end{equation}
+
+The distinction is operationally significant in sense that confirming that an interaction is human does not necessarily establish or corroborate that the person is the claimed and enrolled account holder. 
 
 \subsection{Deep Learning for Time-Series Biometrics}
 
-Mouse movement follows a sequential pattern, where the current state of the cursor is influenced by earlier positions, and many potentially informative behaviors can be exhibited by the cursor trajectory over various time durations. Traditional classifiers typically do not explicitly handle trajectories directly and require conversion of the trajectory into a fixed-dimensional vector that contains engineered features that albeit may be interpretable, may be suboptimal for classification as they may not capture the full temporal structure of the data. Deep learning techniques, by contrast, can take inputs in the form of sequential data or multivariate data and learn hierarchical representations of the data that are optimized for the classification task without the need to convert them into engineered. In a recent survey by Foumani \textit{et al.}, distinct deep time-series classification methods are categorized into convolutional, recurrent, attention-based, hybrid, and other architectural families \cite{foumaniTimeSeriesSurvey}. Based on the findings of Foumani, hybrid architectures that combine convolutional and recurrent components are particularly popular because they utilize the complementary strengths of both components. Convolutional layers are effective at learning local patterns and features, while recurrent layers are adept at capturing long-term dependencies and temporal dynamics.
+Deep learning has previously been directly applied to mouse-dyanamics recognition processes. Antal and Fej\'er evaluated a convolutional approach for learning from mouse-movement tim series \cite{antalFejer2020}. More contemporarily, Wang \textit{et al.} proposed LT-AMouse, a mouse-authentication framework that synthesizes a one-dimesnional residual network with a GRU and scrutinizes data sufficiency and input-segment length \cite{wang2025Mouse}. These studies overlap with NeuroCursor's broad architectural motivation and overall structure. Accordingly, the CNN--GRU Model should be presented as a modeling choice evaluated within NeuroCursor's protocol rather than as the primary novelty of the paper. 
+
+Mouse movement follows a sequential pattern, where the current state of the cursor is influenced by earlier positions, and many potentially informative behaviors can be exhibited by the cursor trajectory over various time durations. Traditional classifiers typically do not explicitly handle trajectories directly and require conversion of the trajectory into a fixed-dimensional vector that contains engineered features that albeit may be interpretable, may be suboptimal for classification as they may not capture the full temporal structure of the data. Deep learning techniques, by contrast, can take inputs in the form of sequential data or multivariate data and learn hierarchical representations of the data that are optimized for the classification task without the need to convert them into engineered. 
+
+In a recent survey by Foumani \textit{et al.}, distinct deep time-series classification methods are categorized into convolutional, recurrent, attention-based, hybrid, and other architectural families \cite{foumaniTimeSeriesSurvey}. Based on the findings of Foumani, hybrid architectures that combine convolutional and recurrent components are particularly popular because they utilize the complementary strengths of both components. Convolutional layers are effective at learning local patterns and features, while recurrent layers are adept at capturing long-term dependencies and temporal dynamics.
 
 For a one-dimensional temporal convolution, the activation of output channel $k$ at time $t$ can be expressed as
 
@@ -394,23 +434,512 @@ Third, evaluation procedures are not necessarily always consistent across studie
 
 Finally, relatively few studies have truly focused on the combination of three specific elements considered in NeuroCursor: (1) a short, randomized point-and-click task, (2) a hybrid CNN--GRU architecture for learning local and temporal patterns, and (3) multichannel kinematic trajectory representation. NeuroCursor is designed to address these gaps by investigating whether such a combination can extract sufficient user-specific information from a brief sequence of cursor movements to support reliable authentication while maintaining a simple and minimally intrusive user experience.
 
-The proposed research is designed to address these gaps through the following contributions:
+The proposed research is designed to address these gaps through the following experimental directions:
 
 \begin{enumerate}
-    \item collecting cursor trajectories under randomized point-and-click conditions to ensure that the model learns user-specific patterns rather than memorizing fixed trajectories;
-    \item representing cursor trajectories as multivariate time series that include both raw positional data and derived kinematic features, allowing the model to capture a richer set of behavioral characteristics;
-    \item combining convolutional and recurrent neural network components to learn both local movement patterns and temporal dependencies, potentially improving classification performance over single-component architectures;
-    \item comparing the proposed hybrid model to traditional CNN-only and GRU-only architectures, as well as to classical machine-learning baselines, to evaluate the contribution of each component to the overall performance;
+    \item collecting cursor trajectories under randomized point-and-click conditions to encourage the model to learn user-specific movement patterns rather than memorizing fixed trajectories;
+    
+    \item representing cursor trajectories as multivariate time series that include both raw positional data and derived kinematic features and target-relative features, allowing the model to capture a richer set of behavioral characteristics;
+    
+    \item evaluating a hybrid CNN--GRU architecture that integrates local motion-feature extraction with temnporal sequence modeling, while treating the architecture as an evaluated modeling choice rather than as the principal ingenuity and novelty of the study;
+    
+    \item comparing the proposed hybrid model to traditional CNN-only and GRU-only architectures, classical machine-learning baselines, and reduced feature configurations to evaluate the contribution of each component to the overall performance;
+    
     \item evaluating the system using biometric error measures such as false acceptance rate, false rejection rate, and equal error rate, in addition to conventional classification metrics, to provide a more comprehensive assessment of the system's effectiveness in a real-world authentication context; and
-    \item testing how authentication performance varies with the number of cursor interactions, interaction accuracy, and interaction latency, to determine the optimal balance between security and user convenience.
+    
+    \item testing how authentication performance varies with the number of cursor interactions, interaction accuracy, and interaction latency, to determine the optimal balance between reliability and user convenience.
 \end{enumerate}
 
 Ultimately, the resulting investigation is designed to determine not only whether NeuroCursor can classify collected samples, but also whether its performance is adequately robust, statistically supported, and operationally efficient in order to justify further development as an additional authentication factor. 
 
+\section{NeuroCursor System Design}
+
+\subsection{System Overview}
+NeuroCursor consists of four major stages: enrollment, challenge generation, trajectory recoridng, and verification. During enrollment, each participant completes a set of randomized point-and-click tasks that are utilized to construct that user's behavioral profile. During the authentication stage, the system generates anew set of target locations and records the user's cursor trajectory as the user selects each target. The recorded trajectory is then preprocessed, converted into feature sequences, evaluated by the authentication model, and compared with the intended claimed user's profile. 
+
+%TODO: We need to replace the following sentence with the exact implementation details once backend is done. This is very concise and may not be 100% accurate. 
+
+In NeuroCursor's implementation, the user is presented with $K$ target during each authentication attempt, one at a time, where $K$ is varied experimentally in order to study the tradeoff between interaction time and the system's reliability in terms of security.
+
+\subsection{Randomized Challenge Generation}
+
+Let $\Omega \subset \mathbb{R}^2$ denote the usable screen region in which the target is designated to appear in. For each movement $k$, the system samples a target location 
+
+\begin{equation}
+\mathbf{q}^{(k)}
+=
+\begin{bmatrix}
+q_x^{(k)}\\
+q_y^{(k)}
+\end{bmatrix}
+\in \Omega.
+\label{eq:target_location}
+\end{bmatrix}
+\in \Omega.
+\label{eq:target_location}
+\end{equation}
+
+The target sequence is randomized so that consecutive movements differ in direction and magnitude. This reduces the probability that the model learns a single fixed gesture rather than user-specific movement trends. 
+
+%TODO: We need to add our actual target constraints here. 
+
+To preclude invalid or overly easy targets, the implementation may impose minimum-distance constraints, boundary margins, or target-size constraints:
+
+\begin{equation}
+\left\|
+\mathbf{q}^{(k)}-\mathbf{q}^{(k-1)}
+\right\|_2
+\geq
+D_{\min}.
+\label{eq:min_target_distance}
+\end{equation}
+
+\subsection{Trajectory Recording}
+
+During each movement, NeuroCursor records cursor coordinates and their respective timestamps. A raw trajectory is represented as 
+
+\begin{equation}
+\mathcal{R}
+=
+\left\{
+(x_i,y_i,t_i)
+\right\}_{i=1}^{T}.
+\label{eq:raw_trajectory}
+\end{equation}
+
+From this raw trajectory, the system computes derived temporal and kinematic variables. For instance, the elapsed time between sequential samples is 
+
+\begin{equation}
+\Delta t_i = t_i - t_{i-1}.
+\label{eq:delta_t}
+\end{equation}
+The displacement vector is
+\begin{equation}
+\Delta \mathbf{r}_i
+=
+\mathbf{r}_i-\mathbf{r}_{i-1},
+\label{eq:displacement}
+\end{equation}
+where $\mathbf{r}_i=[x_i,y_i]^{\top}$. Velocity and acceleration can be
+approximated by
+\begin{equation}
+\mathbf{v}_i
+=
+\frac{\Delta \mathbf{r}_i}{\Delta t_i},
+\qquad
+\mathbf{a}_i
+=
+\frac{\mathbf{v}_i-\mathbf{v}_{i-1}}{\Delta t_i}.
+\label{eq:discrete_velocity_acceleration}
+\end{equation}
+
+\subsection{Authentication Workflow}
+
+For each specific claimed user $u$, NeuroCursor receives a challenge sequence $\mathcal{Q}$ and outputs an authentication score $S(\mathcal{Q},u)$. The decision rule is controlled by the threshold status, $\tau$. If $S(\mathcal{Q},u)\geq \tau$, the attempt is accepted; otherwise, the attempt is repudiated. In a real deployment, rejection would not necessarily imply that access is denied permanently. Rather, it could trigger a secondary authentication factor and process. 
+
+\section{Feature Engineering}
+
+\subsection {Spatial and Temporal Features}
+
+Spatial and temporal features describe the geometry and timing of cursor movements. These include total duration, path length, straight-line distance, average velocity, maximum velocity, average acceleration, pause duration, and click timing. The total movement duration is 
+
+\begin{equation}
+D = t_T - t_1.
+\label{eq:movement_duration}
+\end{equation}
+
+The straight-line distance from the initial cursor position to the target is
+
+\begin{equation}
+D_{\mathrm{straight}}
+=
+\left\|
+\mathbf{q}-\mathbf{r}_1
+\right\|_2.
+\label{eq:straight_distance}
+\end{equation}
+
+\subection{Kinematic Features}
+
+Kinematic featurea are used to elucidate how the movement unfolds over a specific duration of time. Speed at sample $i$ can be computed as 
+
+\begin{equation}
+v_i
+=
+\left\|
+\mathbf{v}_i
+\right\|_2,
+\label{eq:speed}
+\end{equation}
+
+and acceleration magnitude can be computed as
+
+\begin{equation}
+a_i
+=
+\left\|
+\mathbf{a}_i
+\right\|_2.
+\label{eq:acceleration_magnitude}
+\end{equation}
+
+Jerk can be approximated as
+\begin{equation}
+\mathbf{j}_i
+=
+\frac{\mathbf{a}_i-\mathbf{a}_{i-1}}{\Delta t_i}.
+\label{eq:jerk}
+\end{equation}
+
+\subsection{Target-Relative Features}
+
+Due to the nature of NeuroCursor using randomized target locations, target-relative features are significant. These features describe cursor motion with respect to the current target rather than only in terms of screen coordinates. The target-relative displacement at sample $i$ is 
+
+\begin{equation}
+\mathbf{d}_i
+=
+\mathbf{q}-\mathbf{r}_i.
+\label{eq:target_relative_displacement}
+\end{equation}
+
+The target distance is
+
+\begin{equation}
+d_i
+=
+\left\|
+\mathbf{q}-\mathbf{r}_i
+\right\|_2.
+\label{eq:target_distance}
+\end{equation}
+
+The target-closure rate can be approximated as
+
+\begin{equation}
+c_i
+=
+\frac{d_{i-1}-d_i}{\Delta t_i}.
+\label{eq:closure_rate}
+\end{equation}
+
+Positive values indicate movement toward the target, while negative values
+may indicate overshoot or corrective motion.
+
+\subsection{Normlization and Sequence Preparation}
+
+Since screen resolution, smapling rate, and trajectory length may contrast, the recorded data must be normalized before training occurs. Spatial coordinates may be normalized by the screen width and height:
+
+\begin{equation}
+x_i'=\frac{x_i}{W},
+\qquad
+y_i'=\frac{y_i}{H},
+\label{eq:spatial_normalization}
+\end{equation}
+
+where $W$ and $H$ denote screen width and screen height. Temporal features
+may be standardized using the training-set mean and standard deviation:
+
+\begin{equation}
+z
+=
+\frac{x-\mu_{\mathrm{train}}}{\sigma_{\mathrm{train}}}.
+\label{eq:zscore_normalization}
+\end{equation}
+
+%TODO: We gotta state what the exact methodology is that we use. Only keep the section down below (Trajectories... testing) if it's actually true. 
+
+Trajectories of unequal length are handled using interpolation to a fixed length, padding with masking, and variable-length sequence processing. The method is applied consistenly across training, validation, and testing. 
+
+\subsection{CNN--GRU Architecture}
+
+The input to the neural model is a multivariate sequence $\mathbf{X}\in\mathbb{R}^{T\times d}$, where $T$ is the number of time steps and $d$ is the number of feature channels. Each row corresponds to one time step, and each column corresponds to one recorded or derived feature. 
+
+%TODO: Replace list with exact feature channels we implement. 
+The implemented feature channels include normalized cursor position, elapsed time, velocity, acceleration, path efficiency, target distance, and target-closure rate. 
+
+The convolutional component learns localized temporal movement patterns from short durations of the recorded trajectory. These localized patterns may include rapid acceleration, directional correction, pauses, and deceleration near the respective target. If $\mathbf{X}$ is the input sequence, the convolutional block produces an intermediate representation
+
+\begin{equation}
+\mathbf{H}^{\mathrm{CNN}}
+=
+f_{\mathrm{CNN}}(\mathbf{X};\theta_{\mathrm{CNN}}),
+\label{eq:cnn_representation}
+\end{equation}
+
+where $\theta_{\mathrm{CNN}}$ denotes the convolutional parameters.
+
+\subection{Temporal Modeling with GRU}
+
+The GRU component processes the ordered convolutional representation and models how local movement patterns change and evolce over time:
+
+\begin{equation}
+\mathbf{H}^{\mathrm{GRU}}
+=
+f_{\mathrm{GRU}}
+\left(
+\mathbf{H}^{\mathrm{CNN}};
+\theta_{\mathrm{GRU}}
+\right).
+\label{eq:gru_representation}
+\end{equation}
+
+The final hidden representation is passed to a classifier to yield a
+verification score:
+
+\begin{equation}
+s(\mathbf{X},u)
+=
+\sigma
+\left(
+\mathbf{w}^{\top}\mathbf{h}_{T}
++
+b
+\right).
+\label{eq:model_score}
+\end{equation}
+
+\subsection{Training Objective}
+
+For binary verification, the model may be trained using binary cross-entropy:
+
+\begin{equation}
+\mathcal{L}
+=
+-
+\frac{1}{N}
+\sum_{i=1}^{N}
+\left[
+y_i\log(\hat{y}_i)
++
+(1-y_i)\log(1-\hat{y}_i)
+\right],
+\label{eq:bce_loss}
+\end{equation}
+
+where $y_i$ is the true label and $\hat{y}_i$ is the predicted probability.
+
+%Replace this if final model utilizes contrastive loss, triplet loss, multiclass classification, or another objective. 
+
+\subsection{Experimental Methodology}
+
+%TODO: Fill in after data is collected. Revise para. down below. 
+
+Template: Data were collected from x participants under y conditions. Each participant completed z sessions, and each session contained m authentication trials. Each trial consisted of $K$ point-and-click movements. The study recorded cursor corrdinates, timestamps, target locations, and click events. 
+
+\subsection{Dataset Construction}
+
+For each claimed user, genuine samples are formed from that specific user's authentication attempts. Impostor samples are obtained by comparing attempts from other users against the claimed user's biometric profile. This produces a binary verification dataset:
+
+\begin{equation}
+y_i
+=
+\begin{cases}
+1, & \text{genuine attempt},\\
+0, & \text{impostor attempt}.
+\end{cases}
+\label{eq:binary_labels}
+\end{equation}
+
+\subsection{Training, Validation, and Test Splits}
+
+To curtail and preempt leakage, the primary evaluation uses trial- or session-seperated splits. Samples from the same collection session do not appear in both training and testing sets in order to prevent any overlap. A random sample-level split is reported only as a secondary comparison to illustrate how leakage can inflate metrics related to the authentication model's performance and reliability. 
+
+%TODO: Replace with exact test splits (the para. down below).
+
+The dataset is divided into x training, y validation, and z testing sets. The validation set is used for hyperparameter tuning and threshold selection, whereas the test set is specifically reserved for final evaluation. 
+
+\subsection{Baselines and Ablation Studies}
+
+The complete CNN--GRU model is compared with traditional machine-learning baselines, CNN-only and GRU-only neural baselines, and reduced feature configurations. 
+
+\begin{itemize}
+    \item \textbf{Classical baselines:} TODO logistic regression, support vector machine, random forest, $k$-nearest neighbors, and gradient boosting. 
+    \item \textbf{Neural baselines:} CNN-only and GRU-only architectures.
+    \item \textbf{Feature ablations:} raw coordinates only, raw coordinates with kinematics, and raw coordinates with kinematic and target-relative features.
+    \item \textbf{Interaction-count ablations:} authentication attempts using $K=1$, $K=3$, and $K=5$ movements. 
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+Performance of the mouse-dynamics verificational framework is evaluated using accuracy, precision, recall, F1-score, ROC--AUC, false acceptance rate, false rejection rate, and equal error rate. 
+
+Accuracy is defined as 
+
+\begin{equation}
+\mathrm{Accuracy}
+=
+\frac{TP+TN}{TP+TN+FP+FN}.
+\label{eq:accuracy}
+\end{equation}
+
+False acceptance rate is
+\begin{equation}
+\mathrm{FAR}
+=
+\frac{FP}{FP+TN}.
+\label{eq:far}
+\end{equation}
+
+False rejection rate is
+\begin{equation}
+\mathrm{FRR}
+=
+\frac{FN}{FN+TP}.
+\label{eq:frr}
+\end{equation}
+
+The equal error rate is the operating point at which FAR and FRR are equal
+or approximately equal:
+\begin{equation}
+\mathrm{EER}
+=
+\mathrm{FAR}(\tau^{*})
+=
+\mathrm{FRR}(\tau^{*}).
+\label{eq:eer}
+\end{equation}
+
+\subsection{Results}
+
+%TODO: We need to replace entire section with actual values after experiments and data collection. Reports the empirical results of the evaluation of NeuroCursor. All claims must be backed by final experimental outputs. 
+
+\subsection{Overall Verification Performance}
+
+%TODO: We need to put in a table with all metrics.
+
+\subsection{Effect of Number of Cursor Movements}
+
+%TODO: We need to put in a table with all metrics.
+
+\subsection{Feature Ablation Results}
+
+%TODO: We need to put in a table with all metrics.
+
+\subsection{Session-Seperated Evaluation}
+
+\section{Discussion}
+
+\subsection{Interpretation of Results}
+
+%TODO: Wait until results.
+
+\subsection{Security and Usability Implications}
+
+NeuroCursor is best understood as a supplemental authenticational signal. In a deployment setting, a low behavioral score could trigger step-up authentication rather than immediately deny access. The number of cursor movements affects this security--usability balance as increasing $K$ may ameliorate reliability but also simultaneously increase interaction time, making the system less convenient for the user. 
+
+\subsection{Limitations}
+
+This study has numerous limitations. First, the dataset size is limited, which can increase the risk of overfitting and reduce the overall generalizability of the results. Second, mouse dynamics can be affected by hardware, sensitivity settings, trackpads, screen resolution, fatigue, and emporary behavioral changes. Third, the system's resistance to intentional imitation or replay attacks is not established unless such attacks are explicitly tested. Fourth, results collected in a controlled student environment may not necessarily generalize to large-scale deployment. 
+
+\subsection{Ethical and Privacy Considerations}
+
+Behavioral biometrics should be treated as a rather sensitive topic because it may reflect distinctive patterns of user interaction. A pragmatic system should minimize superfluous data collection, store only the data that is required for authentication, protect stored templates, and provide clear notice to users. 
+
+%TODO: Since NeuroCursor involves human-participant data, the final paper should only describe the study as covered by protocol. We have to add some stuff. 
+
+\section{Conclusion}
+
+This paper presents NeuroCursor, a behavioral biometric verification framework that is based on arbitrary mouse-movement challenges. The system records cursor trajectories during point-and-click interactions between the system and the user, represents the trajectories as multivariate time series, and evaluates whether user-specific movement patterns can support authentication. We present NeuroCursor not as the first mouse-dynamics authentication system or the first CNN--GRU approach, but rather as an experimental study of a short randomized protocol, target-relative feature representation, interaction-count tradeoffs, and session-aware evaluation. 
+
+%TODO: Replace with actual final result statement. If the experiments back up the hypotheses, NeuroCursor shows that quick, challenge-based mouse movements can work as a helpful extra layer for authentication. Even if the results turn out weaker, the study still sheds light on some real challenges—behavioral variability, the amount of data needed, reliance on hardware, and how well things generalize. Looking ahead, we need to try this on bigger and more varied datasets, see how it holds up across different devices, test it against people trying to imitate, watch for how behavior changes over time, and figure out how to blend it with authentication methods we already use.
+
+%TODO: We need to put in a table with all metrics.
+
 \section*{Acknowledgment}
-The authors appreciate Dr. Anurag Nagar for his guidance and mentorship throughout this research process. The authors also thank Hamid Rouhani, a concurrent Ph.D. student in computer science at The University of Texas at Dallas, for his valuable technical guidance, research support, feedback, and contributions to the development and evaluation of NeuroCursor. 
+The authors gratefully acknowledge Dr. Anurag Nagar for his guidance and mentorship throughout this research process. The authors also thank Hamid Rouhani, a Ph.D. student in computer science at The University of Texas at Dallas, for his valuable technical guidance, research support, feedback, and contributions to the development and evaluation of NeuroCursor. 
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
+
+\begin{thebibliography}{99}
+
+\bibitem{nistBiometrics}
+National Institute of Standards and Technology,
+``Biometrics,''
+\emph{Computer Security Resource Center Glossary}.
+[Online]. Available: \url{https://csrc.nist.gov/glossary/term/Biometrics}.
+Accessed: Jul. 2026.
+
+\bibitem{khanMouseSurvey}
+S. Khan, C. Devlen, M. Manno, and D. Hou,
+``Mouse dynamics behavioral biometrics: A survey,''
+\emph{ACM Computing Surveys},
+vol. 56, no. 6, Art. no. 154, 2024,
+doi: 10.1145/3640311.
+
+\bibitem{deutschmannContinuousAuthentication}
+I. Deutschmann, P. Nordstr{\"o}m, and L. Nilsson,
+``Continuous authentication using behavioral biometrics,''
+\emph{IT Professional},
+vol. 15, no. 4, pp. 12--15, 2013,
+doi: 10.1109/MITP.2013.50.
+
+\bibitem{kuricMouseCredibility}
+E. Kuric, P. Demcak, P. Smrecek, B. Spilakova, and M. Bielikova,
+``Is mouse dynamics information credible for user behavior research? An empirical investigation,''
+\emph{Computer Standards \& Interfaces},
+Art. no. 103849, 2024,
+doi: 10.1016/j.csi.2024.103849.
+
+\bibitem{antalFejer2020}
+M. Antal and N. Fej{\'e}r,
+``Mouse dynamics based user recognition using deep learning,''
+\emph{Acta Universitatis Sapientiae, Informatica},
+vol. 12, no. 1, pp. 39--50, 2020,
+doi: 10.2478/ausi-2020-0003.
+
+\bibitem{wang2025Mouse}
+Y. Wang, C. Wu, Y. Liao, and M. You,
+``Optimizing mouse dynamics for user authentication by machine learning:
+Addressing data sufficiency, accuracy-practicality trade-off, and model
+performance challenges,''
+\emph{arXiv preprint arXiv:2504.21415}, 2025.
+
+\bibitem{graboxyContinuous}
+Graboxy,
+``Continuous authentication.''
+[Online]. Available:
+\url{https://www.graboxy.com/solutions/continuous-authentication}.
+Accessed: Jul. 2026.
+
+\bibitem{graboxyMFA}
+Graboxy,
+``Silent 2FA.''
+[Online]. Available:
+\url{https://www.graboxy.com/solutions/multi-factor-authentication}.
+Accessed: Jul. 2026.
+
+\bibitem{googleRecaptchaV3}
+Google,
+``reCAPTCHA v3.''
+[Online]. Available:
+\url{https://developers.google.com/recaptcha/docs/v3}.
+Accessed: Jul. 2026.
+
+\bibitem{acien2020BeCAPTCHA}
+A. Acien, A. Morales, J. Fierrez, and R. Vera-Rodriguez,
+``BeCAPTCHA-Mouse: Synthetic mouse trajectories and improved bot detection,''
+\emph{arXiv preprint arXiv:2005.00890}, 2020.
+
+\bibitem{foumaniTimeSeriesSurvey}
+N. M. Foumani, L. Miller, C. W. Tan, G. I. Webb, G. Forestier, and M. Salehi,
+``Deep learning for time series classification and extrinsic regression:
+A current survey,''
+\emph{ACM Computing Surveys}, 2024.
+
+\bibitem{elsayedGRUFCN}
+N. Elsayed, A. S. Maida, and M. Bayoumi,
+``Deep gated recurrent and convolutional network hybrid model for univariate
+time series classification,''
+\emph{International Journal of Advanced Computer Science and Applications},
+vol. 10, no. 5, 2019.
+
+\bibitem{bangCNNGRU}
+J.-S. Bang and S.-W. Lee,
+``Motor imagery classification based on CNN-GRU network with spatio-temporal
+feature representation,''
+\emph{arXiv preprint arXiv:2107.07062}, 2021.
+
+\end{thebibliography}
 
 \end{document}
