@@ -107,6 +107,7 @@ function renderTheFrame() {
         ctx.restore();
     requestAnimationFrame(renderTheFrame);
 }
+renderTheFrame();
 
 window.addEventListener('pointerrawupdate', e => {
     // Stack Overflow: "Real mouse position in canvas"
@@ -116,22 +117,6 @@ window.addEventListener('pointerrawupdate', e => {
 });
 window.addEventListener("mousedown", e => {isClicked = 1});
 window.addEventListener("mouseup", e => {isClicked = 0});
-
-function refreshPositionBars() {
-    if (currentX) {
-        let roundedX = Math.round(currentX);
-        positionElements.x.textContent = String(roundedX).padStart(4, '0');
-    }
-    if (currentY) {
-        let roundedY = Math.round(currentY);
-        positionElements.y.textContent = String(roundedY).padStart(4, '0');
-    }
-    if (isClicked) {
-        positionElements.click.textContent = isClicked == 1 ? 'Down' : 'Idle';
-    }
-    requestAnimationFrame(refreshPositionBars);
-}
-refreshPositionBars();
 
 // Copied from MDN "Math.random()"
 function getRandomInt(min, max) {
@@ -157,7 +142,6 @@ async function startLoop() {
     activeButton.label = "START";
     while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
         console.log(["before start data:", isClicked, distToStartX, distToStartY]);
-        renderTheFrame();
         distToStartX = currentX - 700;
         distToStartY = currentY - 300;
         await wait(1000 / 60);
@@ -173,12 +157,11 @@ async function startLoop() {
 
 async function mainLoop() {
   while(buttonsClicked < 5) {
-    renderTheFrame();
     console.log("X:", currentX);
     console.log("Y: ", currentY);
     console.log("isClicked: ", isClicked);
-    distToButtonX = currentX - buttonX;
-    distToButtonY = currentY - buttonY;
+    distToButtonX = currentX - activeButton.x;
+    distToButtonY = currentY - activeButton.y;
     console.log("DistX: ", distToButtonX);
     console.log("DistY :", distToButtonY);
     data.push({
