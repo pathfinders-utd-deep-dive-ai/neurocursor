@@ -211,7 +211,7 @@ async function mainLoop() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({username: data})
+        body: JSON.stringify({"username": username, "data": data})
     })
     .then(response => response.text())
     .then(result => {
