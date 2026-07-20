@@ -96,16 +96,37 @@ h2 {
     color: #1f293a;
     font-weight: 600;
 }
-.signup-link {
+.-link {
     margin: 20px 0 10px;
     text-align: center;
 }
-.signup-link a {
+.login-link a {
     font-size: 1em;
     color: #0ef;
     text-decoration: none;
     font-weight: 600;
 }
-.signup-link a:hover {
+.login-link a:hover {
     text-decoration: underline;
+}
+
+.container span {
+    position: absolute;
+    left: 0;
+    width: 32px;
+    height: 6px;
+    background: #3ee646;
+    border-radius: 8px;
+    transform-origin: 128px;
+    transform: scale(2.2) rotate(calc(var(--i) * (360deg / 50)));
+    animation: animateBlink 3s linear infinite;
+    animation-delay: calc(var(--i) * (3s / 50));
+}
+@keyframes animateBlink {
+    0% {
+        background: rgb(35, 232, 35);
+    }
+    25% {
+        background: #349a38;
+    }
 }
