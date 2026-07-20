@@ -1,12 +1,11 @@
 document.getElementById('signup').addEventListener('submit', function(event) {
     event.preventDefault();
-    // TODO: Reimplement data, but my way (prob just a massive line in JSON.stringify())
     fetch('/api/signup/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataObject)
+        body: JSON.stringify(Object.fromEntries(FormData(this).entries()))
     })
     .then(response => response.text())
     .then(result => {
