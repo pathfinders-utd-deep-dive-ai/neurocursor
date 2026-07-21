@@ -196,8 +196,8 @@ async function mainLoop() {
     if (isClicked == 1 && isHover(activeButton)) {
         while (isClicked == 1) {
             await wait(1000 / 60);
-            distToButtonX = currentX - buttonX;
-            distToButtonY = currentY - buttonY;
+            distToButtonX = currentX - activeButton.x;
+            distToButtonY = currentY - activeButton.y;
             data.push({
                 time: performance.now() - timeOffset,
                 coords: [distToButtonX, distToButtonY, isClicked]
