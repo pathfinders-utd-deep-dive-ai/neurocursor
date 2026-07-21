@@ -4,4 +4,6 @@ stuff in /frontend/home goes to /home
 /frontend/signup will be at /signup
 stuff in /backend can be at /api
 /backend/login at /api/login
-/backend/data at /api/data
+/backend/signup at /api/signup
+/backend/savedata at /api/data/save
+/backend/getdata at /api/data/get
