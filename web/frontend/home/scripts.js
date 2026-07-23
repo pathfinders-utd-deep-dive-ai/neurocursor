@@ -1,3 +1,9 @@
+// Used MDN Docs in various places
+if (!localStorage.getItem("username")) {
+    window.location.href = "/login/";
+}
+
+var username = localStorage.getItem("username")
 var currentX = 0
 var currentY = 0
 var isClicked = 0
@@ -21,6 +27,24 @@ const dotColorTwo = "#D64545";
 const LABEL_INK = "#FFFFFF";
 const shadowMain = "rgba(15,150,150,0.5)"
 const shadowStart = "rgba(215,70,70,0.5)"
+
+function updateProgress() {
+    fetch('/api/data/get/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username": username})
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log(result);
+        document.getElementById("progress-text").innerText = result.length + "/20 Sessions Complete";
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    })
+}
 
 function paintBackdrop() {
     ctx.fillStyle = colorBackground;
@@ -99,79 +123,38 @@ function renderTheFrame() {
     }
         
         ctx.restore();
-    //Taken from Google AI Mode Overview- Instructs browser you want to animate something
     requestAnimationFrame(renderTheFrame);
 }
+renderTheFrame();
 
 window.addEventListener('pointerrawupdate', e => {
-  const rect = canvas.getBoundingClientRect();
-  
-  // 1. Subtract the canvas's left/top offset on the page
-  // 2. Multiply by the ratio of internal canvas width vs layout width to fix scaling
-  currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
-  currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
-}); // Taken from Gemini
+    // Stack Overflow: "Real mouse position in canvas"
+    var rect = canvas.getBoundingClientRect();
+    currentX = e.clientX - rect.left
+    currentY = e.clientY - rect.top
+});
+window.addEventListener("mousedown", e => {isClicked = 1});
+window.addEventListener("mouseup", e => {isClicked = 0});
 
-window.addEventListener('pointerdown', e => { if (e.buttons === 1) isClicked = 1; }); // Taken from Google AI Mode
-window.addEventListener('pointerup', () => { isClicked = 0; }); // Taken from Google AI Mode
-
-function refreshPositionBars() {
-    if (currentX) {
-        let roundedX = Math.round(currentX);
-        positionElements.x.textContent = String(roundedX).padStart(4, '0');
-    }
-    if (currentY) {
-        let roundedY = Math.round(currentY);
-        positionElements.y.textContent = String(roundedY).padStart(4, '0');
-    }
-    if (isClicked) {
-        positionElements.click.textContent = isClicked == 1 ? 'Down' : 'Idle';
-    }
-    requestAnimationFrame(refreshPositionBars);
-}
-refreshPositionBars();
-
-
-// Taken from Google AI Overview
+// Copied from MDN "Math.random()"
 function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  const minCeiled = Math.ceil(min);
+  const maxFloored = Math.floor(max);
+  return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
 }
 
-//Taken from Google AI Overview- Forces program to "wait" to prevent crashing
-function sleep(milliseconds) {
-    return new Promise(function(resolve) {
-        setTimeout(resolve, milliseconds);
-    });
-}
-
-
-// Taken from Google AI Overview
-function downloadToFile(content, filename, contentType = 'text/plain') {
-  // 1. Create a Blob object with the variable's content
-  const blob = new Blob([content], { type: contentType });
-  
-  // 2. Create an invisible anchor element
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  
-  // 3. Create a temporary URL pointing to the Blob object
-  const url = window.URL.createObjectURL(blob);
-  
-  // 4. Set the download destination and filename
-  a.href = url;
-  a.download = filename;
-  
-  // 5. Trigger the download automatically
-  a.click();
-  
-  // 6. Clean up the DOM and memory
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+// Adapted from Medium "JavaScript loops — how to handle async/await"
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
 async function startLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    buttonsClicked = 0;
+    data = [];
+    await wait(500);
+    updateProgress();
     distToStartX = 9999
     distToStartY = 9999
     activeButton.x = 700;
@@ -182,10 +165,9 @@ async function startLoop() {
     activeButton.label = "START";
     while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
         console.log(["before start data:", isClicked, distToStartX, distToStartY]);
-        renderTheFrame();
         distToStartX = currentX - 700;
         distToStartY = currentY - 300;
-        await sleep(1000 / 60);
+        await wait(1000 / 60);
     }
     activeButton.x = getRandomInt(200, 1200);
     activeButton.y = getRandomInt(200, 400);
@@ -193,31 +175,31 @@ async function startLoop() {
     activeButton.height = 50;
     activeButton.color = dotColor;
     activeButton.label = String(buttonsClicked + 1);
+    timeOffset = performance.now();
     mainLoop();
 }
 
 async function mainLoop() {
   while(buttonsClicked < 5) {
-    renderTheFrame();
     console.log("X:", currentX);
     console.log("Y: ", currentY);
     console.log("isClicked: ", isClicked);
-    distToButtonX = currentX - buttonX;
-    distToButtonY = currentY - buttonY;
+    distToButtonX = currentX - activeButton.x;
+    distToButtonY = currentY - activeButton.y;
     console.log("DistX: ", distToButtonX);
     console.log("DistY :", distToButtonY);
     data.push({
-        time: performance.now(),
+        time: performance.now() - timeOffset,
         coords: [distToButtonX, distToButtonY, isClicked]
     });
     console.log(data);
     if (isClicked == 1 && isHover(activeButton)) {
         while (isClicked == 1) {
-            await sleep(1000 / 60);
-            distToButtonX = currentX - buttonX;
-            distToButtonY = currentY - buttonY;
+            await wait(1000 / 60);
+            distToButtonX = currentX - activeButton.x;
+            distToButtonY = currentY - activeButton.y;
             data.push({
-                time: performance.now(),
+                time: performance.now() - timeOffset,
                 coords: [distToButtonX, distToButtonY, isClicked]
             });
         }
@@ -229,8 +211,22 @@ async function mainLoop() {
         activeButton.color = dotColor;
         activeButton.label = String(buttonsClicked + 1);
     }
-    await sleep(1000 / 60);
+    await wait(1000 / 60);
   }
-  downloadToFile(JSON.stringify(data), "data.json", "application/json")
+  fetch('/api/data/save/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username": username, "data": data})
+    })
+    .then(response => response.text())
+    .then(result => {
+        console.log(result)
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+    startLoop();
 }
 startLoop();
