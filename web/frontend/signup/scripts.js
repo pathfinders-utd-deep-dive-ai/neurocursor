@@ -1,3 +1,8 @@
+document.getElementById('generate').addEventListener('submit', function(event) {
+    event.preventDefault();
+    document.querySelector('input[name="username"]').value = `cursor_${Math.random().toString(36).slice(2, 8)}`;
+});
+
 document.getElementById('signup').addEventListener('submit', function(event) {
     event.preventDefault();
     fetch('/api/signup/', {
