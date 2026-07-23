@@ -133,6 +133,11 @@ window.addEventListener('pointerrawupdate', e => {
     currentX = e.clientX - rect.left
     currentY = e.clientY - rect.top
 });
+window.addEventListener('pointermove', e => {
+    var rect = canvas.getBoundingClientRect();
+    currentX = e.clientX - rect.left
+    currentY = e.clientY - rect.top
+});
 window.addEventListener("mousedown", e => {isClicked = 1});
 window.addEventListener("mouseup", e => {isClicked = 0});
 
@@ -153,7 +158,6 @@ async function startLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     buttonsClicked = 0;
     data = [];
-    await wait(500);
     updateProgress();
     distToStartX = 9999
     distToStartY = 9999
@@ -169,6 +173,10 @@ async function startLoop() {
         distToStartY = currentY - 300;
         await wait(1000 / 60);
     }
+    while (isClicked == 1) {
+        // Wait till start is released
+        await wait(1000 / 60);
+    }
     activeButton.x = getRandomInt(200, 1200);
     activeButton.y = getRandomInt(200, 400);
     activeButton.width = 50;
@@ -176,7 +184,8 @@ async function startLoop() {
     activeButton.color = dotColor;
     activeButton.label = String(buttonsClicked + 1);
     timeOffset = performance.now();
-    mainLoop();
+    await mainLoop();
+    startLoop();
 }
 
 async function mainLoop() {
@@ -190,6 +199,18 @@ async function mainLoop() {
     console.log("DistY :", distToButtonY);
     data.push({
         time: performance.now() - timeOffset,
+        cursor_x: currentX,
+        cursor_y: currentY,
+        target_x: activeButton.x,
+        target_y: activeButton.y,
+        relative_x: distToButtonX,
+        relative_y: distToButtonY,
+        button_state: isClicked,
+        movement_index: buttonsClicked,
+        target_width: activeButton.width,
+        target_height: activeButton.height,
+        canvas_width: canvas.width,
+        canvas_height: canvas.height,
         coords: [distToButtonX, distToButtonY, isClicked]
     });
     console.log(data);
@@ -198,22 +219,42 @@ async function mainLoop() {
             await wait(1000 / 60);
             distToButtonX = currentX - activeButton.x;
             distToButtonY = currentY - activeButton.y;
-            data.push({
-                time: performance.now() - timeOffset,
-                coords: [distToButtonX, distToButtonY, isClicked]
-            });
+            if (isClicked == 1) {
+                // Make sure to not record with old movement_index if button is released
+                data.push({
+                    time: performance.now() - timeOffset,
+                    cursor_x: currentX,
+                    cursor_y: currentY,
+                    target_x: activeButton.x,
+                    target_y: activeButton.y,
+                    relative_x: distToButtonX,
+                    relative_y: distToButtonY,
+                    button_state: isClicked,
+                    movement_index: buttonsClicked,
+                    target_width: activeButton.width,
+                    target_height: activeButton.height,
+                    canvas_width: canvas.width,
+                    canvas_height: canvas.height,
+                    coords: [distToButtonX, distToButtonY, isClicked]
+                });
+            }
         }
         buttonsClicked += 1;
-        activeButton.x = getRandomInt(200, 1200);
-        activeButton.y = getRandomInt(200, 400);
-        activeButton.width = 50;
-        activeButton.height = 50;
-        activeButton.color = dotColor;
-        activeButton.label = String(buttonsClicked + 1);
+        if (buttonsClicked < 5) {
+            // Don't make a sixth button
+            activeButton.x = getRandomInt(200, 1200);
+            activeButton.y = getRandomInt(200, 400);
+            activeButton.width = 50;
+            activeButton.height = 50;
+            activeButton.color = dotColor;
+            activeButton.label = String(buttonsClicked + 1);
+        }
+        // Instantly record release with new movement_index
+        continue;
     }
     await wait(1000 / 60);
   }
-  fetch('/api/data/save/', {
+  await fetch('/api/data/save/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -227,6 +268,5 @@ async function mainLoop() {
     .catch(error => {
         console.error('Error:', error);
     });
-    startLoop();
 }
 startLoop();
