@@ -158,7 +158,6 @@ async function startLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     buttonsClicked = 0;
     data = [];
-    await wait(500);
     updateProgress();
     distToStartX = 9999
     distToStartY = 9999
@@ -174,6 +173,10 @@ async function startLoop() {
         distToStartY = currentY - 300;
         await wait(1000 / 60);
     }
+    while (isClicked == 1) {
+        // Wait till start is released
+        await wait(1000 / 60);
+    }
     activeButton.x = getRandomInt(200, 1200);
     activeButton.y = getRandomInt(200, 400);
     activeButton.width = 50;
@@ -181,11 +184,8 @@ async function startLoop() {
     activeButton.color = dotColor;
     activeButton.label = String(buttonsClicked + 1);
     timeOffset = performance.now();
-    while (isClicked == 1) {
-        // Wait till start is released
-        await wait(1000 / 60);
-    }
-    mainLoop();
+    await mainLoop();
+    startLoop();
 }
 
 async function mainLoop() {
@@ -220,6 +220,7 @@ async function mainLoop() {
             distToButtonX = currentX - activeButton.x;
             distToButtonY = currentY - activeButton.y;
             if (isClicked == 1) {
+                // Make sure to not record with old movement_index if button is released
                 data.push({
                     time: performance.now() - timeOffset,
                     cursor_x: currentX,
@@ -240,6 +241,7 @@ async function mainLoop() {
         }
         buttonsClicked += 1;
         if (buttonsClicked < 5) {
+            // Don't make a sixth button
             activeButton.x = getRandomInt(200, 1200);
             activeButton.y = getRandomInt(200, 400);
             activeButton.width = 50;
@@ -247,11 +249,12 @@ async function mainLoop() {
             activeButton.color = dotColor;
             activeButton.label = String(buttonsClicked + 1);
         }
+        // Instantly record release with new movement_index
         continue;
     }
     await wait(1000 / 60);
   }
-  fetch('/api/data/save/', {
+  await fetch('/api/data/save/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -265,6 +268,5 @@ async function mainLoop() {
     .catch(error => {
         console.error('Error:', error);
     });
-    startLoop();
 }
 startLoop();
