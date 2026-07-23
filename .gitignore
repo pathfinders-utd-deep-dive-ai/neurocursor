@@ -4,3 +4,4 @@ paper.fls
 paper.log
 paper.pdf
 paper.synctex.gz
+.venv/
