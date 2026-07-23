@@ -51,7 +51,7 @@ h2 {
     transition: .5s ease;
 }
 .input-box input:focus,
-.input-box input:valid {
+.input-box input:not(:placeholder-shown) {
     border-color: #0ef;
 }
 .input-box label {
@@ -65,7 +65,7 @@ h2 {
     transition: .5s ease;
 }
 .input-box input:focus~label,
-.input-box input:valid~label {
+.input-box input:not(:placeholder-shown)~label {
     top: 1px;
     font-size: .8em;
     background: #1f293a;
