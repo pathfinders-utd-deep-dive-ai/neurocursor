@@ -272,17 +272,6 @@ def trainLogisticRegression(X_train, y_train, lr= 0.01, steps = 1000):
         model.b -= lr * db
     return model.w, model.b
 
-#TODO: 
-# - add weight decay [#4]
-# - add early stopping [#4]
-# - make presentation [shreehan #2]
-# - make demo [shreehan #1]
-# - add other metrics (FAR, FRR, dataset size) [#3] [x]
-# - fix tensorboard (make it show the history and the different runs) [chetan #1] [x]
-# - fix random seed [#2] [x]
-# - start experiment log [hamid #1] [x]
-# - far, frr, batch_size, accuracy, learning rate, time, description, others as we see
-
 class EarlyStopping:
     def __init__(self, patience=8, min_delta=0.001):
         self.patience = patience
