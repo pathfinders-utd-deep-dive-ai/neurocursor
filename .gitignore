@@ -4,3 +4,7 @@ paper.fls
 paper.log
 paper.pdf
 paper.synctex.gz
+.venv/
+model/data.json
+model/runs/
+model/best_neurocursor_model.pth
