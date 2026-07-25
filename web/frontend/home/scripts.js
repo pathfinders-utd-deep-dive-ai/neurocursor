@@ -39,7 +39,7 @@ function updateProgress() {
     .then(response => response.json())
     .then(result => {
         console.log(result);
-        document.getElementById("progress-text").innerText = result.length + "/20 Sessions Complete";
+        document.getElementById("progress-text").innerText = result.length + "/30 Sessions Complete";
     })
     .catch(error => {
         console.error('Error:', error);
