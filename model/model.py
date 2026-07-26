@@ -1,22 +1,24 @@
-print("Imports [1/7] (tensorboard)")
+print("Imports [1/9] (tensorboard)")
 import tensorboard
-print("Imports [2/7] (torch)")
+print("Imports [2/9] (torch)")
 import torch
-print("Imports [3/7] (json)")
+print("Imports [3/9] (json)")
 import json
-print("Imports [4/7] (pandas)")
+print("Imports [4/9] (pandas)")
 import pandas as pd
-print("Imports [5/7] (random)")
+print("Imports [5/9] (random)")
 import random
-print("Imports [6/7] (sklearn)")
+print("Imports [6/9] (sklearn)")
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import log_loss
-print("Imports [7/7] (numpy)")
+print("Imports [7/9] (numpy)")
 import numpy as np
+print("Imports [8/9] (datetime)")
 from datetime import datetime
+print("Imports [9/9] (copy)")
 import copy
 
 RANDOM_SEED = 42
@@ -28,18 +30,22 @@ torch.cuda.manual_seed(RANDOM_SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
+threshold_pct = 0.5
+
 # Load our data
 print("Loading data...")
-raw_data = json.load(open("data.json"))
+raw_data = json.load(open("master_dataset.json"))
 df = pd.DataFrame([{"user_id": user_id, "data": sessions} for user_id, sessions in raw_data.items()])
 print("Printing data...")
 print(df)
 print("Data loaded.\n\n\n\n\n")
 
-# Grabbing users w/ at least 30 cycles
-valid_users = df[df["data"].apply(len) >= 30].reset_index(drop=True)
+# Grabbing users w/ at least 20 cycles
+valid_users = df[df["data"].apply(len) >= 20].reset_index(drop=True)
 print("Printing dataset size...")
 print(valid_users["data"].apply(len).sum())
+print("Printing valid users number...")
+print(len(valid_users))
 
 # Pick random user as yes and rest as no
 yes_user_row = valid_users.iloc[random.randint(0, len(valid_users)-1)]
@@ -86,24 +92,23 @@ for cycle in train_df.iterrows():
             continue
         # Convert chunk to tensor and add to train dataset
         # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
-        # Each tensor should look like [[time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height], [...], ... 128 times]
+        # Each tensor should look like [[time, relative_x, relative_y, button_state], [...], ... 128 times]
         multi_dim_array = []
         for data_point in chunk:
-            list = [
-                data_point["time"],
-                data_point["cursor_x"],
-                data_point["cursor_y"],
-                data_point["target_x"],
-                data_point["target_y"],
-                data_point["relative_x"],
-                data_point["relative_y"],
-                data_point["button_state"],
-                data_point["movement_index"],
-                data_point["target_width"],
-                data_point["target_height"],
-                data_point["canvas_width"],
-                data_point["canvas_height"]
-            ]
+            if len(data_point) < 13:
+                list = [
+                    data_point["time"],
+                    data_point["coords"][0],
+                    data_point["coords"][1],
+                    data_point["coords"][2]
+                ]
+            else:
+                list = [
+                    data_point["time"],
+                    data_point["relative_x"],
+                    data_point["relative_y"],
+                    data_point["button_state"]
+                ]
             multi_dim_array.append(list)
         X = torch.tensor(multi_dim_array, dtype=torch.float32)
         y = torch.tensor(cycle_label, dtype=torch.long)
@@ -124,24 +129,23 @@ for cycle in val_df.iterrows():
             continue
         # Convert chunk to tensor and add to validation dataset
         # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
-        # Each tensor should look like [[time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height], [...], ... 128 times]
+        # Each tensor should look like [[time, relative_x, relative_y], [...], ... 128 times]
         multi_dim_array = []
         for data_point in chunk:
-            list = [
-                data_point["time"],
-                data_point["cursor_x"],
-                data_point["cursor_y"],
-                data_point["target_x"],
-                data_point["target_y"],
-                data_point["relative_x"],
-                data_point["relative_y"],
-                data_point["button_state"],
-                data_point["movement_index"],
-                data_point["target_width"],
-                data_point["target_height"],
-                data_point["canvas_width"],
-                data_point["canvas_height"]
-            ]
+            if len(data_point) < 13:
+                list = [
+                    data_point["time"],
+                    data_point["coords"][0],
+                    data_point["coords"][1],
+                    data_point["coords"][2]
+                ]
+            else:
+                list = [
+                    data_point["time"],
+                    data_point["relative_x"],
+                    data_point["relative_y"],
+                    data_point["button_state"]
+                ]
             multi_dim_array.append(list)
         X = torch.tensor(multi_dim_array, dtype=torch.float32)
         y = torch.tensor(cycle_label, dtype=torch.long)
@@ -155,6 +159,25 @@ y_train = torch.stack(y_train)
 X_val = torch.stack(X_val)
 y_val = torch.stack(y_val)
 
+# -- Taken from Gemini --
+# 1. Compute per-sample weights for WeightedRandomSampler
+class_counts = torch.bincount(y_train)  # Counts of [0, 1]
+class_weights = 1.0 / class_counts.float()
+sample_weights = class_weights[y_train]
+
+# 2. Sampler forces 50% positive / 50% negative drawing per batch
+sampler = torch.utils.data.WeightedRandomSampler(
+    weights=sample_weights, 
+    num_samples=len(sample_weights), 
+    replacement=True
+)
+
+# 3. Create PyTorch DataLoaders
+train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, sampler=sampler)
+
+val_dataset = torch.utils.data.TensorDataset(X_val, y_val)
+val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
 
 class MouseLogistic:
     def __init__(self, n_features):
@@ -170,13 +193,17 @@ class MouseLogistic:
 class MouseCNN(torch.nn.Module):
     def __init__(self, num_classes):
         super(MouseCNN, self).__init__()
-        self.conv1 = torch.nn.Conv1d(num_classes, 32, kernel_size=5)
+        self.conv1 = torch.nn.Conv1d(num_classes, 16, kernel_size=5)
         self.relu = torch.nn.ReLU()
-        self.norm1 = torch.nn.BatchNorm1d(32)
+        self.norm1 = torch.nn.BatchNorm1d(16)
         self.maxpool = torch.nn.MaxPool1d(kernel_size=2)
-        self.dropout1 = torch.nn.Dropout(0.2)
-        self.conv2 = torch.nn.Conv1d(32, 64, kernel_size=3)
-        self.norm2 = torch.nn.BatchNorm1d(64)
+        self.dropout1 = torch.nn.Dropout(0.5)
+        self.conv2 = torch.nn.Conv1d(16, 32, kernel_size=3)
+        self.norm2 = torch.nn.BatchNorm1d(32)
+        self.conv3 = torch.nn.Conv1d(32, 64, kernel_size=3)
+        self.norm3 = torch.nn.BatchNorm1d(64)
+        self.conv4 = torch.nn.Conv1d(64, 128, kernel_size=3)
+        self.norm4 = torch.nn.BatchNorm1d(128)
         
     def forward(self, x):
         x = self.conv1(x)
@@ -187,12 +214,20 @@ class MouseCNN(torch.nn.Module):
         x = self.conv2(x)
         x = self.relu(x)
         x = self.norm2(x)
+        x = self.dropout1(x)
+        x = self.conv3(x)
+        x = self.relu(x)
+        x = self.norm3(x)
         x = self.maxpool(x)
+        x = self.dropout1(x)
+        x = self.conv4(x)
+        x = self.relu(x)
+        x = self.norm4(x)
         return x
 
 # tensorflow units are pytorch hidden_size
 units = 64
-mouseGRU = torch.nn.GRU(input_size=64, hidden_size=units, batch_first=True)
+mouseGRU = torch.nn.GRU(input_size=128, hidden_size=units, batch_first=True)
 
 class MouseCNNGRU(torch.nn.Module):
     def __init__(self, num_classes):
@@ -202,7 +237,7 @@ class MouseCNNGRU(torch.nn.Module):
         units = 32
         self.dense = torch.nn.Linear(64, units)
         self.relu = torch.nn.ReLU()
-        self.dropout = torch.nn.Dropout(0.3)
+        self.dropout = torch.nn.Dropout(0.5)
         self.dense2 = torch.nn.Linear(units, 1)
 
     def forward(self, x):
@@ -225,14 +260,15 @@ def CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=32):
     total_negatives = 0
     total_positives = 0
     with torch.no_grad():
-        for i in range(0, len(X_val), batch_size):
-            batch_x = X_val[i:i+batch_size].to(device)
-            batch_y = y_val[i:i+batch_size].to(device)
+        for batch_x, batch_y in val_loader:
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
             batch_x = batch_x.permute(0, 2, 1)  # Change shape to (batch_size, num_features, sequence_length)
             output = model(batch_x)
             loss = criterion(output.squeeze(-1), batch_y.float())
             running_loss += loss.item() * len(batch_y)
-            predicted = (output.squeeze(-1) > 0).long()
+            probability = torch.sigmoid(output.squeeze(-1))
+            predicted = (probability > threshold_pct).long()
             correct += (predicted == batch_y).sum().item()
             total += len(batch_y)
             total_false_accepts += ((predicted == 1) & (batch_y == 0)).sum().item()
@@ -296,12 +332,12 @@ class EarlyStopping:
 def trainCNNGRU(X_train, y_train, X_val, y_val):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     writer = SummaryWriter(log_dir=f"runs/neurocursor_experiment_{timestamp}")
-    model = MouseCNNGRU(num_classes=13)
+    model = MouseCNNGRU(num_classes=4)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     pos_weight = torch.tensor([(y_train == 0).sum().item() / (y_train == 1).sum().item()], dtype=torch.float32).to(device)
     print(f"Current negative:positive ratio: {pos_weight.item()}")
-    criterion = torch.nn.BCEWithLogitsLoss(pos_weight)
+    criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.00067)
     early_stopper = EarlyStopping(patience=10, min_delta=0.0001)
     num_epochs = 50
@@ -315,9 +351,9 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
         total_false_rejects = 0
         total_negatives = 0
         total_positives = 0
-        for i in range(0, len(X_train), batch_size):
-            batch_x = X_train[i:i+batch_size].to(device)
-            batch_y = y_train[i:i+batch_size].to(device)
+        for batch_x, batch_y in train_loader:
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
             batch_x = batch_x.permute(0, 2, 1)  # Change shape to (batch_size, num_features, sequence_length)
             optimizer.zero_grad()
             output = model(batch_x)
@@ -325,7 +361,8 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * len(batch_y)
-            predicted = (output.squeeze(-1) > 0).long()
+            probability = torch.sigmoid(output.squeeze(-1))
+            predicted = (probability > threshold_pct).long()
             correct += (predicted == batch_y).sum().item()
             total += len(batch_y)
             total_false_accepts += ((predicted == 1) & (batch_y == 0)).sum().item()
