@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NeuroCursor</title>
+    <style>
+        body { background: #EDF2F3; font-family: Arial, sans-serif; text-align: center; margin: 0; }
+        #myCanvas { border: 1px solid #ccc; background: white; margin-top: 20px; }
+        .box { background: white; width: 300px; margin: 100px auto; padding: 20px; border-radius: 8px; }
+        input { width: 90%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; }
+        button { padding: 10px; background: #0E9594; color: white; border: none; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen" class="box">
+        <h2 id="form-title">Login</h2>
+        <input type="text" id="username" placeholder="Username"><br>
+        <input type="password" id="password" placeholder="Password"><br>
+        <button onclick="submitAuth()">Submit</button>
+        <p onclick="toggleAuth()" style="color: blue; cursor: pointer; margin-top: 15px;" id="switch-text">Need an account? Sign up</p>
+    </div>
+
+    <div id="game-screen" style="display:none;">
+        <h2 id="mode-heading">Train Mode</h2>
+        <p id="progress-text">0/30 Sessions</p>
+        <canvas id="myCanvas" width="1200" height="500"></canvas><br>
+        <button onclick="localStorage.clear(); location.reload();" style="width: 200px; margin-top: 10px;">Logout</button>
+    </div>
+
+    <script>
+        var isSignup = false;
+        if (localStorage.getItem("user")) {
+            showGame();
+        }
+
+        function toggleAuth() {
+            isSignup = !isSignup;
+            document.getElementById("form-title").innerText = isSignup ? "Sign Up" : "Login";
+            document.getElementById("switch-text").innerText = isSignup ? "Have an account? Login" : "Need an account? Sign up";
+        }
+
+        function submitAuth() {
+            var u = document.getElementById("username").value;
+            var p = document.getElementById("password").value;
+            var endpoint = isSignup ? "/api/signup/" : "/api/login/";
+
+            fetch(endpoint, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username: u, password: p})
+            })
+            .then(res => res.text()).then(txt => {
+                if (txt === "True") {
+                    if (isSignup) {
+                        alert("Registered! Now log in.");
+                        toggleAuth();
+                    } else {
+                        localStorage.setItem("user", u);
+                        showGame();
+                    }
+                } else {
+                    alert("Failed");
+                }
+            });
+        }
+
+        function showGame() {
+            document.getElementById("auth-screen").style.display = "none";
+            document.getElementById("game-screen").style.display = "block";
+            initGame();
+        }
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        var mx = 0, my = 0, clicked = 0, count = 0, sessionData = [], mode = "train";
+        var target = {x: 600, y: 250, w: 100, h: 50, color: "red", label: "START"};
+        var active = false;
+        var startTime = 0;
+
+        window.onmousemove = function(e) {
+            var r = canvas.getBoundingClientRect();
+            mx = e.clientX - r.left;
+            my = e.clientY - r.top;
+        }
+        window.onmousedown = function() { clicked = 1; }
+        window.onmouseup = function() { clicked = 0; }
+
+        function initGame() {
+            fetch("/api/data/get/", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username: localStorage.getItem("user")})
+            })
+            .then(res => res.json()).then(data => {
+                mode = data.mode;
+                document.getElementById("mode-heading").innerText = mode === "train" ? "Train Mode" : "Test Mode";
+                document.getElementById("progress-text").innerText = data.sessions + "/30 Sessions";
+            });
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = target.color;
+            ctx.fillRect(target.x - target.w/2, target.y - target.h/2, target.w, target.h);
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(target.label, target.x, target.y);
+
+            if (clicked && Math.abs(mx - target.x) < target.w/2 && Math.abs(my - target.y) < target.h/2) {
+                if (!active) {
+                    active = true;
+                    startTime = Date.now();
+                    target.w = 50; 
+                    target.h = 50; 
+                    target.color = "teal"; 
+                    target.label = "1";
+                    target.x = Math.random() * 1000 + 100;
+                    target.y = Math.random() * 300 + 100;
+                } else {
+                    count++;
+                    if (count < 5) {
+                        target.label = count + 1;
+                        target.x = Math.random() * 1000 + 100;
+                        target.y = Math.random() * 300 + 100;
+                    } else {
+                        active = false;
+                        saveSession();
+                    }
+                }
+            }
+
+            if (active) {
+                sessionData.push({time: Date.now() - startTime, coords: [mx - target.x, my - target.y, clicked]});
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        function saveSession() {
+            fetch("/api/data/save/", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username: localStorage.getItem("user"), data: sessionData})
+            })
+            .then(res => res.json()).then(res => {
+                sessionData = [];
+                count = 0;
+                target = {x: 600, y: 250, w: 100, h: 50, color: "red", label: "START"};
+                if (res.just_finished_training) {
+                    alert("Training finished! Switching to test mode.");
+                    location.reload();
+                } else {
+                    initGame();
+                }
+            });
+        }
+
+        loop();
+    </script>
+</body>
+</html>
