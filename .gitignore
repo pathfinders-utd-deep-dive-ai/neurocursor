@@ -9,3 +9,4 @@ model/data.json
 model/runs/
 model/best_neurocursor_model.pth
 model/master_dataset.json
+/model/__pycache__/
