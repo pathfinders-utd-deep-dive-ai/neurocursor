@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NeuroCursor Data Collection</title>
+    <!-- Eel Desktop Binding -->
+    <script type="text/javascript" src="/eel.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #1f293a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ---------- Canvas / Data Collection screen ---------- */
+        #myCanvas {
+            border: 1px solid #2c4766;
+            border-radius: 6px;
+            background: #ffffff;
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #progress {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 600;
+            color: #0ef;
+        }
+
+        .btn-action {
+            width: 150px;
+            height: 45px;
+            margin-top: 15px;
+            background: #0ef;
+            border: none;
+            outline: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 1em;
+            color: #1f293a;
+            font-weight: 600;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        /* ---------- Auth screen (old login/signup look) ---------- */
+        .container {
+            position: relative;
+            width: 256px;
+            height: 256px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            position: absolute;
+            width: 400px;
+        }
+
+        .login-box form {
+            width: 100%;
+            padding: 0 50px;
+        }
+
+        .login-box h2 {
+            font-size: 2em;
+            color: #0ef;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .input-box {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .input-box input {
+            width: 100%;
+            height: 50px;
+            background: transparent;
+            border: 2px solid #2c4766;
+            outline: none;
+            border-radius: 40px;
+            font-size: 1em;
+            color: #fff;
+            padding: 0 20px;
+            transition: .5s ease;
+        }
+
+        .input-box input:focus,
+        .input-box input:not(:placeholder-shown) {
+            border-color: #0ef;
+        }
+
+        .input-box label {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            font-size: 1em;
+            color: #fff;
+            pointer-events: none;
+            transition: .5s ease;
+        }
+
+        .input-box input:focus ~ label,
+        .input-box input:not(:placeholder-shown) ~ label {
+            top: 1px;
+            font-size: .8em;
+            background: #1f293a;
+            padding: 0 6px;
+            color: #0ef;
+        }
+
+        .btn {
+            width: 100%;
+            height: 45px;
+            background: #0ef;
+            border: none;
+            outline: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 1em;
+            color: #1f293a;
+            font-weight: 600;
+        }
+
+        .switch-link {
+            margin: 20px 0 10px;
+            text-align: center;
+        }
+
+        .switch-link a {
+            font-size: 1em;
+            color: #0ef;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .switch-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Spinning decorative bars around the login box */
+        .container span.deco-bar {
+            position: absolute;
+            left: 0;
+            width: 32px;
+            height: 6px;
+            background: #2c4766;
+            border-radius: 8px;
+            transform-origin: 128px;
+            transform: scale(2.2) rotate(calc(var(--i) * (360deg / 50)));
+            animation: animateBlink 3s linear infinite;
+            animation-delay: calc(var(--i) * (3s / 50));
+        }
+
+        .switch-link {
+            width: 300px;
+        }
+
+        .switch-link a {
+            display: inline-block;
+        }
+
+        @keyframes animateBlink {
+            0% { background: #0ef; }
+            25% { background: #2c4766; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Embedded Auth View (Shows if not logged in) -->
+    <div id="auth-screen" class="container" style="display: none;">
+        <div class="login-box">
+            <h2 id="auth-title">NeuroCursor<br>Login</h2>
+            <form onsubmit="event.preventDefault(); handleAuth();">
+                <div class="input-box">
+                    <input type="text" id="username-input" autocomplete="username" placeholder=" " required>
+                    <label>Username</label>
+                </div>
+                <div class="input-box">
+                    <input type="password" id="password-input" autocomplete="current-password" placeholder=" " required>
+                    <label>Password</label>
+                </div>
+                <button type="submit" class="btn" id="auth-btn">Login</button>
+                <div class="switch-link">
+                    <a onclick="toggleAuthMode()"><span id="switch-text">Need an account? Sign up here</span></a>
+                </div>
+            </form>
+        </div>
+        <span class="deco-bar" style="--i:0;"></span><span class="deco-bar" style="--i:1;"></span><span class="deco-bar" style="--i:2;"></span><span class="deco-bar" style="--i:3;"></span>
+        <span class="deco-bar" style="--i:4;"></span><span class="deco-bar" style="--i:5;"></span><span class="deco-bar" style="--i:6;"></span><span class="deco-bar" style="--i:7;"></span>
+        <span class="deco-bar" style="--i:8;"></span><span class="deco-bar" style="--i:9;"></span><span class="deco-bar" style="--i:10;"></span><span class="deco-bar" style="--i:11;"></span>
+        <span class="deco-bar" style="--i:12;"></span><span class="deco-bar" style="--i:13;"></span><span class="deco-bar" style="--i:14;"></span><span class="deco-bar" style="--i:15;"></span>
+        <span class="deco-bar" style="--i:16;"></span><span class="deco-bar" style="--i:17;"></span><span class="deco-bar" style="--i:18;"></span><span class="deco-bar" style="--i:19;"></span>
+        <span class="deco-bar" style="--i:20;"></span><span class="deco-bar" style="--i:21;"></span><span class="deco-bar" style="--i:22;"></span><span class="deco-bar" style="--i:23;"></span>
+        <span class="deco-bar" style="--i:24;"></span><span class="deco-bar" style="--i:25;"></span><span class="deco-bar" style="--i:26;"></span><span class="deco-bar" style="--i:27;"></span>
+        <span class="deco-bar" style="--i:28;"></span><span class="deco-bar" style="--i:29;"></span><span class="deco-bar" style="--i:30;"></span><span class="deco-bar" style="--i:31;"></span>
+        <span class="deco-bar" style="--i:32;"></span><span class="deco-bar" style="--i:33;"></span><span class="deco-bar" style="--i:34;"></span><span class="deco-bar" style="--i:35;"></span>
+        <span class="deco-bar" style="--i:36;"></span><span class="deco-bar" style="--i:37;"></span><span class="deco-bar" style="--i:38;"></span><span class="deco-bar" style="--i:39;"></span>
+        <span class="deco-bar" style="--i:40;"></span><span class="deco-bar" style="--i:41;"></span><span class="deco-bar" style="--i:42;"></span><span class="deco-bar" style="--i:43;"></span>
+        <span class="deco-bar" style="--i:44;"></span><span class="deco-bar" style="--i:45;"></span><span class="deco-bar" style="--i:46;"></span><span class="deco-bar" style="--i:47;"></span>
+        <span class="deco-bar" style="--i:48;"></span><span class="deco-bar" style="--i:49;"></span>
+    </div>
+
+    <!-- Main Data Collection View -->
+    <div id="game-screen" style="display: none; text-align: center;">
+        <canvas id="myCanvas" width="1400" height="600"></canvas>
+        <div id="progress">
+            <p id="progress-text">0/30 Sessions Complete</p>
+        </div>
+        <div>
+            <button class="btn-action" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <script>
+        var username = localStorage.getItem("username");
+        var isSignup = false;
+
+        // --- AUTHENTICATION & UI TOGGLES ---
+        function checkSession() {
+            if (username) {
+                document.getElementById("auth-screen").style.display = "none";
+                document.getElementById("game-screen").style.display = "block";
+                renderTheFrame();
+                startLoop();
+            } else {
+                document.getElementById("auth-screen").style.display = "flex";
+                document.getElementById("game-screen").style.display = "none";
+            }
+        }
+
+        function toggleAuthMode() {
+            isSignup = !isSignup;
+            document.getElementById("auth-title").innerHTML = isSignup ? "NeuroCursor<br>Sign Up" : "NeuroCursor<br>Login";
+            document.getElementById("auth-btn").innerText = isSignup ? "Sign Up" : "Login";
+            document.getElementById("switch-text").innerText = isSignup ? "Have an account? Login here" : "Need an account? Sign up here";
+
+            const passInput = document.getElementById("password-input");
+            passInput.setAttribute("autocomplete", isSignup ? "new-password" : "current-password");
+        }
+
+        async function handleAuth() {
+            var u = document.getElementById("username-input").value;
+            var p = document.getElementById("password-input").value;
+
+            try {
+                let success = await eel.submit_auth(u, p, isSignup)();
+                if (success) {
+                    if (isSignup) {
+                        alert("Account created successfully!");
+                        toggleAuthMode();
+                    } else {
+                        localStorage.setItem("username", u);
+                        username = u;
+                        checkSession();
+                    }
+                } else {
+                    alert("Authentication failed. Check your credentials.");
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("username");
+            username = null;
+            location.reload();
+        }
+
+        // --- CANVAS ENGINE & MOUSE TRACKING ---
+        var currentX = 0;
+        var currentY = 0;
+        var isClicked = 0;
+        var buttonX = 0;
+        var buttonY = 0;
+        var buttonsClicked = 0;
+        var data = [];
+        let distToStartX = 9999;
+        let distToStartY = 9999;
+        let distToButtonX = 9999;
+        let distToButtonY = 9999;
+        var activeButton = {};
+        var timeOffset = 0;
+
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const colorBackground = "#FFFFFF";
+        const gridColor = "rgba(15, 150, 150, 0.1)";
+        const dotColor = "#0E9594";
+        const dotColorTwo = "#D64545";
+        const LABEL_INK = "#FFFFFF";
+        const shadowMain = "rgba(15,150,150,0.5)";
+        const shadowStart = "rgba(215,70,70,0.5)";
+
+        // Precise Coordinate Rescaling for 1400x600 resolution
+        function updateMouseCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            currentX = (e.clientX - rect.left) * scaleX;
+            currentY = (e.clientY - rect.top) * scaleY;
+        }
+
+        window.addEventListener('pointerrawupdate', updateMouseCoordinates);
+        window.addEventListener('pointermove', updateMouseCoordinates);
+        window.addEventListener("mousedown", e => { isClicked = 1; });
+        window.addEventListener("mouseup", e => { isClicked = 0; });
+
+        async function updateProgress() {
+            try {
+                let result = await eel.get_user_progress(username)();
+                let sessionCount = result.sessions !== undefined ? result.sessions : 0;
+                document.getElementById("progress-text").innerText = sessionCount + "/30 Sessions Complete";
+            } catch (error) {
+                console.error('Error fetching progress:', error);
+            }
+        }
+
+        function paintBackdrop() {
+            ctx.fillStyle = colorBackground;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+            const step = 40;
+            for (let x = 0.5; x <= canvas.width; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0.5; y <= canvas.height; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function isHover(button) {
+            if (!button) return false;
+            let distX = Math.abs(currentX - button.x);
+            let distY = Math.abs(currentY - button.y);
+            let maxWidthDist = button.width / 2;
+            let maxHeightDist = button.height / 2;
+            return (maxWidthDist > distX && maxHeightDist > distY);
+        }
+
+        function drawRect(x, y, width, height, color, label) {
+            ctx.fillStyle = color;
+            const rx = x - (width / 2), ry = y - (height / 2);
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(rx, ry, width, height, 12);
+                ctx.fill();
+            } else {
+                ctx.fillRect(rx, ry, width, height);
+            }
+            if (label) {
+                ctx.fillStyle = LABEL_INK;
+                ctx.font = "600 20px Arial, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(label, x, y + 1);
+            }
+        }
+
+        function renderTheFrame() {
+            paintBackdrop();
+            let hovering = isHover(activeButton);
+            ctx.save();
+            if (hovering && activeButton.x != null) {
+                if (activeButton.color == dotColorTwo) {
+                    ctx.shadowColor = shadowStart;
+                } else {
+                    ctx.shadowColor = shadowMain;
+                }
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetY = 3;
+                ctx.shadowOffsetX = 2;
+            }
+            if (activeButton.x != null) {
+                drawRect(
+                    activeButton.x,
+                    activeButton.y,
+                    activeButton.width,
+                    activeButton.height,
+                    activeButton.color,
+                    activeButton.label
+                );
+            }
+            ctx.restore();
+            requestAnimationFrame(renderTheFrame);
+        }
+
+        function getRandomInt(min, max) {
+            const minCeiled = Math.ceil(min);
+            const maxFloored = Math.floor(max);
+            return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled);
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            buttonsClicked = 0;
+            data = [];
+            updateProgress();
+            distToStartX = 9999;
+            distToStartY = 9999;
+
+            // Start button centered for 1400x600 canvas
+            activeButton.x = 700;
+            activeButton.y = 300;
+            activeButton.width = 100;
+            activeButton.height = 50;
+            activeButton.color = dotColorTwo;
+            activeButton.label = "START";
+
+            while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
+                distToStartX = currentX - 700;
+                distToStartY = currentY - 300;
+                await wait(1000 / 60);
+            }
+
+            while (isClicked == 1) {
+                await wait(1000 / 60);
+            }
+
+            activeButton.x = getRandomInt(200, 1200);
+            activeButton.y = getRandomInt(200, 400);
+            activeButton.width = 50;
+            activeButton.height = 50;
+            activeButton.color = dotColor;
+            activeButton.label = String(buttonsClicked + 1);
+            timeOffset = performance.now();
+
+            await mainLoop();
+            startLoop();
+        }
+
+        async function mainLoop() {
+            while (buttonsClicked < 5) {
+                distToButtonX = currentX - activeButton.x;
+                distToButtonY = currentY - activeButton.y;
+
+                data.push({
+                    time: performance.now() - timeOffset,
+                    cursor_x: currentX,
+                    cursor_y: currentY,
+                    target_x: activeButton.x,
+                    target_y: activeButton.y,
+                    relative_x: distToButtonX,
+                    relative_y: distToButtonY,
+                    button_state: isClicked,
+                    movement_index: buttonsClicked,
+                    target_width: activeButton.width,
+                    target_height: activeButton.height,
+                    canvas_width: canvas.width,
+                    canvas_height: canvas.height,
+                    coords: [distToButtonX, distToButtonY, isClicked]
+                });
+
+                if (isClicked == 1 && isHover(activeButton)) {
+                    while (isClicked == 1) {
+                        await wait(1000 / 60);
+                        distToButtonX = currentX - activeButton.x;
+                        distToButtonY = currentY - activeButton.y;
+                        if (isClicked == 1) {
+                            data.push({
+                                time: performance.now() - timeOffset,
+                                cursor_x: currentX,
+                                cursor_y: currentY,
+                                target_x: activeButton.x,
+                                target_y: activeButton.y,
+                                relative_x: distToButtonX,
+                                relative_y: distToButtonY,
+                                button_state: isClicked,
+                                movement_index: buttonsClicked,
+                                target_width: activeButton.width,
+                                target_height: activeButton.height,
+                                canvas_width: canvas.width,
+                                canvas_height: canvas.height,
+                                coords: [distToButtonX, distToButtonY, isClicked]
+                            });
+                        }
+                    }
+                    buttonsClicked += 1;
+                    if (buttonsClicked < 5) {
+                        activeButton.x = getRandomInt(200, 1200);
+                        activeButton.y = getRandomInt(200, 400);
+                        activeButton.width = 50;
+                        activeButton.height = 50;
+                        activeButton.color = dotColor;
+                        activeButton.label = String(buttonsClicked + 1);
+                    }
+                    continue;
+                }
+                await wait(1000 / 60);
+            }
+
+            try {
+                let res = await eel.save_session(username, data)();
+                console.log("Session saved successfully:", res);
+            } catch (error) {
+                console.error('Error saving session:', error);
+            }
+        }
+
+        // Initialize Session Check
+        checkSession();
+    </script>
+</body>
+</html>

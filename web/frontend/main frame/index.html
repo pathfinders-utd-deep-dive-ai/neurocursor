@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>NeuroCursor</title>
+    <!-- 1. Include Eel JS file -->
+    <script type="text/javascript" src="/eel.js"></script>
     <style>
         body { background: #EDF2F3; font-family: Arial, sans-serif; text-align: center; margin: 0; }
         #myCanvas { border: 1px solid #ccc; background: white; margin-top: 20px; }
@@ -39,29 +41,24 @@
             document.getElementById("switch-text").innerText = isSignup ? "Have an account? Login" : "Need an account? Sign up";
         }
 
-        function submitAuth() {
+        // Direct Python Call replacing fetch API
+        async function submitAuth() {
             var u = document.getElementById("username").value;
             var p = document.getElementById("password").value;
-            var endpoint = isSignup ? "/api/signup/" : "/api/login/";
 
-            fetch(endpoint, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username: u, password: p})
-            })
-            .then(res => res.text()).then(txt => {
-                if (txt === "True") {
-                    if (isSignup) {
-                        alert("Registered! Now log in.");
-                        toggleAuth();
-                    } else {
-                        localStorage.setItem("user", u);
-                        showGame();
-                    }
+            let success = await eel.submit_auth(u, p, isSignup)();
+
+            if (success) {
+                if (isSignup) {
+                    alert("Registered! Now log in.");
+                    toggleAuth();
                 } else {
-                    alert("Failed");
+                    localStorage.setItem("user", u);
+                    showGame();
                 }
-            });
+            } else {
+                alert("Failed");
+            }
         }
 
         function showGame() {
@@ -85,17 +82,12 @@
         window.onmousedown = function() { clicked = 1; }
         window.onmouseup = function() { clicked = 0; }
 
-        function initGame() {
-            fetch("/api/data/get/", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username: localStorage.getItem("user")})
-            })
-            .then(res => res.json()).then(data => {
-                mode = data.mode;
-                document.getElementById("mode-heading").innerText = mode === "train" ? "Train Mode" : "Test Mode";
-                document.getElementById("progress-text").innerText = data.sessions + "/30 Sessions";
-            });
+        // Direct Python Call replacing fetch API
+        async function initGame() {
+            let data = await eel.get_user_progress(localStorage.getItem("user"))();
+            mode = data.mode;
+            document.getElementById("mode-heading").innerText = mode === "train" ? "Train Mode" : "Test Mode";
+            document.getElementById("progress-text").innerText = data.sessions + "/30 Sessions";
         }
 
         function loop() {
@@ -139,23 +131,21 @@
             requestAnimationFrame(loop);
         }
 
-        function saveSession() {
-            fetch("/api/data/save/", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username: localStorage.getItem("user"), data: sessionData})
-            })
-            .then(res => res.json()).then(res => {
-                sessionData = [];
-                count = 0;
-                target = {x: 600, y: 250, w: 100, h: 50, color: "red", label: "START"};
-                if (res.just_finished_training) {
-                    alert("Training finished! Switching to test mode.");
-                    location.reload();
-                } else {
-                    initGame();
-                }
-            });
+        // Direct Python Call replacing fetch API
+        async function saveSession() {
+            let user = localStorage.getItem("user");
+            let res = await eel.save_session(user, sessionData)();
+
+            sessionData = [];
+            count = 0;
+            target = {x: 600, y: 250, w: 100, h: 50, color: "red", label: "START"};
+            
+            if (res.just_finished_training) {
+                alert("Training finished! Switching to test mode.");
+                location.reload();
+            } else {
+                initGame();
+            }
         }
 
         loop();
