@@ -105,9 +105,9 @@ class MouseCNNGRU(torch.nn.Module):
     def __init__(self, num_classes, num_users):
         super(MouseCNNGRU, self).__init__()
         self.cnn = MouseCNN(num_classes)
-        self.gru = torch.nn.GRU(input_size=128, hidden_size=128, batch_first=True)
-        units = 128
-        self.dense = torch.nn.Linear(128, units)
+        self.gru = torch.nn.GRU(input_size=128, hidden_size=256, batch_first=True)
+        units = 256
+        self.dense = torch.nn.Linear(256, units)
         self.relu = torch.nn.ReLU()
         self.dropout = torch.nn.Dropout(0.3)
         self.dense2 = torch.nn.Linear(units, num_users)

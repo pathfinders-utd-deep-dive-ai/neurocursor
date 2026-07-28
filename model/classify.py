@@ -52,7 +52,7 @@ yes_user_label = user_labels[yes_user_id]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 num_background_users = len(user_labels) - 1
 
-model = MouseCNNGRU(num_classes=4, num_users=num_background_users)
+model = MouseCNNGRU(num_classes=14, num_users=num_background_users)
 model.load_state_dict(torch.load("best_neurocursor_model.pth", map_location=device))
 model.to(device)
 
@@ -65,7 +65,7 @@ X_val_features, y_val_orig = extract_64_features(model, val_loader, device)
 y_train = (y_train_orig == yes_user_label).astype(int)
 y_val = (y_val_orig == yes_user_label).astype(int)
 
-clf = LogisticRegression(l1_ratio=1, C=0.1, solver='liblinear', max_iter=1000, random_state=RANDOM_SEED)
+clf = LogisticRegression(l1_ratio=1, C=0.1, solver='liblinear', max_iter=2000, random_state=RANDOM_SEED, class_weight='balanced')
 clf.fit(X_train_features, y_train)
 
 y_val_prob = clf.predict_proba(X_val_features)[:, 1]
@@ -74,20 +74,20 @@ fpr, tpr, thresholds = roc_curve(y_val, y_val_prob)
 frr = 1 - tpr
 
 # Define your maximum allowed FAR target (e.g., 1% or 0.01)
-MAX_FAR = 0.01
-MAX_FRR = 0.3
+MAX_FAR = 0.1
+MAX_FRR = 1
 
-# Find all indices where FRR is within our budget
-valid_indices = np.where((frr <= MAX_FRR) & (frr > 0))[0]
+# Find all indices where FAR is within our budget
+valid_indices = np.where((fpr <= MAX_FAR) & (fpr > 0))[0]
 
 if len(valid_indices) > 0:
     # Among valid thresholds, pick the one with the lowest FAR
     best_idx = valid_indices[np.argmin(fpr[valid_indices])]
     threshold = thresholds[best_idx]
 else:
-    # Fallback if no threshold meets the budget: pick the absolute minimum FRR
+    # Fallback if no threshold meets the budget: pick the absolute minimum FAR
     print("fallbacked")
-    best_idx = np.argmin(frr)
+    best_idx = np.argmin(fpr)
     threshold = thresholds[best_idx]
 
 y_val_pred = (y_val_prob >= threshold).astype(int)
