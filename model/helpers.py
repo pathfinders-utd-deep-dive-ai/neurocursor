@@ -70,80 +70,74 @@ def load_data():
     # Validation tensors
     X_val = []
     y_val = []
-
+    def process_cycle_data(cyclesdata):
+        X = []
+        y = []
+        for cycle in cyclesdata.iterrows():
+            # cycle is a tuple with (index, row), where row is a Series
+            cycle_data = cycle[1]["data"]
+            cycle_label = cycle[1]["user_label"]
+    
+            # Split cycle_data into chunks of 128
+            chunks = [cycle_data[i:i+128] for i in range(0, len(cycle_data), 128)]
+            for chunk in chunks:
+                if len(chunk) < 128:
+                    continue
+                # Convert chunk to tensor and add to train dataset
+                # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
+                # Each tensor should look like [[time, relative_x, relative_y, button_state], [...], ... 128 times]
+                multi_dim_array = []
+                for data_point in chunk:
+                    if len(data_point) < 13:
+                        list = [
+                            data_point["time"],
+                            data_point["coords"][0],
+                            data_point["coords"][1],
+                            data_point["coords"][2]
+                        ]
+                    else:
+                        list = [
+                            data_point["time"],
+                            data_point["relative_x"],
+                            data_point["relative_y"],
+                            data_point["button_state"]
+                        ]
+                    multi_dim_array.append(list)
+                raw_arr = np.array(multi_dim_array, dtype=np.float32)
+    
+                # calculate kinematic features
+                vel_x = np.zeros(128, dtype=np.float32); vel_x[1:] = np.diff(raw_arr[:, 1])
+                vel_y = np.zeros(128, dtype=np.float32); vel_y[1:] = np.diff(raw_arr[:, 2])
+                speed = np.sqrt(vel_x ** 2 + vel_y ** 2)
+                acc_x = np.zeros(128, dtype=np.float32); acc_x[1:] = np.diff(vel_x)
+                acc_y = np.zeros(128, dtype=np.float32); acc_y[1:] = np.diff(vel_y)
+                jerk_x = np.zeros(128, dtype=np.float32); jerk_x[1:] = np.diff(acc_x)
+                jerk_y = np.zeros(128, dtype=np.float32); jerk_y[1:] = np.diff(acc_y)
+                dist  = np.sqrt(raw_arr[:, 1] ** 2 + raw_arr[:, 2] ** 2)
+                heading = np.arctan2(vel_y, vel_x)
+                btn_diff = np.zeros(128, dtype=np.float32); btn_diff[1:] = np.diff(raw_arr[:, 3]) # button transition
+    
+                final_arr = np.column_stack([
+                    raw_arr,
+                    vel_x,
+                    vel_y,
+                    speed,
+                    acc_x,
+                    acc_y,
+                    jerk_x,
+                    jerk_y,
+                    dist,
+                    heading,
+                    btn_diff
+                ]).astype(np.float32)
+                X.append(torch.tensor(final_arr, dtype=torch.float32))
+                y.append(torch.tensor(cycle_label, dtype=torch.long))
+        return X, y
     # Turn train_df into tensors, taking each cycle's data and label and splitting by 128
-    for cycle in train_df.iterrows():
-        # cycle is a tuple with (index, row), where row is a Series
-        cycle_data = cycle[1]["data"]
-        cycle_label = cycle[1]["user_label"]
-
-        # Split cycle_data into chunks of 128
-        chunks = [cycle_data[i:i+128] for i in range(0, len(cycle_data), 128)]
-        for chunk in chunks:
-            if len(chunk) < 128:
-                continue
-            # Convert chunk to tensor and add to train dataset
-            # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
-            # Each tensor should look like [[time, relative_x, relative_y, button_state], [...], ... 128 times]
-            multi_dim_array = []
-            for data_point in chunk:
-                if len(data_point) < 13:
-                    list = [
-                        data_point["time"],
-                        data_point["coords"][0],
-                        data_point["coords"][1],
-                        data_point["coords"][2]
-                    ]
-                else:
-                    list = [
-                        data_point["time"],
-                        data_point["relative_x"],
-                        data_point["relative_y"],
-                        data_point["button_state"]
-                    ]
-                multi_dim_array.append(list)
-            X = torch.tensor(multi_dim_array, dtype=torch.float32)
-            y = torch.tensor(cycle_label, dtype=torch.long)
-            # Add to train dataset (implement this part)
-            X_train.append(X)
-            y_train.append(y)
+    X_train, y_train = process_cycle_data(train_df)
 
     # Turn val_df into tensors, taking each cycle's data and label and splitting by 128
-    for cycle in val_df.iterrows():
-        # cycle is a tuple with (index, row), where row is a Series
-        cycle_data = cycle[1]["data"]
-        cycle_label = cycle[1]["user_label"]
-
-        # Split cycle_data into chunks of 128
-        chunks = [cycle_data[i:i+128] for i in range(0, len(cycle_data), 128)]
-        for chunk in chunks:
-            if len(chunk) < 128:
-                continue
-            # Convert chunk to tensor and add to validation dataset
-            # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
-            # Each tensor should look like [[time, relative_x, relative_y], [...], ... 128 times]
-            multi_dim_array = []
-            for data_point in chunk:
-                if len(data_point) < 13:
-                    list = [
-                        data_point["time"],
-                        data_point["coords"][0],
-                        data_point["coords"][1],
-                        data_point["coords"][2]
-                    ]
-                else:
-                    list = [
-                        data_point["time"],
-                        data_point["relative_x"],
-                        data_point["relative_y"],
-                        data_point["button_state"]
-                    ]
-                multi_dim_array.append(list)
-            X = torch.tensor(multi_dim_array, dtype=torch.float32)
-            y = torch.tensor(cycle_label, dtype=torch.long)
-            # Add to validation dataset (implement this part)
-            X_val.append(X)
-            y_val.append(y)
+    X_val, y_val = process_cycle_data(val_df)
 
     # Turn X_train, y_train, X_val, y_val into tensors
     X_train = torch.stack(X_train)

@@ -57,19 +57,6 @@ y_val = torch.tensor([label_map[y.item()] for y in y_val], dtype=torch.long)
 # Update total class count for the model
 num_background_users = len(unique_users)
 
-# # -- Taken from Gemini --
-# # 1. Compute per-sample weights for WeightedRandomSampler
-# class_counts = torch.bincount(y_train)  # Counts of [0, 1]
-# class_weights = 1.0 / class_counts.float()
-# sample_weights = class_weights[y_train]
-
-# # 2. Sampler forces 50% positive / 50% negative drawing per batch
-# sampler = torch.utils.data.WeightedRandomSampler(
-#     weights=sample_weights, 
-#     num_samples=len(sample_weights), 
-#     replacement=True
-# )
-
 # 3. Create PyTorch DataLoaders
 train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, sampler=None, shuffle=True)
@@ -204,7 +191,7 @@ class EarlyStopping:
 def trainCNNGRU(X_train, y_train, X_val, y_val):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     writer = SummaryWriter(log_dir=f"runs/neurocursor_cnngru_{timestamp}")
-    model = MouseCNNGRU(num_classes=4, num_users=num_background_users)
+    model = MouseCNNGRU(num_classes=14, num_users=num_background_users)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     pos_weight = torch.tensor([(y_train == 0).sum().item() / (y_train == 1).sum().item()], dtype=torch.float32).to(device)
