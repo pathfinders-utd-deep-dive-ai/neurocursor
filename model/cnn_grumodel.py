@@ -194,9 +194,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
     model = MouseCNNGRU(num_classes=14, num_users=num_background_users)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    pos_weight = torch.tensor([(y_train == 0).sum().item() / (y_train == 1).sum().item()], dtype=torch.float32).to(device)
-    print(f"Current negative:positive ratio: {pos_weight.item()}")
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001)
     early_stopper = EarlyStopping(patience=50, min_delta=0.0001)
     num_epochs = 500

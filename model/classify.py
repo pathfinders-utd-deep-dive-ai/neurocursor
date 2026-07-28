@@ -62,6 +62,12 @@ val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=32, shuffle=Fals
 X_train_features, y_train_orig = extract_64_features(model, train_loader, device)
 X_val_features, y_val_orig = extract_64_features(model, val_loader, device)
 
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+X_train_features = scaler.fit_transform(X_train_features)
+X_val_features = scaler.transform(X_val_features)
+
 y_train = (y_train_orig == yes_user_label).astype(int)
 y_val = (y_val_orig == yes_user_label).astype(int)
 
