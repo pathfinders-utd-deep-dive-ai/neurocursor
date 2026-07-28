@@ -195,7 +195,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001, weight_decay=0.0001)
     early_stopper = EarlyStopping(patience=50, min_delta=0.0001)
     num_epochs = 500
     batch_size = 32
