@@ -198,7 +198,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
     print(f"Current negative:positive ratio: {pos_weight.item()}")
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001)
-    early_stopper = EarlyStopping(patience=20, min_delta=0.0001)
+    early_stopper = EarlyStopping(patience=50, min_delta=0.0001)
     num_epochs = 500
     batch_size = 32
     train_losses, train_accuracies = [], []

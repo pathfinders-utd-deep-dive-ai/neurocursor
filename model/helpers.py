@@ -144,5 +144,11 @@ def load_data():
     y_train = torch.stack(y_train)
     X_val = torch.stack(X_val)
     y_val = torch.stack(y_val)
+    mean = X_train.mean(dim=(0, 1))
+    std = X_train.std(dim=(0, 1), unbiased=False)
+
+    # Apply z-score normalization
+    X_train = (X_train - mean) / (std + 1e-8)
+    X_val = (X_val - mean) / (std + 1e-8)
 
     return X_train, y_train, X_val, y_val, yes_user_id, user_labels
