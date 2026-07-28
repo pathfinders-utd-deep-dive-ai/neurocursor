@@ -116,14 +116,14 @@ class MouseCNNGRU(torch.nn.Module):
         x = self.cnn(x)
         x = x.permute(0, 2, 1)
         gru_out, hn = self.gru(x)
-        x = hn[-1]
+        x = gru_out.mean(dim=1)
         return x
 
     def forward(self, x):
         x = self.cnn(x)
         x = x.permute(0, 2, 1)
         gru_out, hn = self.gru(x)
-        x = hn[-1]
+        x = gru_out.mean(dim=1)
         x = self.dense(x)
         x = self.relu(x)
         x = self.dropout(x)
