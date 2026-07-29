@@ -5,3 +5,10 @@ paper.log
 paper.pdf
 paper.synctex.gz
 .venv/
+model/data.json
+model/runs/
+model/best_neurocursor_model.pth
+model/master_dataset.json
+/model/__pycache__/
+model/best_neurocursor_val_model.pth
+/model/demo_data/
