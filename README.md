@@ -130,8 +130,8 @@ Each 128-sample chunk processes 14 channels derived from time, spatial position,
 | **Jerk** | Horizontal Jerk | $j_x = \frac{\Delta a_x}{\Delta t}$ |
 | | Vertical Jerk | $j_y = \frac{\Delta a_y}{\Delta t}$ |
 | **Spatial/Kinematic** | Origin Distance | $d = \sqrt{x_{\text{rel}}^2 + y_{\text{rel}}^2}$ |
-| | Heading Angle | $\theta = \operatorname{arctan2}(v_y, v_x)$ |
-| | Button State Delta | $\Delta \text{button\_state}$ |
+| | Heading Angle | $\theta = \text{arctan2}(v_y, v_x)$ |
+| | Button State Delta | $\Delta$ `button_state` |
 
 ### Accepted Input JSON Schemas
 
