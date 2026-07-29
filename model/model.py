@@ -808,6 +808,49 @@ def calibrate_eer_threshold(labels, scores) -> dict[str, float]:
     }
 
 
+def calibrate_far_threshold(
+    labels,
+    scores,
+    target_far: float = 0.05,
+) -> dict[str, float]:
+    """Choose the lowest-FRR validation threshold whose FAR is within target."""
+    if not 0.0 <= target_far < 1.0:
+        raise ValueError("target_far must be in the interval [0, 1).")
+    labels = np.asarray(labels, dtype=int)
+    scores = np.asarray(scores, dtype=float).reshape(-1)
+    if len(np.unique(labels)) < 2:
+        raise ValueError("Threshold calibration requires both classes.")
+    false_acceptance, true_positive, thresholds = roc_curve(labels, scores)
+    eligible = np.flatnonzero(false_acceptance <= target_far + EPSILON)
+    if eligible.size == 0:
+        index = 0
+    else:
+        best_recall = np.max(true_positive[eligible])
+        best = eligible[np.isclose(true_positive[eligible], best_recall)]
+        index = int(best[-1])
+    threshold = float(thresholds[index])
+    if not np.isfinite(threshold):
+        threshold = float(np.nextafter(np.max(scores), np.inf))
+    return {
+        "target_far": float(target_far),
+        "threshold": threshold,
+        "far": float(false_acceptance[index]),
+        "frr": float(1.0 - true_positive[index]),
+    }
+
+
+def roc_curve_points(labels, scores) -> dict[str, list[float]]:
+    """Return serializable ROC points for paper figures."""
+    false_acceptance, true_positive, _ = roc_curve(
+        np.asarray(labels, dtype=int),
+        np.asarray(scores, dtype=float).reshape(-1),
+    )
+    return {
+        "false_positive_rate": false_acceptance.tolist(),
+        "true_positive_rate": true_positive.tolist(),
+    }
+
+
 def biometric_metrics(labels, scores, threshold: float):
     """Implement Eqs. 48-51 using a previously frozen threshold."""
     labels = np.asarray(labels, dtype=int)
@@ -860,7 +903,7 @@ def _cohens_d(genuine: np.ndarray, impostor: np.ndarray) -> float:
         + (len(impostor) - 1) * np.var(impostor, ddof=1)
     ) / (len(genuine) + len(impostor) - 2)
     if pooled_variance <= EPSILON:
-        return 0.0
+        return float("nan")
     return float((np.mean(genuine) - np.mean(impostor)) / np.sqrt(pooled_variance))
 
 
@@ -981,6 +1024,8 @@ def interaction_count_metrics(
     seed: int,
     permutations: int,
     bootstrap_samples: int,
+    target_far: float,
+    include_statistics: bool,
 ):
     results = {}
     for count in INTERACTION_COUNTS:
@@ -1015,22 +1060,38 @@ def interaction_count_metrics(
         calibration = calibrate_eer_threshold(
             validation_attempt_labels, validation_attempt_scores
         )
+        security_calibration = calibrate_far_threshold(
+            validation_attempt_labels,
+            validation_attempt_scores,
+            target_far=target_far,
+        )
         metrics = biometric_metrics(
             test_attempt_labels,
             test_attempt_scores,
             calibration["threshold"],
         )
+        metrics["security_calibration"] = security_calibration
+        metrics["security_metrics"] = biometric_metrics(
+            test_attempt_labels,
+            test_attempt_scores,
+            security_calibration["threshold"],
+        )
+        metrics["roc_curve"] = roc_curve_points(
+            test_attempt_labels,
+            test_attempt_scores,
+        )
         metrics["average_duration_seconds"] = float(np.mean(test_durations))
         metrics["attempt_count"] = int(len(test_attempt_scores))
         metrics["validation_calibration"] = calibration
-        metrics["statistics"] = score_statistics(
-            test_attempt_labels,
-            test_attempt_scores,
-            calibration["threshold"],
-            seed=seed + count,
-            permutations=permutations,
-            bootstrap_samples=bootstrap_samples,
-        )
+        if include_statistics:
+            metrics["statistics"] = score_statistics(
+                test_attempt_labels,
+                test_attempt_scores,
+                calibration["threshold"],
+                seed=seed + count,
+                permutations=permutations,
+                bootstrap_samples=bootstrap_samples,
+            )
         results[str(count)] = metrics
     return results
 
@@ -1207,6 +1268,7 @@ def run_configuration(
     model_type: str,
     feature_set: str,
     persist_models: bool,
+    include_statistics: bool = True,
 ):
     train_indexes, validation_indexes, test_indexes, split_type = split
     selected_indexes = feature_indexes(dataset.feature_names, feature_set)
@@ -1268,6 +1330,7 @@ def run_configuration(
             _ensure_both_classes(labels, name, claimed_user)
 
         filename = safe_filename(claimed_user)
+        training_history = None
         if model_type in NEURAL_MODELS:
             model = build_model(
                 args.sequence_length,
@@ -1288,7 +1351,7 @@ def run_configuration(
                     save_best_only=True,
                 ),
             ]
-            model.fit(
+            history = model.fit(
                 data[train_indexes],
                 y_train,
                 validation_data=(data[validation_indexes], y_validation),
@@ -1298,6 +1361,10 @@ def run_configuration(
                 callbacks=callbacks,
                 verbose=args.verbose,
             )
+            training_history = {
+                name: [float(value) for value in values]
+                for name, values in history.history.items()
+            }
             best_model = load_model(model_path)
             validation_scores = best_model.predict(
                 data[validation_indexes],
@@ -1326,8 +1393,19 @@ def run_configuration(
         calibration = calibrate_eer_threshold(
             y_validation, validation_scores
         )
+        security_calibration = calibrate_far_threshold(
+            y_validation,
+            validation_scores,
+            target_far=args.target_far,
+        )
         threshold = calibration["threshold"]
         movement_metrics = biometric_metrics(y_test, test_scores, threshold)
+        movement_security_metrics = biometric_metrics(
+            y_test,
+            test_scores,
+            security_calibration["threshold"],
+        )
+        movement_metrics["roc_curve"] = roc_curve_points(y_test, test_scores)
         k_metrics = interaction_count_metrics(
             validation_scores,
             test_scores,
@@ -1339,21 +1417,29 @@ def run_configuration(
             seed=args.seed,
             permutations=args.permutations,
             bootstrap_samples=args.bootstrap_samples,
-        )
-        statistics = score_statistics(
-            y_test,
-            test_scores,
-            threshold,
-            seed=args.seed,
-            permutations=args.permutations,
-            bootstrap_samples=args.bootstrap_samples,
+            target_far=args.target_far,
+            include_statistics=include_statistics,
         )
         user_results[str(claimed_user)] = {
             "validation_calibration": calibration,
+            "security_calibration": security_calibration,
             "movement_metrics": movement_metrics,
+            "movement_security_metrics": movement_security_metrics,
             "interaction_count_metrics": k_metrics,
-            "statistics": statistics,
         }
+        if include_statistics:
+            user_results[str(claimed_user)]["statistics"] = score_statistics(
+                y_test,
+                test_scores,
+                threshold,
+                seed=args.seed,
+                permutations=args.permutations,
+                bootstrap_samples=args.bootstrap_samples,
+            )
+        if training_history is not None:
+            user_results[str(claimed_user)][
+                "training_history"
+            ] = training_history
         interaction_thresholds = {
             count: value["validation_calibration"]["threshold"]
             for count, value in k_metrics.items()
@@ -1365,7 +1451,17 @@ def run_configuration(
                 "movement": threshold,
                 **interaction_thresholds,
             },
+            "security_thresholds": {
+                "movement": security_calibration["threshold"],
+                **{
+                    count: value["security_calibration"]["threshold"]
+                    for count, value in k_metrics.items()
+                    if value.get("status") != "unavailable"
+                },
+            },
+            "target_far": float(args.target_far),
             "default_interaction_count": 5,
+            "default_operating_point": "security",
         }
         print(
             f"AUC={movement_metrics['roc_auc']:.4f} | "
@@ -1383,6 +1479,8 @@ def run_configuration(
         "source_feature_names": list(dataset.feature_names),
         "source_format": dataset.source_format,
         "split_type": split_type,
+        "target_far": float(args.target_far),
+        "full_statistical_analysis": bool(include_statistics),
         "split_fractions": {
             "train": 1.0 - args.validation_size - args.test_size,
             "validation": args.validation_size,
@@ -1490,6 +1588,7 @@ def experiment(args):
             model_type=model_type,
             feature_set=feature_set,
             persist_models=True,
+            include_statistics=(name == "cnn-gru__full"),
         )
     split_comparison = {
         "primary": {
@@ -1515,6 +1614,7 @@ def experiment(args):
             model_type="cnn-gru",
             feature_set="full",
             persist_models=True,
+            include_statistics=False,
         )
         results["cnn-gru__full__sample-split"] = sample_result
         split_comparison["secondary"] = {
@@ -1525,6 +1625,34 @@ def experiment(args):
         output_directory / "experiment_summary.json",
         {
             "split_type": split[3],
+            "dataset": {
+                "source_format": dataset.source_format,
+                "users": int(len(np.unique(dataset.user_ids))),
+                "movements": int(len(dataset.sequences)),
+                "sessions": int(
+                    len(
+                        set(
+                            zip(
+                                dataset.user_ids.tolist(),
+                                dataset.session_ids.tolist(),
+                            )
+                        )
+                    )
+                ),
+                "attempts": int(
+                    len(
+                        set(
+                            zip(
+                                dataset.user_ids.tolist(),
+                                dataset.session_ids.tolist(),
+                                dataset.attempt_ids.tolist(),
+                            )
+                        )
+                    )
+                ),
+                "metadata": dataset.metadata,
+            },
+            "target_far": float(args.target_far),
             "configurations": results,
             "paper_tables": {
                 "table_iv_models": [
@@ -1647,7 +1775,11 @@ def predict(args):
         movement_scores = model.predict_proba(summaries)[:, 1]
 
     attempt_score = float(np.mean(movement_scores))
-    thresholds = user_config["thresholds"]
+    thresholds = (
+        user_config.get("security_thresholds", user_config["thresholds"])
+        if args.operating_point == "security"
+        else user_config["thresholds"]
+    )
     threshold_key = str(args.required_movements)
     if threshold_key not in thresholds:
         raise ValueError(
@@ -1664,6 +1796,7 @@ def predict(args):
                 "movement_scores": movement_scores.tolist(),
                 "attempt_score": attempt_score,
                 "threshold": threshold,
+                "operating_point": args.operating_point,
                 "accepted": bool(accepted),
                 "decision": "accept" if accepted else "reject",
             },
@@ -1727,6 +1860,15 @@ def _add_training_arguments(parser):
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--permutations", type=int, default=10000)
     parser.add_argument("--bootstrap-samples", type=int, default=1000)
+    parser.add_argument(
+        "--target-far",
+        type=float,
+        default=0.05,
+        help=(
+            "Validation FAR target for the security operating point "
+            "(default: 0.05)."
+        ),
+    )
     parser.add_argument("--verbose", type=int, choices=(0, 1, 2), default=1)
 
 
@@ -1770,6 +1912,15 @@ def make_parser():
         type=int,
         choices=INTERACTION_COUNTS,
         default=5,
+    )
+    predict_parser.add_argument(
+        "--operating-point",
+        choices=("security", "balanced"),
+        default="security",
+        help=(
+            "Use the validation-calibrated FAR-target threshold by default, "
+            "or the paper's EER-balanced threshold."
+        ),
     )
     predict_parser.set_defaults(function=predict)
 

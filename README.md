@@ -237,15 +237,25 @@ python3 test.py
 
 ## 📊 Experimental Results
 
-The held-out evaluation yields the following error metrics:
+The paper-aligned pipeline was evaluated on 1,330 movements from 266
+anonymized user sessions using a session-separated train/validation/test
+protocol. Thresholds were selected on validation data only.
 
-| Evaluation Granularity | False Acceptance Rate (FAR) | False Rejection Rate (FRR) |
-| :--- | :--- | :--- |
-| **Chunk Level** (128-sample windows) | 0.0% | 100.0% |
-| **Cycle Level** (Full Session) | 0.0% | 66.7% |
+| K=5 operating point | Accuracy | ROC-AUC | FAR | FRR | EER |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Paper EER-balanced** | 89.23% | 96.13% | 8.31% | 30.00% | 7.56% |
+| **Validation FAR target** | 94.23% | 96.13% | 1.69% | 46.67% | 7.56% |
 
-### Metric Analysis
-The evaluation metrics demonstrate an ultra-conservative decision threshold. While the system successfully eliminates False Acceptances ($0\%$ FAR), it exhibits a high False Rejection Rate ($66.7\%$ at session level). Fine-tuning the logistic decision probability hyperparameters is necessary to achieve optimal Equal Error Rate (EER) trade-offs.
+The security operating point meets the requested held-out FAR below 5%, but
+raises FRR. Both thresholds are retained so the security/usability tradeoff is
+explicit.
+
+See the
+[complete real-data evaluation](results/paper-real-data-2026-07-29/README.md)
+for the confusion matrix, ROC curves, neural and classical model comparisons,
+K=1/3/5 analysis, feature ablation, split sensitivity analysis, statistical
+tests, training diagnostics, CSV tables, machine-readable results, and
+checksums.
 
 ---
 
@@ -264,7 +274,7 @@ The evaluation metrics demonstrate an ultra-conservative decision threshold. Whi
 
 - [ ] Expand dataset diversity with additional users, hardware setups, and input device types.
 - [ ] Implement adaptive chunking or variable-length sequence models (e.g., Transformers/LSTMs).
-- [ ] Benchmark against classical classifiers (Random Forest, SVM, k-NN) and anomaly detection baselines (Isolation Forests, One-Class SVMs).
+- [x] Benchmark against logistic regression, SVM, Random Forest, k-NN, and Gradient Boosting.
 - [ ] Incorporate rejected authentications into continuous incremental user retraining loops.
 - [ ] Enhance storage security via standard password hashing algorithms (Argon2 / bcrypt) and encrypted biometrics storage.
 

@@ -1,0 +1,4 @@
+Feature set,ROC-AUC,FAR,EER
+Raw,95.77%,13.11%,7.00%
+Raw + kinematic,95.72%,12.07%,7.64%
+Full,96.13%,8.31%,7.56%
