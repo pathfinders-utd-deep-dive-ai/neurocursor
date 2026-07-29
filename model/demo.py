@@ -1,9 +1,13 @@
 # AI coded with opencode
 import eel
+import glob
 import json
 import os
 import pickle
 import random
+import re
+import shutil
+import sys
 import threading
 import time
 import traceback
@@ -25,6 +29,129 @@ from main import (
     evaluate, get_training_status, train,
     RANDOM_SEED, NORM_FILE, SCALER_FILE, LR_FILE, THRESHOLD_FILE,
 )
+
+
+def _playwright_version_key(path):
+    """Natural-sort key for ms-playwright version dirs.
+
+    Path layout is .../ms-playwright/chromium-1.10.0/chrome-linux64/chrome
+    (or chromium_headless_shell-*). We pull out the version directory and
+    fullmatch against the canonical pattern, so '(1, 10, 0)' > '(1, 9, 0)'
+    and trailing cruft in the dir name is rejected.
+    """
+    parts = path.split("/")
+    try:
+        ms_idx = parts.index("ms-playwright")
+        ver_dir = parts[ms_idx + 1]
+    except (ValueError, IndexError):
+        return ()
+    m = re.fullmatch(r"chromium(?:_headless_shell)?-([\d.]+)", ver_dir)
+    if not m:
+        return ()
+    return tuple(int(n) for n in m.group(1).split(".") if n.isdigit())
+
+
+_APT_IDS = {"debian", "ubuntu", "pop", "linuxmint", "elementary", "kali"}
+_DNF_IDS = {"fedora", "rhel", "centos", "rocky", "almalinux"}
+_PACMAN_IDS = {"arch", "manjaro", "endeavouros", "artix"}
+_ZYPPER_IDS = {"opensuse", "sles", "opensuse-tumbleweed", "opensuse-leap"}
+
+
+def _distro_install_hint():
+    """Return a distro-specific install command, or None if the distro is unknown.
+
+    `ID_LIKE` is space-separated per the systemd spec (e.g. Manjaro is
+    `ID=manjaro ID_LIKE="arch debian"`), so we split it into tokens and do
+    set-intersection matching against the family sets.
+    """
+    try:
+        with open("/etc/os-release") as f:
+            info = {}
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                info[k] = v.strip().strip('"').strip("'").lower()
+    except (OSError, IOError):
+        return None
+    did = info.get("id", "")
+    like = set(info.get("id_like", "").split())
+    if did in _APT_IDS or like & _APT_IDS:
+        return "sudo apt install chromium"
+    if did in _DNF_IDS or like & _DNF_IDS:
+        return "sudo dnf install chromium"
+    if did in _PACMAN_IDS or like & _PACMAN_IDS:
+        return "sudo pacman -S chromium"
+    if did in _ZYPPER_IDS or like & _ZYPPER_IDS:
+        return "sudo zypper install chromium"
+    return None
+
+
+def _find_chrome():
+    """Locate a Chrome/Chromium/Edge/Brave executable.
+
+    Eel's built-in detector only tries a handful of binary names on PATH; this
+    extends the search to common distros, snap/flatpak installs, /opt, and
+    Playwright-bundled chromium. Returns (path, source_label) or (None, None).
+
+    A pre-existing CHROME_PATH env var is honored as-is.
+    """
+    # 1. Respect a user-provided CHROME_PATH first.
+    existing = os.environ.get("CHROME_PATH")
+    if existing and os.path.isfile(existing):
+        return existing, "CHROME_PATH env"
+
+    # 2. Common binary names on PATH (also catches /snap/bin/* which is on PATH on Ubuntu).
+    names = [
+        "chromium", "chromium-browser", "google-chrome", "google-chrome-stable",
+        "chrome", "microsoft-edge", "microsoft-edge-stable",
+        "brave", "brave-browser", "vivaldi", "vivaldi-stable",
+    ]
+    for name in names:
+        p = shutil.which(name)
+        if p:
+            return p, f"PATH:{name}"
+
+    # 3. Linux-only direct-path fallbacks. Skip on Windows since /snap/bin and
+    #    /opt paths don't exist there, and X_OK semantics on Windows differ.
+    if sys.platform != "win32":
+        direct_candidates = [
+            ("/snap/bin/chromium", "snap:chromium"),
+            ("/snap/bin/google-chrome", "snap:google-chrome"),
+            ("/opt/google/chrome/chrome", "opt:google-chrome"),
+            ("/usr/bin/google-chrome", "apt:google-chrome"),
+            ("/usr/bin/google-chrome-stable", "apt:google-chrome-stable"),
+            ("/usr/local/bin/google-chrome", "manual:google-chrome"),
+            ("/usr/local/bin/chromium", "manual:chromium"),
+        ]
+        for path, label in direct_candidates:
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return path, label
+
+        # 4. Flatpak exports (no single fixed binary — glob the app-id directory).
+        flatpak_root = "/var/lib/flatpak/exports/bin"
+        if os.path.isdir(flatpak_root):
+            for entry in sorted(glob.glob(os.path.join(flatpak_root, "*"))):
+                base = os.path.basename(entry).lower()
+                if any(k in base for k in ("chrom", "chrome", "edge", "brave")):
+                    if os.access(entry, os.X_OK):
+                        return entry, f"flatpak:{base}"
+
+        # 5. Playwright bundled chromium. Modern Playwright uses chrome-linux64/
+        #    while older releases used chrome-linux/ — check both. Use a natural-
+        #    sort key so '1.10.0' beats '1.9.0' (vs lexicographic where it wouldn't).
+        for pattern in (
+            "~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome",
+            "~/.cache/ms-playwright/chromium-*/chrome-linux/chrome",
+            "~/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux64/chrome",
+            "~/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux/chrome",
+        ):
+            matches = sorted(glob.glob(os.path.expanduser(pattern)), key=_playwright_version_key)
+            if matches:
+                return matches[-1], "playwright"
+
+    return None, None
 
 DATA_DIR = Path("demo_data")
 DATA_DIR.mkdir(exist_ok=True)
@@ -437,7 +564,20 @@ def save_session(username, session_data, save_data=True):
     }
 
 
-# Start the self-contained app
-# Point Eel to the folder containing your index.html
-eel.init('.') 
+# Start the self-contained app.
+# Point Eel to the folder containing your index.html.
+_chrome_path, _chrome_source = _find_chrome()
+if _chrome_path:
+    os.environ["CHROME_PATH"] = _chrome_path
+    print(f"[startup] Using browser at {_chrome_path} (via {_chrome_source})")
+else:
+    print("[startup] WARNING: No Chrome/Chromium/Edge/Brave found on this system.")
+    hint = _distro_install_hint()
+    if hint:
+        print(f"[startup]   {hint}")
+    else:
+        print("[startup]   Install Chromium/Chrome via your distro's package manager.")
+    print("[startup]   Or set CHROME_PATH=/absolute/path/to/chrome before running.")
+
+eel.init('.')
 eel.start('index.html', size=(1250, 700), shutdown_delay=30)
