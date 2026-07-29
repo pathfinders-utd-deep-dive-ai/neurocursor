@@ -1,389 +1,275 @@
-NeuroCursor
-
-Securing Identity Through Every Movement
-
-NeuroCursor is a desktop behavioral-biometric prototype that uses cursor movement to verify an enrolled user. The system presents randomized point-and-click tasks, records mouse behavior, extracts motion features, and returns a probability-based verification result.
-
-Prototype status: NeuroCursor is a research demo. It is not ready for production authentication. Do not use real passwords or sensitive production data.
-
-Contributions
-
-Hamid Abdul Mossa: Backend, model, and frontend development.
-
-Shreehan Aalok Pathak: Frontend and model development.
-
-Chetan Gangireddy: Early model development and research-paper contributions; unavailable for part of the project due to being out of town.
-
-Shaurya Saxena: Majority of the research paper, majority of the presentation, and the model's mathematical features and architecture.
-
-Demo Workflow
-
-Create an account or log in.
-
-Complete 30 enrollment sessions.
-
-Each session records a short randomized cursor challenge.
-
-The system converts the recorded data into 128-sample chunks.
-
-A pretrained CNN-GRU extracts a behavioral feature vector.
-
-A user-specific logistic regression model is trained against background-user data.
-
-A validation threshold is selected under a configured false-acceptance limit.
-
-Future attempts return a probability and a pass/fail result.
-
-The background dataset uses users with at least 20 sessions. The interactive demo waits until the current user has completed 30 sessions before training that user’s verification model.
-
-Architecture
-
-Background Training
-
-The CNN-GRU first learns to classify the users in master_dataset.json.
-
-128-step trajectory
-        ↓
-1D CNN feature extraction
-        ↓
-GRU temporal modeling
-        ↓
-Dense classification layer
-
-Implemented neural architecture:
-
-Input: 128 × 14
-
-Conv1D: 16 filters, kernel size 5
-
-Batch normalization
-
-Max pooling
-
-Dropout: 0.20
-
-Conv1D: 32 filters, kernel size 3
-
-Conv1D: 64 filters, kernel size 3
-
-Max pooling
-
-Conv1D: 128 filters, kernel size 3
-
-GRU: 256 hidden units
-
-Dense: 256 units
-
-Dropout: 0.30
-
-Multiclass user output
-
-The model saves:
-
-best_neurocursor_model.pth
-best_neurocursor_val_model.pth
-
-Verification Stage
-
-The demo uses the trained CNN-GRU as a feature extractor.
-
-Recorded cursor session
-        ↓
-14-channel preprocessing
-        ↓
-CNN-GRU feature extraction
-        ↓
-StandardScaler
-        ↓
-Binary logistic regression
-        ↓
-Probability threshold
-        ↓
-Accepted or rejected
-
-The logistic regression model treats:
-
-the enrolled demo user as the positive class
-
-the background users as the negative class
-
-Chunk probabilities are averaged to create a session-level score.
-
-Feature Engineering
-
-Every complete 128-sample chunk contains 14 channels.
-
-Raw channels
-
-Time
-
-Relative x-position
-
-Relative y-position
-
-Button state
-
-Derived channels
-
-Horizontal velocity
-
-Vertical velocity
-
-Speed
-
-Horizontal acceleration
-
-Vertical acceleration
-
-Horizontal jerk
-
-Vertical jerk
-
-Distance from the target-relative origin
-
-Heading
-
-Button-state difference
-
-The code supports the current fields:
-
+# NeuroCursor: Securing Identity Through Every Movement
+
+**NeuroCursor** is a desktop behavioral-biometric research prototype that uses cursor movement dynamics to continuously verify an enrolled user's identity. By presenting randomized point-and-click tasks, recording fine-grained mouse kinematics, extracting spatial-temporal feature vectors, and scoring probability against background user baselines, NeuroCursor demonstrates real-time continuous behavioral authentication.
+
+---
+
+> ⚠️ **Prototype Status & Safety Disclaimer** > NeuroCursor is a research demonstration and is **not** production-ready authentication software. Do **not** use real passwords, personal data, or sensitive production credentials.
+
+---
+
+## 👥 Project Team & Contributions
+
+* **Shaurya Saxena**: Primary research paper author, lead presentation developer, mathematical feature design, and model architecture.
+* **Hamid Abdul Mossa**: Full-stack pipeline development (Backend, ML model integration, and frontend interface).
+* **Shreehan Aalok Pathak**: Frontend design, interface integration, and model development.
+* **Chetan Gangireddy**: Early model architecture development, research contributions, and feature ideation.
+
+> 📝 **Note on Collaboration & Git Commit History** > Much of the development was conducted interactively using VS Code Live Share. As a result, git commit histories across different branches and user profiles may not strictly reflect individual line-by-line contributions or real effort distribution.
+
+---
+
+## 🔄 Demo Workflow
+
+```
+[ Register / Log In ]
+        │
+        ▼
+[ 30 Enrollment Sessions ] ──► (Randomized cursor trajectory challenges)
+        │
+        ▼
+[ Chunk Processing ] ───────► (Extract 128-sample x 14-channel matrices)
+        │
+        ▼
+[ CNN-GRU Feature Extractor ]
+        │
+        ▼
+[ Logistic Regression Model ] ──► (Trained against background baseline user data)
+        │
+        ▼
+[ Thresholding & Inference ] ─► (Generates confidence probability + Pass/Fail decision)
+```
+
+1. **Authentication:** Create a demo account or log into an existing local account.
+2. **Enrollment:** Complete 30 cursor enrollment sessions consisting of short, randomized point-and-click movement tasks.
+3. **Data Chunking:** The system standardizes recorded mouse trajectories into 128-sample sequence windows.
+4. **Feature Extraction:** A pretrained CNN-GRU deep learning network extracts dense behavioral feature vectors.
+5. **Class-Model Training:** A user-specific Logistic Regression classifier is dynamically trained using the user's vectors as positive samples and background dataset vectors as negative samples.
+6. **Threshold Calibration:** A decision boundary threshold is tuned under a target false-acceptance constraint.
+7. **Verification Inference:** Subsequent authentication attempts evaluate mouse trajectories, yielding an identity probability score and an explicit Pass / Fail output.
+
+> **Note:** Background user baselines are sourced from dataset participants with at least 20 recorded sessions. Interactive model training triggers once the active user completes 30 valid enrollment sessions.
+
+---
+
+## 🏗 System Architecture
+
+### 1. Neural Architecture (CNN-GRU Feature Extractor)
+
+The pretrained neural network leverages 1D Convolutional layers for spatially-local kinematics extraction, followed by GRU recurrent layers for sequential trajectory dynamics.
+
+```
+128-step x 14-channel trajectory ──► 1D CNN Layers ──► GRU Temporal Modeling ──► Dense Layer ──► User Embedding / Output
+```
+
+#### Detailed Network Layers
+
+| Layer Type | Configuration / Output Dimensions | Hyperparameters / Details |
+| :--- | :--- | :--- |
+| **Input** | $128 \times 14$ | 128 spatial-temporal steps across 14 channels |
+| **Conv1D** | 16 Filters | Kernel Size: 5 |
+| **Batch Normalization** | — | Accelerates convergence |
+| **MaxPool1D** | — | Downsampling |
+| **Dropout** | Rate: 0.20 | Regularization |
+| **Conv1D** | 32 Filters | Kernel Size: 3 |
+| **Conv1D** | 64 Filters | Kernel Size: 3 |
+| **MaxPool1D** | — | Downsampling |
+| **Conv1D** | 128 Filters | Kernel Size: 3 |
+| **GRU** | 256 Hidden Units | Recurrent temporal feature extraction |
+| **Dense** | 256 Output Units | Fully connected embedding layer |
+| **Dropout** | Rate: 0.30 | Regularization |
+| **Dense** | Multiclass Classification | Background user identification head |
+
+**Saved Checkpoints:**
+* `best_neurocursor_model.pth`
+* `best_neurocursor_val_model.pth`
+
+### 2. Verification Classifier Stage
+
+```
+Recorded Cursor Session
+        │
+        ▼
+14-Channel Feature Preprocessing
+        │
+        ▼
+Pretrained CNN-GRU Feature Extractor
+        │
+        ▼
+StandardScaler Normalization
+        │
+        ▼
+Binary Logistic Regression (User vs. Background)
+        │
+        ▼
+Probability Averaging & Thresholding
+        │
+        ▼
+[ ACCEPTED ] or [ REJECTED ]
+```
+
+---
+
+## 📐 Feature Engineering
+
+Each 128-sample chunk processes 14 channels derived from time, spatial position, and mouse state:
+
+### Feature Specification Matrix
+
+| Category | Channel Name | Description / Formula |
+| :--- | :--- | :--- |
+| **Raw Signals** | `time` | Timestamp delta / elapsed time |
+| | `relative_x` | $x$ coordinate relative to target origin |
+| | `relative_y` | $y$ coordinate relative to target origin |
+| | `button_state` | Mouse button state ($0 = \text{released}, 1 = \text{pressed}$) |
+| **Velocity** | Horizontal Velocity | $v_x = \frac{\Delta x}{\Delta t}$ |
+| | Vertical Velocity | $v_y = \frac{\Delta y}{\Delta t}$ |
+| | Speed | $s = \sqrt{v_x^2 + v_y^2}$ |
+| **Acceleration** | Horizontal Acceleration | $a_x = \frac{\Delta v_x}{\Delta t}$ |
+| | Vertical Acceleration | $a_y = \frac{\Delta v_y}{\Delta t}$ |
+| **Jerk** | Horizontal Jerk | $j_x = \frac{\Delta a_x}{\Delta t}$ |
+| | Vertical Jerk | $j_y = \frac{\Delta a_y}{\Delta t}$ |
+| **Spatial/Kinematic** | Origin Distance | $d = \sqrt{x_{\text{rel}}^2 + y_{\text{rel}}^2}$ |
+| | Heading Angle | $\theta = \text{arctan2}(v_y, v_x)$ |
+| | Button State Delta | $\Delta$ `button_state` |
+
+### Accepted Input JSON Schemas
+
+**Primary Format:**
+```json
 {
   "time": 0,
   "relative_x": 0,
   "relative_y": 0,
   "button_state": 0
 }
+```
 
-It also supports the older format:
-
+**Legacy Format Support:**
+```json
 {
   "time": 0,
   "coords": [0, 0, 0]
 }
+```
 
-Incomplete chunks containing fewer than 128 samples are skipped.
+> **Note:** Any trajectories resulting in incomplete sequence windows containing fewer than 128 samples are safely skipped.
 
-Repository Structure
+---
 
-neurocursor/
-├── model/
-│   ├── demo.py              # Desktop demo and user workflow
-│   ├── index.html           # Eel interface
-│   ├── styles.css           # Additional interface styling
-│   ├── main.py              # Preprocessing, training, and evaluation
-│   ├── cnn_grumodel.py      # CNN-GRU architecture and training
-│   ├── helpers.py           # Dataset loading and feature engineering
-│   ├── classify.py          # Validation-stage classifier evaluation
-│   ├── test.py              # Held-out test evaluation
-│   ├── old_model.py         # Earlier model implementation
-│   ├── master_dataset.json  # Background cursor dataset
-│   └── best_neurocursor_model.pth
-└── web/                     # Original web data-collection application
+## ⚙️ Requirements & Installation
 
-Requirements
+### Requirements
+* **Python:** 3.9+
+* **Supported Browsers:** Google Chrome, Chromium, Microsoft Edge, Brave, or Playwright Chromium instances.
 
-Python 3
+### Setup Instructions
 
-Chrome, Chromium, Edge, Brave, or another supported Chromium browser
+1. **Clone Repository & Switch Branch:**
+   ```bash
+   git clone [https://github.com/pathfinders-utd-deep-dive-ai/neurocursor.git](https://github.com/pathfinders-utd-deep-dive-ai/neurocursor.git)
+   cd neurocursor
+   git switch hamid
+   ```
 
-master_dataset.json
+2. **Set Up Python Virtual Environment:**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+   ```
 
-best_neurocursor_model.pth
+3. **Install Dependencies:**
+   ```bash
+   python3 -m pip install --upgrade pip
+   python3 -m pip install eel joblib numpy pandas scipy scikit-learn tensorboard torch
+   ```
 
-Python packages:
+---
 
-eel
-joblib
-numpy
-pandas
-scipy
-scikit-learn
-tensorboard
-torch
+## 🚀 Running the System
 
-Setup
+### 1. Launch Interactive Desktop Demo
 
-Clone the repository and switch to the hamid branch:
+Because paths are configured relative to the `model/` directory, launch the script directly from `model/`:
 
-git clone https://github.com/pathfinders-utd-deep-dive-ai/neurocursor.git
-cd neurocursor
-git switch hamid
-
-Create a virtual environment:
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-Install the dependencies:
-
-python3 -m pip install --upgrade pip
-python3 -m pip install eel joblib numpy pandas scipy scikit-learn tensorboard torch
-
-Run the Demo
-
-The Python files use relative paths. Run the program from the model directory:
-
+```bash
 cd model
 python3 demo.py
+```
 
-The first launch may take longer because the program builds and stores a background-feature cache inside:
+* **First Run Behavior:** The application will generate a cached feature repository in `model/demo_data/cache/`. User state and trained linear models are stored under `model/demo_data/`.
+* **Custom Browser Path Setup (Optional):** If automatic browser detection fails, manually define your Chromium binary path:
+  ```bash
+  export CHROME_PATH="/path/to/chrome"
+  python3 demo.py
+  ```
 
-model/demo_data/cache/
+### 2. Train the Background Deep Network (CNN-GRU)
 
-The demo also stores local user progress and trained user models inside:
+To retrain the base feature extractor on `master_dataset.json`:
 
-model/demo_data/
-
-Train the CNN-GRU
-
-Place master_dataset.json inside the model directory, then run:
-
+```bash
 cd model
 python3 cnn_grumodel.py
+```
 
-Training uses:
+#### Training Configuration
+* **Optimizer:** AdamW (learning rate: 0.001)
+* **Batch Size:** 32
+* **Loss Function:** Cross-Entropy Loss with Label Smoothing
+* **Regularization:** Dropout, Early Stopping, Seed = 42
+* **Logging:** TensorBoard (`tensorboard --logdir runs`)
 
-random seed: 42
+### 3. Run Benchmark Evaluations
 
-batch size: 32
+Evaluate system performance on validation and held-out test sets:
 
-AdamW optimizer
-
-learning rate: 0.001
-
-cross-entropy loss with label smoothing
-
-early stopping
-
-TensorBoard logging
-
-View the training logs with:
-
-tensorboard --logdir runs
-
-Evaluate the Classifier
-
-Validation evaluation:
-
+```bash
 cd model
+# Evaluate validation metrics
 python3 classify.py
 
-Held-out test evaluation:
-
-cd model
+# Evaluate out-of-sample test performance
 python3 test.py
+```
 
-Both scripts report:
+---
 
-Accuracy
+## 📊 Experimental Results
 
-Precision
+The held-out evaluation yields the following error metrics:
 
-Recall
+| Evaluation Granularity | False Acceptance Rate (FAR) | False Rejection Rate (FRR) |
+| :--- | :--- | :--- |
+| **Chunk Level** (128-sample windows) | 0.0% | 100.0% |
+| **Cycle Level** (Full Session) | 0.0% | 66.7% |
 
-F1 score
+### Metric Analysis
+The evaluation metrics demonstrate an ultra-conservative decision threshold. While the system successfully eliminates False Acceptances ($0\%$ FAR), it exhibits a high False Rejection Rate ($66.7\%$ at session level). Fine-tuning the logistic decision probability hyperparameters is necessary to achieve optimal Equal Error Rate (EER) trade-offs.
 
-False acceptance rate
+---
 
-False rejection rate
+## ⚠️ Limitations & Security Considerations
 
-Equal error estimate
+* **Dataset Scale:** Prototype baselines rely on a constrained pool of background users.
+* **Hardware Variability:** Kinematic features (acceleration, velocity, jerk) vary across physical hardware, mouse DPI settings, and display resolutions.
+* **Conservative Decision Thresholds:** High FRR requires additional threshold tuning.
+* **Windowing Constraint:** Fixed 128-sample chunks result in partial chunk discarding for short trajectories.
+* **Credentials Storage:** Credentials are currently stored in unencrypted local JSON files for prototype convenience.
+* **Authentication Scope:** Behavioral biometrics should serve as a continuous multi-factor authentication (MFA) signal rather than a standalone login credential.
 
-They report results at both the individual 128-sample chunk level and the full-session or cycle level.
+---
 
-Current Results
+## 🔮 Future Work
 
-The recorded final test results were:
+- [ ] Expand dataset diversity with additional users, hardware setups, and input device types.
+- [ ] Implement adaptive chunking or variable-length sequence models (e.g., Transformers/LSTMs).
+- [ ] Benchmark against classical classifiers (Random Forest, SVM, k-NN) and anomaly detection baselines (Isolation Forests, One-Class SVMs).
+- [ ] Incorporate rejected authentications into continuous incremental user retraining loops.
+- [ ] Enhance storage security via standard password hashing algorithms (Argon2 / bcrypt) and encrypted biometrics storage.
 
-Evaluation level
+---
 
-FAR
+## 🏫 Institutional Context
 
-FRR
-
-Chunk level
-
-0%
-
-100%
-
-Cycle level
-
-0%
-
-66.7%
-
-Cycle-level result: FAR 0% and FRR 66.7%.
-
-These results show a highly conservative threshold. The tested configuration produced no false accepts, but it rejected many genuine attempts. The current model therefore requires further tuning and broader evaluation.
-
-Browser Detection
-
-demo.py attempts to locate a browser through:
-
-CHROME_PATH
-
-browser executables available on PATH
-
-common Linux installation paths
-
-Flatpak exports
-
-Playwright Chromium installations
-
-A custom browser path can be supplied before launch:
-
-export CHROME_PATH="/absolute/path/to/chrome"
-python3 demo.py
-
-Important Limitations
-
-The available dataset is limited.
-
-Mouse behavior can change across devices and sessions.
-
-The present threshold causes a high false rejection rate.
-
-The code processes fixed 128-sample chunks.
-
-Incomplete chunks are discarded.
-
-The demo stores usernames and passwords locally in plain JSON.
-
-The trained models and cache files are local prototype artifacts.
-
-The system should be used as a supplemental signal, not as the only authentication factor.
-
-Future Work
-
-Collect data from more users.
-
-Test more devices and environments.
-
-Collect more sessions per user.
-
-Improve feature extraction.
-
-Test different chunk sizes.
-
-Use failed attempts for later retraining.
-
-Compare one, three, and five movements.
-
-Compare with Random Forest, KNN, and other classifiers.
-
-Reduce false rejections while keeping FAR low.
-
-Improve credential and biometric-data protection.
-
-Team
-
-Shaurya Saxena
-
-Chetan Gangireddy
-
-Shreehan Aalok Pathak
-
-Hamid Abdul Mossa
-
-Developed through the 2026 Summer Deep Dive AI Program at The University of Texas at Dallas.
+**NeuroCursor** was developed through the 2026 Summer Deep Dive AI Program at **The University of Texas at Dallas (UTD)**.
