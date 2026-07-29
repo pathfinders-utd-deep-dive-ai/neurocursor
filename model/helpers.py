@@ -144,16 +144,22 @@ def load_data():
     # Turn val_df into tensors, taking each cycle's data and label and splitting by 128
     X_val, y_val, val_cycleids = process_cycle_data(val_df)
 
+    # Turn test_df into tensors, taking each cycle's data and label and splitting by 128
+    X_test, y_test, test_cycleids = process_cycle_data(test_df)
+
     # Turn X_train, y_train, X_val, y_val into tensors
     X_train = torch.stack(X_train)
     y_train = torch.stack(y_train)
     X_val = torch.stack(X_val)
     y_val = torch.stack(y_val)
+    X_test = torch.stack(X_test)
+    y_test = torch.stack(y_test)
     mean = X_train.mean(dim=(0, 1))
     std = X_train.std(dim=(0, 1), unbiased=False)
 
     # Apply z-score normalization
     X_train = (X_train - mean) / (std + 1e-8)
     X_val = (X_val - mean) / (std + 1e-8)
+    X_test = (X_test - mean) / (std + 1e-8)
 
-    return X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids
+    return X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids, X_test, y_test, test_cycleids

@@ -36,7 +36,7 @@ torch.backends.cudnn.benchmark = False
 
 threshold_pct = 0.5
 
-X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids = load_data()
+X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids, ignore, ignore, ignore = load_data()
 
 # -- Taken from Gemini --
 # RE-INDEX LABELS to 0..N-1
@@ -199,7 +199,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
     model.to(device)
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
-    early_stopper = EarlyStopping(patience=100, min_delta=0.0001)
+    early_stopper = EarlyStopping(patience=150, min_delta=0.0001)
     num_epochs = 500
     batch_size = 32
     train_losses, train_accuracies = [], []
