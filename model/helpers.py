@@ -49,9 +49,11 @@ def load_data():
     cycle_rows = []
     for _, row in valid_users.iterrows():
         for cycle_idx, cycle_data in enumerate(row["data"]):
+            # actually instead do
+            for data_point in cycle_data:
+                data_point["cycle_id"] = f"{row['user_id']}_c{cycle_idx}"
             cycle_rows.append({
                 "user_id": row["user_id"],
-                "cycle_id": f"{row['user_id']}_c{cycle_idx}",
                 "data": cycle_data,
                 "user_label": user_labels[row["user_id"]]
             })
@@ -73,6 +75,7 @@ def load_data():
     def process_cycle_data(cyclesdata):
         X = []
         y = []
+        cycleids = []
         for cycle in cyclesdata.iterrows():
             # cycle is a tuple with (index, row), where row is a Series
             cycle_data = cycle[1]["data"]
@@ -83,10 +86,12 @@ def load_data():
             for chunk in chunks:
                 if len(chunk) < 128:
                     continue
+                cycleid = chunk[0]["cycle_id"]
+                cycleids.append(cycleid)
                 # Convert chunk to tensor and add to train dataset
                 # Turn chunk for features into a vector with time, cursor_x, cursor_y, target_x, target_y, relative_x, relative_y, button_state, movement_index, target_width, target_height, canvas_width, canvas_height
                 # Each tensor should look like [[time, relative_x, relative_y, button_state], [...], ... 128 times]
-                multi_dim_array = []
+                multi_dim_chunk_array = []
                 for data_point in chunk:
                     if len(data_point) < 13:
                         list = [
@@ -102,23 +107,23 @@ def load_data():
                             data_point["relative_y"],
                             data_point["button_state"]
                         ]
-                    multi_dim_array.append(list)
-                raw_arr = np.array(multi_dim_array, dtype=np.float32)
+                    multi_dim_chunk_array.append(list)
+                raw_chunk_arr = np.array(multi_dim_chunk_array, dtype=np.float32)
     
                 # calculate kinematic features
-                vel_x = np.zeros(128, dtype=np.float32); vel_x[1:] = np.diff(raw_arr[:, 1])
-                vel_y = np.zeros(128, dtype=np.float32); vel_y[1:] = np.diff(raw_arr[:, 2])
+                vel_x = np.zeros(128, dtype=np.float32); vel_x[1:] = np.diff(raw_chunk_arr[:, 1])
+                vel_y = np.zeros(128, dtype=np.float32); vel_y[1:] = np.diff(raw_chunk_arr[:, 2])
                 speed = np.sqrt(vel_x ** 2 + vel_y ** 2)
                 acc_x = np.zeros(128, dtype=np.float32); acc_x[1:] = np.diff(vel_x)
                 acc_y = np.zeros(128, dtype=np.float32); acc_y[1:] = np.diff(vel_y)
                 jerk_x = np.zeros(128, dtype=np.float32); jerk_x[1:] = np.diff(acc_x)
                 jerk_y = np.zeros(128, dtype=np.float32); jerk_y[1:] = np.diff(acc_y)
-                dist  = np.sqrt(raw_arr[:, 1] ** 2 + raw_arr[:, 2] ** 2)
+                dist  = np.sqrt(raw_chunk_arr[:, 1] ** 2 + raw_chunk_arr[:, 2] ** 2)
                 heading = np.arctan2(vel_y, vel_x)
-                btn_diff = np.zeros(128, dtype=np.float32); btn_diff[1:] = np.diff(raw_arr[:, 3]) # button transition
+                btn_diff = np.zeros(128, dtype=np.float32); btn_diff[1:] = np.diff(raw_chunk_arr[:, 3]) # button transition
     
-                final_arr = np.column_stack([
-                    raw_arr,
+                final_chunk_arr = np.column_stack([
+                    raw_chunk_arr,
                     vel_x,
                     vel_y,
                     speed,
@@ -130,14 +135,14 @@ def load_data():
                     heading,
                     btn_diff
                 ]).astype(np.float32)
-                X.append(torch.tensor(final_arr, dtype=torch.float32))
+                X.append(torch.tensor(final_chunk_arr, dtype=torch.float32))
                 y.append(torch.tensor(cycle_label, dtype=torch.long))
-        return X, y
+        return X, y, cycleids
     # Turn train_df into tensors, taking each cycle's data and label and splitting by 128
-    X_train, y_train = process_cycle_data(train_df)
+    X_train, y_train, train_cycleids = process_cycle_data(train_df)
 
     # Turn val_df into tensors, taking each cycle's data and label and splitting by 128
-    X_val, y_val = process_cycle_data(val_df)
+    X_val, y_val, val_cycleids = process_cycle_data(val_df)
 
     # Turn X_train, y_train, X_val, y_val into tensors
     X_train = torch.stack(X_train)
@@ -151,4 +156,4 @@ def load_data():
     X_train = (X_train - mean) / (std + 1e-8)
     X_val = (X_val - mean) / (std + 1e-8)
 
-    return X_train, y_train, X_val, y_val, yes_user_id, user_labels
+    return X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids

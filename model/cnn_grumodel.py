@@ -36,15 +36,7 @@ torch.backends.cudnn.benchmark = False
 
 threshold_pct = 0.5
 
-X_train, y_train, X_val, y_val, yes_user_id, user_labels = load_data()
-yes_user_label = user_labels[yes_user_id]
-# remove yes user from training set
-train_mask = y_train != yes_user_label
-X_train = X_train[train_mask]
-y_train = y_train[train_mask]
-val_mask = y_val != yes_user_label
-X_val = X_val[val_mask]
-y_val = y_val[val_mask]
+X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids = load_data()
 
 # -- Taken from Gemini --
 # RE-INDEX LABELS to 0..N-1
@@ -140,6 +132,7 @@ def CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=32):
     total_positives = 0
     # measure prediction frequency per user
     prediction_frequency = {}
+    predictions = []
     with torch.no_grad():
         for batch_x, batch_y in val_loader:
             batch_x = batch_x.to(device)
@@ -148,6 +141,7 @@ def CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=32):
             output = model(batch_x)
             loss = criterion(output.squeeze(-1), batch_y.long())
             running_loss += loss.item() * len(batch_y)
+            predictions.extend(output.squeeze(-1).softmax(dim=1).tolist())
             output = torch.argmax(output.squeeze(-1), dim=1)
             for user in output.tolist():
                 prediction_frequency[user] = prediction_frequency.get(user, 0) + 1
@@ -157,12 +151,21 @@ def CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=32):
             total_positives += (batch_y == 1).sum().item()
     avg_loss = running_loss / total
     accuracy = 100 * correct / total
+    # average accuracy per cycle (averaging each chunk together)
+    predictions_with_cycle_id = list(zip(predictions, val_cycleids))
+
+    predicted_user_per_cycle = []
+    for cycle in set(val_cycleids):
+        cycle_predictions = [pred for pred, cycle_id in predictions_with_cycle_id if cycle_id == cycle]
+        predicted_user_per_cycle.append(np.mean(cycle_predictions, axis=0).argmax())
+    actual_user_per_cycle = [y_val[val_cycleids.index(cycle)].item() for cycle in set(val_cycleids)]
+    val_cycle_accuracy = accuracy_score(actual_user_per_cycle, predicted_user_per_cycle) * 100
     counts = np.zeros(num_background_users)
     for user_id, count in prediction_frequency.items():
         counts[user_id] = count
     p = counts / counts.sum()
     neff = 2 ** entropy(p[p > 0], base=2)
-    return avg_loss, accuracy, neff
+    return avg_loss, accuracy, neff, val_cycle_accuracy
 
 
 # Train the models
@@ -181,7 +184,7 @@ class EarlyStopping:
             self.best_val_loss = val_loss
             self.counter = 0
             self.best_weights = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(), 'best_neurocursor_model.pth')
+            torch.save(model.state_dict(), 'best_neurocursor_val_model.pth')
         else:
             self.counter += 1
             print(f"EarlyStopping counter: {self.counter}/{self.patience}")
@@ -196,11 +199,12 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
     model.to(device)
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
-    early_stopper = EarlyStopping(patience=50, min_delta=0.0001)
+    early_stopper = EarlyStopping(patience=100, min_delta=0.0001)
     num_epochs = 500
     batch_size = 32
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
+    val_cycle_accuracies = []
     for epoch in range(num_epochs):
         model.train()
         running_loss, correct, total = 0.0, 0, 0
@@ -210,6 +214,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
         total_positives = 0
         # measure prediction frequency per user
         prediction_frequency = {}
+        predictions = []
         for batch_x, batch_y in train_loader:
             batch_x = batch_x.to(device)
             batch_y = batch_y.to(device)
@@ -220,6 +225,7 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * len(batch_y)
+            predictions.extend(output.squeeze(-1).softmax(dim=1).tolist())
             output = torch.argmax(output.squeeze(-1), dim=1)
             for user in output.tolist():
                 prediction_frequency[user] = prediction_frequency.get(user, 0) + 1
@@ -229,26 +235,34 @@ def trainCNNGRU(X_train, y_train, X_val, y_val):
             total_positives += (batch_y == 1).sum().item()
         train_loss = running_loss / total
         train_acc = 100 * correct / total
+
         counts = np.zeros(num_background_users)
 
         for user_id, count in prediction_frequency.items():
             counts[user_id] = count
         p = counts / counts.sum()
         train_neff = 2 ** entropy(p[p > 0], base=2)
-        val_loss, val_acc, val_neff = CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=batch_size)
+        val_loss, val_acc, val_neff, val_cycle_accuracy = CNNGRU_evaluate(model, X_val, y_val, criterion, device, batch_size=batch_size)
 
+        # save if model has best val cycle accuracy
+        if val_cycle_accuracy > max(val_cycle_accuracies, default=0):
+            print("Saving best cycle accuracy model...")
+            torch.save(model.state_dict(), 'best_neurocursor_model.pth')
+        val_cycle_accuracies.append(val_cycle_accuracy)
         train_losses.append(train_loss)
         train_accuracies.append(train_acc)
         val_losses.append(val_loss)
         val_accuracies.append(val_acc)
+        val_cycle_accuracies.append(val_cycle_accuracy)
 
         writer.add_scalar('Loss/train - Training:', train_loss, epoch)
         writer.add_scalar('Accuracy/train - Training:', train_acc, epoch)
         writer.add_scalar('Loss/train - Validation:', val_loss, epoch)
         writer.add_scalar('Accuracy/train - Validation:', val_acc, epoch)
+        writer.add_scalar('Cycle Accuracy/train - Validation:', val_cycle_accuracy, epoch)
         writer.add_scalar('Neff/train - Training:', train_neff, epoch)
         writer.add_scalar('Neff/train - Validation:', val_neff, epoch)
-        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Train Neff: {train_neff:.2f}, Val Neff: {val_neff:.2f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%, Train Neff: {train_neff:.2f}, Val Neff: {val_neff:.2f}, Val Cycle Acc: {val_cycle_accuracy:.2f}%")
 
         early_stopper(val_loss, model)
         if early_stopper.early_stop:

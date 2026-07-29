@@ -46,7 +46,7 @@ def extract_64_features(model, dataloader, device):
     y_labels = np.concatenate(label_list)
     return X_features, y_labels
 
-X_train, y_train, X_val, y_val, yes_user_id, user_labels = load_data()
+X_train, y_train, X_val, y_val, yes_user_id, user_labels, train_cycleids, val_cycleids = load_data()
 yes_user_label = user_labels[yes_user_id]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -75,6 +75,23 @@ clf = LogisticRegression(l1_ratio=1, C=0.1, solver='liblinear', max_iter=2000, r
 clf.fit(X_train_features, y_train)
 
 y_val_prob = clf.predict_proba(X_val_features)[:, 1]
+
+# overwrite y_val_prob with cycle accuracy version
+y_val_prob = []
+for cycle in set(val_cycleids):
+    cycle_indices = [i for i, cycle_id in enumerate(val_cycleids) if cycle_id == cycle]
+    cycle_predictions = clf.predict_proba(X_val_features[cycle_indices])[:, 1]
+    prediction = np.mean(cycle_predictions)
+    y_val_prob.append(prediction)
+
+# overwrite y_val with cycle accuracy version
+y_val_chunk = y_val
+y_val = []
+for cycle in set(val_cycleids):
+    cycle_indices = [i for i, cycle_id in enumerate(val_cycleids) if cycle_id == cycle]
+    cycle_labels = y_val_chunk[cycle_indices]
+    y_val.append(cycle_labels[0])
+
 print(y_val_prob)
 fpr, tpr, thresholds = roc_curve(y_val, y_val_prob)
 frr = 1 - tpr
