@@ -1,0 +1,272 @@
+// Used MDN Docs in various places
+if (!localStorage.getItem("username")) {
+    window.location.href = "/login/";
+}
+
+var username = localStorage.getItem("username")
+var currentX = 0
+var currentY = 0
+var isClicked = 0
+var buttonX = 0
+var buttonY = 0
+var buttonsClicked = 0
+var data = []
+let distToStartX = 9999;
+let distToStartY = 9999;
+let distToButtonX = 9999;
+let distToButtonY = 9999;
+var activeButton = {};
+
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
+
+const colorBackground = "#FFFFFF";
+const gridColor = "rgba(15, 150, 150, 0.1)";
+const dotColor = "#0E9594";
+const dotColorTwo = "#D64545";
+const LABEL_INK = "#FFFFFF";
+const shadowMain = "rgba(15,150,150,0.5)"
+const shadowStart = "rgba(215,70,70,0.5)"
+
+function updateProgress() {
+    fetch('/api/data/get/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username": username})
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log(result);
+        document.getElementById("progress-text").innerText = result.length + "/30 Sessions Complete";
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    })
+}
+
+function paintBackdrop() {
+    ctx.fillStyle = colorBackground;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    const step = 40;
+    for (let x = 0.5; x <= canvas.width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0.5; y <= canvas.height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+function isHover(button) {
+    if(!button) return false;
+    let distX = Math.abs(currentX - button.x);
+    let distY = Math.abs(currentY - button.y);
+    let maxWidthDist = button.width/2;
+    let maxHeightDist = button.height/2;
+    if(maxWidthDist > distX) {
+        if(maxHeightDist > distY) {
+            return true;
+        }
+    }
+    return false;
+}
+function drawRect(x, y, width, height, color, label) {
+    ctx.fillStyle = color;
+    const rx = x - (width / 2), ry = y - (height / 2);
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, width, height, 12);
+        ctx.fill();
+    } else {
+        ctx.fillRect(rx, ry, width, height);
+    }
+    if (label) {
+        ctx.fillStyle = LABEL_INK;
+        ctx.font = "600 20px Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, x, y + 1);
+    }
+}
+
+function renderTheFrame() {
+    paintBackdrop();
+    let hovering = isHover(activeButton)
+    ctx.save();
+    if(hovering && activeButton.x != null) {
+        if(activeButton.color == dotColorTwo) {
+            ctx.shadowColor = shadowStart;
+        }
+        else {
+            ctx.shadowColor = shadowMain;
+        }
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetX = 2;
+    }
+    if(activeButton.x != null) {
+        drawRect(activeButton.x, 
+                activeButton.y, 
+                activeButton.width, 
+                activeButton.height, 
+                activeButton.color, 
+                activeButton.label
+            );
+    }
+        
+        ctx.restore();
+    requestAnimationFrame(renderTheFrame);
+}
+renderTheFrame();
+
+window.addEventListener('pointerrawupdate', e => {
+    // Stack Overflow: "Real mouse position in canvas"
+    var rect = canvas.getBoundingClientRect();
+    currentX = e.clientX - rect.left
+    currentY = e.clientY - rect.top
+});
+window.addEventListener('pointermove', e => {
+    var rect = canvas.getBoundingClientRect();
+    currentX = e.clientX - rect.left
+    currentY = e.clientY - rect.top
+});
+window.addEventListener("mousedown", e => {isClicked = 1});
+window.addEventListener("mouseup", e => {isClicked = 0});
+
+// Copied from MDN "Math.random()"
+function getRandomInt(min, max) {
+  const minCeiled = Math.ceil(min);
+  const maxFloored = Math.floor(max);
+  return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+}
+
+// Adapted from Medium "JavaScript loops — how to handle async/await"
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+async function startLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    buttonsClicked = 0;
+    data = [];
+    updateProgress();
+    distToStartX = 9999
+    distToStartY = 9999
+    activeButton.x = 700;
+    activeButton.y = 300;
+    activeButton.width = 100;
+    activeButton.height = 50;
+    activeButton.color = dotColorTwo;
+    activeButton.label = "START";
+    while (!(isClicked == 1 && Math.abs(distToStartX) <= 50 && Math.abs(distToStartY) <= 25)) {
+        console.log(["before start data:", isClicked, distToStartX, distToStartY]);
+        distToStartX = currentX - 700;
+        distToStartY = currentY - 300;
+        await wait(1000 / 60);
+    }
+    while (isClicked == 1) {
+        // Wait till start is released
+        await wait(1000 / 60);
+    }
+    activeButton.x = getRandomInt(200, 1200);
+    activeButton.y = getRandomInt(200, 400);
+    activeButton.width = 50;
+    activeButton.height = 50;
+    activeButton.color = dotColor;
+    activeButton.label = String(buttonsClicked + 1);
+    timeOffset = performance.now();
+    await mainLoop();
+    startLoop();
+}
+
+async function mainLoop() {
+  while(buttonsClicked < 5) {
+    console.log("X:", currentX);
+    console.log("Y: ", currentY);
+    console.log("isClicked: ", isClicked);
+    distToButtonX = currentX - activeButton.x;
+    distToButtonY = currentY - activeButton.y;
+    console.log("DistX: ", distToButtonX);
+    console.log("DistY :", distToButtonY);
+    data.push({
+        time: performance.now() - timeOffset,
+        cursor_x: currentX,
+        cursor_y: currentY,
+        target_x: activeButton.x,
+        target_y: activeButton.y,
+        relative_x: distToButtonX,
+        relative_y: distToButtonY,
+        button_state: isClicked,
+        movement_index: buttonsClicked,
+        target_width: activeButton.width,
+        target_height: activeButton.height,
+        canvas_width: canvas.width,
+        canvas_height: canvas.height,
+        coords: [distToButtonX, distToButtonY, isClicked]
+    });
+    console.log(data);
+    if (isClicked == 1 && isHover(activeButton)) {
+        while (isClicked == 1) {
+            await wait(1000 / 60);
+            distToButtonX = currentX - activeButton.x;
+            distToButtonY = currentY - activeButton.y;
+            if (isClicked == 1) {
+                // Make sure to not record with old movement_index if button is released
+                data.push({
+                    time: performance.now() - timeOffset,
+                    cursor_x: currentX,
+                    cursor_y: currentY,
+                    target_x: activeButton.x,
+                    target_y: activeButton.y,
+                    relative_x: distToButtonX,
+                    relative_y: distToButtonY,
+                    button_state: isClicked,
+                    movement_index: buttonsClicked,
+                    target_width: activeButton.width,
+                    target_height: activeButton.height,
+                    canvas_width: canvas.width,
+                    canvas_height: canvas.height,
+                    coords: [distToButtonX, distToButtonY, isClicked]
+                });
+            }
+        }
+        buttonsClicked += 1;
+        if (buttonsClicked < 5) {
+            // Don't make a sixth button
+            activeButton.x = getRandomInt(200, 1200);
+            activeButton.y = getRandomInt(200, 400);
+            activeButton.width = 50;
+            activeButton.height = 50;
+            activeButton.color = dotColor;
+            activeButton.label = String(buttonsClicked + 1);
+        }
+        // Instantly record release with new movement_index
+        continue;
+    }
+    await wait(1000 / 60);
+  }
+  await fetch('/api/data/save/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"username": username, "data": data})
+    })
+    .then(response => response.text())
+    .then(result => {
+        console.log(result)
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+startLoop();
