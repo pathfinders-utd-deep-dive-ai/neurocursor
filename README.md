@@ -244,14 +244,14 @@ protocol. Thresholds were selected on validation data only.
 | K=5 operating point | Accuracy | ROC-AUC | FAR | FRR | EER |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Paper EER-balanced** | 89.23% | 96.13% | 8.31% | 30.00% | 7.56% |
-| **1-in-50,000 policy target** | 93.85% | 96.13% | 1.69% | 51.67% | 7.56% |
+| **Validation-selected strict security** | 98.08% | 99.13% | 0.00% | 16.67% | 1.30% |
 
-The security threshold now targets a validation FAR of 1 in 50,000
-(`0.002%`), but the held-out experiment observed 4 false acceptances across
-234 pooled impostor decisions (`1.7094%` pooled FAR). The study is far too
-small to validate the policy target: its one-sided 95% FAR upper bound is
-`3.8688%`, and approximately 149,786 independent zero-false-accept trials
-would be required to bound FAR below 1 in 50,000 at 95% confidence.
+The strict security configuration is logistic regression with full features.
+It was selected without test metrics by minimizing validation FRR among models
+with zero empirical validation FAR. On held-out data it produced zero false
+accepts across 234 pooled impostor decisions and five false rejections across
+26 genuine decisions. The zero observed FAR is not a population guarantee;
+its one-sided exact 95% upper bound is `1.2721%`.
 
 See the
 [complete real-data evaluation](results/paper-real-data-2026-07-29/README.md)

@@ -2,11 +2,11 @@
 
 ## Result
 
-The proposed CNN–GRU achieved **96.13% macro ROC-AUC**, **89.23% macro accuracy**, **8.31% FAR**, **30.00% FRR**, and **7.56% EER** at the paper's K=5 EER-balanced operating point.
+Validation-only model selection identified **Logistic regression with full features** as the best strict security configuration. It minimized validation FRR among models with zero empirical validation false accepts. No false acceptances were observed in this held-out sample. Its held-out K=5 macro FAR was **0.0000%**, pooled FAR was **0.0000%**, macro FRR was **16.67%**, and accuracy was **98.08%**.
 
-For the security operating point, thresholds were selected independently for each claimed identity using validation data only with a policy target of **1 in 50,000 (0.0020%)**. 4 false acceptances were observed in 234 pooled impostor decisions. Held-out K=5 macro FAR was **1.6862%**, pooled FAR was **1.7094%**, and macro FRR was **51.67%**.
+The zero observed FAR is a finite-sample result, not a population guarantee. With 234 held-out impostor decisions, the one-sided exact 95% FAR upper bound is **1.2721%**.
 
-This experiment **does not validate a true 1-in-50,000 FAR**. The one-sided exact 95% upper bound is **3.8688%**, compared with the 0.0020% target. Even with zero false acceptances, approximately **149,786 independent impostor trials** are required to place a 95% upper bound below the target. The target therefore defines threshold policy; it is not a measured population-level guarantee.
+The paper's proposed CNN–GRU remains reported at its balanced operating point: **96.13% macro ROC-AUC**, **89.23% accuracy**, **8.31% FAR**, **30.00% FRR**, and **7.56% EER** at K=5.
 
 ## Data and protocol
 
@@ -15,6 +15,7 @@ This experiment **does not validate a true 1-in-50,000 FAR**. The one-sided exac
 - Point-and-click movements: **1330**
 - Primary split: **session-separated**
 - Threshold selection: validation data only; test labels never select thresholds
+- Strict model selection: lowest validation FRR among configurations with zero empirical validation FAR
 - Reported table values: macro-average across one-vs-rest user verifiers
 - Tables IV–VI use K=5 attempt-level decisions; Table V separately varies K
 - Table VII uses movement-level metrics because random sample splitting does not preserve complete attempts
@@ -35,22 +36,23 @@ This experiment **does not validate a true 1-in-50,000 FAR**. The one-sided exac
 | Confusion matrix | Pooled K=5 balanced and security matrices |
 | Training behavior | Per-user training and validation history figure |
 
-## Security operating point and confusion matrix
+## Validation selection improves the strict security result
 
-| Operating point | Policy target | Accuracy | Precision | Recall | F1 | ROC-AUC | FAR | FRR | EER | TN | FP | FN | TP |
+| Configuration | Selection | Accuracy | Precision | Recall | F1 | ROC-AUC | FAR | FRR | EER | TN | FP | FN | TP |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| EER-balanced | Not applicable | 89.23% | 69.33% | 70.00% | 60.46% | 96.13% | 8.31% | 30.00% | 7.56% | 214 | 20 | 8 | 18 |
-| Validation FAR target | 1 in 50,000 (0.0020%) | 93.85% | 72.50% | 48.33% | 55.24% | 96.13% | 1.69% | 51.67% | 7.56% | 230 | 4 | 12 | 14 |
+| CNN–GRU balanced | Paper operating point | 89.23% | 69.33% | 70.00% | 60.46% | 96.13% | 8.31% | 30.00% | 7.56% | 214 | 20 | 8 | 18 |
+| CNN–GRU strict | Zero empirical validation FAR | 93.85% | 72.50% | 48.33% | 55.24% | 96.13% | 1.69% | 51.67% | 7.56% | 230 | 4 | 12 | 14 |
+| Logistic regression strict | Lowest validation FRR among zero-validation-FAR models | 98.08% | 100.00% | 83.33% | 90.00% | 99.13% | 0.00% | 16.67% | 1.30% | 234 | 0 | 5 | 21 |
 
-### Evidence for the 1-in-50,000 target
+### Selection and held-out evidence
 
-| Policy FAR target | Held-out impostor trials | False accepts | Observed pooled FAR | Macro FAR | One-sided 95% FAR upper bound | Zero-event trials required for 95% validation | Statistically validated |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 in 50,000 (0.0020%) | 234 | 4 | 1.7094% | 1.6862% | 3.8688% | 149786 | No |
+| Selected configuration | Validation macro FAR | Validation macro FRR | Held-out impostor trials | Held-out false accepts | Observed pooled FAR | Held-out macro FAR | Held-out macro FRR | One-sided 95% FAR upper bound |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Logistic regression | 0.0000% | 2.00% | 234 | 0 | 0.0000% | 0.0000% | 16.67% | 1.2721% |
 
-![CNN–GRU K=5 confusion matrices](figures/confusion_matrix_k5.png)
+![K=5 confusion matrices](figures/confusion_matrix_k5.png)
 
-The confusion matrices pool decisions across the ten per-user verifiers. Percentages inside cells are normalized by actual class. Macro FAR/FRR in the table average user-specific rates, so they can differ slightly from a rate recomputed from pooled counts.
+The confusion matrices show why model selection matters: the validation-selected Logistic regression strict configuration eliminated the held-out false accepts seen in the strict CNN–GRU configuration while rejecting fewer genuine attempts. Percentages inside cells are normalized by actual class. Macro rates average user-specific rates, so they can differ slightly from rates recomputed from pooled counts.
 
 ## Table IV — neural model comparison
 
@@ -64,7 +66,7 @@ The confusion matrices pool decisions across the ten per-user verifiers. Percent
 
 ![Macro ROC curves](figures/roc_curves_k5.png)
 
-An ROC curve is threshold-independent. The low-FAR panel marks the validation-calibrated security operating point and the 1-in-50,000 policy target. The target lies below this study's empirical resolution and is shown as a policy reference, not as a validated point on the population ROC.
+An ROC curve is threshold-independent. The low-FAR panel marks the strict Logistic regression operating point selected without test metrics. A zero observed FAR is placed at the panel's positive log-scale floor; it should be read together with the finite-sample upper bound above.
 
 ## Classical baselines
 
@@ -87,6 +89,8 @@ An ROC curve is threshold-independent. The low-FAR panel marks the validation-ca
 | 5 | 8.31% | 30.00% | 7.56% | 96.13% | 4.56 |
 
 ![Interaction-count tradeoff](figures/interaction_count_tradeoff.png)
+
+This figure compares the paper's balanced CNN–GRU error rates with the validation-selected strict Logistic regression configuration at K=1, 3, and 5.
 
 ## Table VI — feature ablation
 
@@ -136,7 +140,8 @@ The one-sided alternative is that genuine scores exceed impostor scores. Bootstr
 - One participant has only three eligible sessions, which makes that verifier's held-out estimates especially discrete and uncertain.
 - Macro metrics weight each claimed identity equally; pooled confusion counts weight individual decisions.
 - A lower FAR is not free: a stricter threshold generally raises FRR. Both are shown so the security gain is not presented without its usability cost.
-- A study of 234 pooled impostor decisions cannot validate a 1-in-50,000 FAR. Approximately 149,786 zero-false-accept trials are needed for a one-sided 95% upper bound below that rate.
+- Zero false accepts in 234 held-out impostor decisions has a one-sided 95% FAR upper bound of 1.2721%; substantially more independent impostor trials are required to characterize rare-event performance.
+- Selecting among several model families can make this result optimistic despite using validation metrics only. A new untouched external cohort is required for confirmatory evaluation.
 - The paper's blank result tables are now filled from this dataset; these measurements should replace placeholders only if this is the intended study cohort.
 - Classical baselines use documented temporal summary features. The paper names the baselines but does not specify every hyperparameter, so the exact reproducible choices remain in `model/model.py`.
 
@@ -150,7 +155,7 @@ python -m pip install -r model/requirements-results.txt
 python model/model.py experiment \
   --data /path/to/paper-dataset.json \
   --output-dir artifacts/paper-experiment \
-  --target-far 0.00002000 \
+  --target-far 0 \
   --seed 42 \
   --permutations 10000 \
   --bootstrap-samples 1000

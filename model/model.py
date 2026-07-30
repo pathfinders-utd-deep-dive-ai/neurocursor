@@ -65,7 +65,7 @@ SEED = 42
 EPSILON = 1e-8
 SEQUENCE_LENGTH = 128
 INTERACTION_COUNTS = (1, 3, 5)
-DEFAULT_TARGET_FAR = 1.0 / 50_000.0
+DEFAULT_TARGET_FAR = 0.0
 
 RAW_FEATURES = (
     "x_normalized",
@@ -1867,7 +1867,7 @@ def _add_training_arguments(parser):
         default=DEFAULT_TARGET_FAR,
         help=(
             "Validation FAR target for the security operating point "
-            "(default: 1/50,000 = 0.00002)."
+            "(default: zero empirical validation false accepts)."
         ),
     )
     parser.add_argument("--verbose", type=int, choices=(0, 1, 2), default=1)

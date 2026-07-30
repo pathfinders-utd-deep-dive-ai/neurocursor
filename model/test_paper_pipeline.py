@@ -11,8 +11,8 @@ from model import reporting
 
 
 class SecurityThresholdTests(unittest.TestCase):
-    def test_default_policy_target_is_one_in_fifty_thousand(self):
-        self.assertEqual(model.DEFAULT_TARGET_FAR, 1.0 / 50_000.0)
+    def test_default_policy_requires_zero_validation_false_accepts(self):
+        self.assertEqual(model.DEFAULT_TARGET_FAR, 0.0)
 
     def test_far_target_is_applied_without_test_labels(self):
         validation_labels = np.asarray([0, 0, 0, 0, 1, 1])
@@ -42,11 +42,33 @@ class SecurityThresholdTests(unittest.TestCase):
 
 
 class ReportingAggregationTests(unittest.TestCase):
-    def test_one_in_fifty_thousand_requires_about_150k_zero_events(self):
-        required = reporting.zero_event_trials_required(1.0 / 50_000.0)
-        self.assertEqual(required, 149_786)
-        upper = reporting.binomial_upper_bound(0, required)
-        self.assertLessEqual(upper, 1.0 / 50_000.0)
+    def test_security_model_selection_uses_validation_far_then_frr(self):
+        def configuration(far, frr):
+            return {
+                "users": {
+                    "user_001": {
+                        "interaction_count_metrics": {
+                            "5": {
+                                "security_calibration": {
+                                    "far": far,
+                                    "frr": frr,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        name, validation = reporting.select_security_configuration(
+            {
+                "higher_validation_frr": configuration(0.0, 0.4),
+                "selected": configuration(0.0, 0.1),
+                "nonzero_validation_far": configuration(0.01, 0.0),
+            }
+        )
+        self.assertEqual(name, "selected")
+        self.assertEqual(validation["far"], 0.0)
+        self.assertEqual(validation["frr"], 0.1)
 
     def test_macro_metrics_and_pooled_confusion_counts_are_distinct(self):
         configuration = {
