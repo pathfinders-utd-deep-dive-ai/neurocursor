@@ -6,6 +6,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -14,6 +15,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import beta
 
 
 METRICS = (
@@ -147,6 +149,47 @@ def percent(value: float) -> str:
     return f"{100.0 * value:.2f}%"
 
 
+def precise_percent(value: float) -> str:
+    return f"{100.0 * value:.4f}%"
+
+
+def far_target_label(target: float) -> str:
+    denominator = int(round(1.0 / target))
+    return f"1 in {denominator:,} ({precise_percent(target)})"
+
+
+def binomial_upper_bound(
+    false_accepts: int,
+    impostor_trials: int,
+    confidence: float = 0.95,
+) -> float:
+    """One-sided exact Clopper-Pearson upper bound for pooled FAR."""
+    if impostor_trials <= 0:
+        raise ValueError("At least one impostor trial is required.")
+    if false_accepts >= impostor_trials:
+        return 1.0
+    return float(
+        beta.ppf(
+            confidence,
+            false_accepts + 1,
+            impostor_trials - false_accepts,
+        )
+    )
+
+
+def zero_event_trials_required(
+    target_far: float,
+    confidence: float = 0.95,
+) -> int:
+    """Trials needed for zero events to bound FAR below target."""
+    return int(
+        math.ceil(
+            math.log(1.0 - confidence)
+            / math.log(1.0 - target_far)
+        )
+    )
+
+
 def number(value: float) -> str:
     return f"{value:.3f}"
 
@@ -217,7 +260,11 @@ def plot_confusion_matrices(
             ylabel="Actual identity",
             title=title,
         )
-    fig.suptitle("CNN–GRU pooled K=5 confusion matrices")
+    target = far_target_label(float(security["target_far"]))
+    fig.suptitle(
+        f"CNN–GRU pooled K=5 confusion matrices\n"
+        f"Security policy target: {target}"
+    )
     fig.savefig(path, dpi=220, bbox_inches="tight")
     plt.close(fig)
 
@@ -225,28 +272,103 @@ def plot_confusion_matrices(
 def plot_roc(
     configurations: dict[str, Any],
     names: Iterable[str],
+    target_far: float,
     path: Path,
 ) -> None:
-    fig, axis = plt.subplots(figsize=(6.7, 5.2), constrained_layout=True)
+    primary = configurations["cnn-gru__full"]
+    target_label = far_target_label(target_far)
+    security = aggregate_k(primary, 5, operating_point="security")
+    security_far = security["fp"] / max(1, security["fp"] + security["tn"])
+    security_tpr = security["tp"] / max(1, security["tp"] + security["fn"])
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(11.4, 4.9),
+        constrained_layout=True,
+    )
     for color, name in zip(COLORS, names):
         x, y = macro_roc(configurations[name], 5)
         auc = aggregate_k(configurations[name], 5)["roc_auc"]
-        axis.plot(x, y, color=color, linewidth=2.2, label=f"{MODEL_LABELS[name]} ({auc:.3f})")
-    axis.plot((0, 1), (0, 1), linestyle="--", color="#9ca3af", label="Chance")
-    axis.set(
+        label = f"{MODEL_LABELS[name]} ({auc:.3f})"
+        axes[0].plot(x, y, color=color, linewidth=2.2, label=label)
+        axes[1].step(
+            np.maximum(x, target_far / 2.0),
+            y,
+            where="post",
+            color=color,
+            linewidth=2.2,
+            label=label,
+        )
+    axes[0].plot(
+        (0, 1),
+        (0, 1),
+        linestyle="--",
+        color="#9ca3af",
+        label="Chance",
+    )
+    axes[0].scatter(
+        security_far,
+        security_tpr,
+        marker="*",
+        s=130,
+        color="#111827",
+        zorder=5,
+        label="Security operating point",
+    )
+    axes[0].set(
         xlabel="False acceptance rate",
         ylabel="True acceptance rate",
-        title="Macro ROC curves at K=5",
+        title="K=5 ROC curves\nFull operating range",
         xlim=(0, 1),
         ylim=(0, 1.01),
     )
-    axis.grid(alpha=0.2)
-    axis.legend(title="Model (macro AUC)", loc="lower right")
+    axes[0].grid(alpha=0.2)
+    axes[0].legend(title="Model (macro AUC)", loc="lower right")
+
+    plotted_far = max(security_far, target_far / 2.0)
+    observed_label = (
+        "Observed test FAR = 0"
+        if security_far == 0.0
+        else f"Observed test FAR = {precise_percent(security_far)}"
+    )
+    axes[1].axvline(
+        target_far,
+        color="#ef4444",
+        linestyle="--",
+        linewidth=1.5,
+        label=f"Policy target: {target_label}",
+    )
+    axes[1].scatter(
+        plotted_far,
+        security_tpr,
+        marker="*",
+        s=150,
+        color="#111827",
+        zorder=5,
+        label=observed_label,
+    )
+    axes[1].set_xscale("log")
+    axes[1].set(
+        xlabel="False acceptance rate (log scale)",
+        ylabel="True acceptance rate",
+        title=(
+            "Low-FAR operating region\n"
+            "Target shown; study is underpowered to validate it"
+        ),
+        xlim=(target_far / 2.0, 0.10),
+        ylim=(0, 1.01),
+    )
+    axes[1].grid(alpha=0.2, which="both")
+    axes[1].legend(loc="lower right", fontsize=8)
     fig.savefig(path, dpi=220, bbox_inches="tight")
     plt.close(fig)
 
 
-def plot_k_tradeoff(configuration: dict[str, Any], path: Path) -> None:
+def plot_k_tradeoff(
+    configuration: dict[str, Any],
+    target_far: float,
+    path: Path,
+) -> None:
     counts = (1, 3, 5)
     balanced = [aggregate_k(configuration, k) for k in counts]
     security = [
@@ -281,11 +403,21 @@ def plot_k_tradeoff(configuration: dict[str, Any], path: Path) -> None:
         color="#6b7280",
         label="Security FRR",
     )
-    axis.axhline(5.0, color="#dc2626", linewidth=1.2, linestyle="--", label="5% FAR goal")
+    target_label = far_target_label(target_far)
+    axis.axhline(
+        100.0 * target_far,
+        color="#dc2626",
+        linewidth=1.2,
+        linestyle="--",
+        label=f"Policy target: {target_label}",
+    )
     axis.set(
         xlabel="Movements per authentication attempt (K)",
         ylabel="Rate (%)",
-        title="Authentication error tradeoff by interaction count",
+        title=(
+            "Authentication error tradeoff by interaction count\n"
+            f"Validation policy target: {target_label}"
+        ),
         xticks=counts,
     )
     axis.grid(alpha=0.2)
@@ -420,6 +552,8 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
     summary_path = experiment_directory / "experiment_summary.json"
     summary = load_json(summary_path)
     configurations = summary["configurations"]
+    target = float(summary.get("target_far", 1.0 / 50_000.0))
+    target_label = far_target_label(target)
     output_directory.mkdir(parents=True, exist_ok=True)
     figures = output_directory / "figures"
     tables = output_directory / "tables"
@@ -429,6 +563,15 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
     primary = configurations["cnn-gru__full"]
     balanced = aggregate_k(primary, 5)
     security = aggregate_k(primary, 5, operating_point="security")
+    security["target_far"] = target
+    impostor_trials = int(security["tn"] + security["fp"])
+    pooled_security_far = float(security["fp"] / impostor_trials)
+    upper_far_95 = binomial_upper_bound(
+        int(security["fp"]),
+        impostor_trials,
+    )
+    required_zero_event_trials = zero_event_trials_required(target)
+    statistically_validated = upper_far_95 <= target
 
     neural_names = ["cnn-gru__full", "cnn-only__full", "gru-only__full"]
     classical_names = [
@@ -501,6 +644,7 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
     security_rows = [
         {
             "Operating point": "EER-balanced",
+            "Policy target": "Not applicable",
             **{
                 DISPLAY[name]: percent(balanced[name])
                 for name in ("accuracy", "precision", "recall", "f1_score", "roc_auc", "far", "frr", "eer")
@@ -512,6 +656,7 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
         },
         {
             "Operating point": "Validation FAR target",
+            "Policy target": target_label,
             **{
                 DISPLAY[name]: percent(security[name])
                 for name in ("accuracy", "precision", "recall", "f1_score", "roc_auc", "far", "frr", "eer")
@@ -522,6 +667,22 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
             "TP": security["tp"],
         },
     ]
+    evidence_rows = [
+        {
+            "Policy FAR target": target_label,
+            "Held-out impostor trials": impostor_trials,
+            "False accepts": security["fp"],
+            "Observed pooled FAR": precise_percent(pooled_security_far),
+            "Macro FAR": precise_percent(security["far"]),
+            "One-sided 95% FAR upper bound": precise_percent(upper_far_95),
+            "Zero-event trials required for 95% validation": (
+                required_zero_event_trials
+            ),
+            "Statistically validated": (
+                "Yes" if statistically_validated else "No"
+            ),
+        }
+    ]
     statistics = statistical_rows(primary)
 
     for filename, rows in (
@@ -531,6 +692,7 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
         ("table_vi_feature_ablation.csv", ablation_rows),
         ("table_vii_split_comparison.csv", split_rows),
         ("security_operating_points.csv", security_rows),
+        ("security_target_evidence.csv", evidence_rows),
         ("statistical_analysis_k5.csv", statistics),
     ):
         write_csv(tables / filename, rows)
@@ -540,8 +702,17 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
         security,
         figures / "confusion_matrix_k5.png",
     )
-    plot_roc(configurations, neural_names, figures / "roc_curves_k5.png")
-    plot_k_tradeoff(primary, figures / "interaction_count_tradeoff.png")
+    plot_roc(
+        configurations,
+        neural_names,
+        target,
+        figures / "roc_curves_k5.png",
+    )
+    plot_k_tradeoff(
+        primary,
+        target,
+        figures / "interaction_count_tradeoff.png",
+    )
     plot_comparison(
         configurations,
         neural_names,
@@ -572,12 +743,14 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
     plot_training_history(primary, figures / "training_history.png")
 
     dataset = summary["dataset"]
-    target = float(summary.get("target_far", 0.05))
-    target_met = security["far"] <= target
-    conclusion = (
-        "The held-out goal was met."
-        if target_met
-        else "The held-out goal was not met; the value below is the honest test result."
+    observed_at_or_below_target = pooled_security_far <= target
+    observed_statement = (
+        "No false acceptances were observed in this held-out sample."
+        if security["fp"] == 0
+        else (
+            f"{security['fp']} false acceptances were observed in "
+            f"{impostor_trials} pooled impostor decisions."
+        )
     )
     report = f"""# NeuroCursor complete real-data evaluation
 
@@ -585,7 +758,9 @@ def generate_report(experiment_directory: Path, output_directory: Path) -> None:
 
 The proposed CNN–GRU achieved **{percent(balanced['roc_auc'])} macro ROC-AUC**, **{percent(balanced['accuracy'])} macro accuracy**, **{percent(balanced['far'])} FAR**, **{percent(balanced['frr'])} FRR**, and **{percent(balanced['eer'])} EER** at the paper's K=5 EER-balanced operating point.
 
-For the security operating point, thresholds were selected independently for each claimed identity using validation data only with a FAR target of {percent(target)}. Held-out K=5 FAR was **{percent(security['far'])}** and FRR was **{percent(security['frr'])}**. {conclusion} This operating point is the default used by `model.py predict`; `--operating-point balanced` retains the paper comparison threshold.
+For the security operating point, thresholds were selected independently for each claimed identity using validation data only with a policy target of **{target_label}**. {observed_statement} Held-out K=5 macro FAR was **{precise_percent(security['far'])}**, pooled FAR was **{precise_percent(pooled_security_far)}**, and macro FRR was **{percent(security['frr'])}**.
+
+This experiment **does not validate a true 1-in-50,000 FAR**. The one-sided exact 95% upper bound is **{precise_percent(upper_far_95)}**, compared with the {precise_percent(target)} target. Even with zero false acceptances, approximately **{required_zero_event_trials:,} independent impostor trials** are required to place a 95% upper bound below the target. The target therefore defines threshold policy; it is not a measured population-level guarantee.
 
 ## Data and protocol
 
@@ -618,6 +793,10 @@ For the security operating point, thresholds were selected independently for eac
 
 {markdown_table(security_rows)}
 
+### Evidence for the 1-in-50,000 target
+
+{markdown_table(evidence_rows)}
+
 ![CNN–GRU K=5 confusion matrices](figures/confusion_matrix_k5.png)
 
 The confusion matrices pool decisions across the ten per-user verifiers. Percentages inside cells are normalized by actual class. Macro FAR/FRR in the table average user-specific rates, so they can differ slightly from a rate recomputed from pooled counts.
@@ -629,6 +808,8 @@ The confusion matrices pool decisions across the ten per-user verifiers. Percent
 ![Neural model comparison](figures/neural_model_comparison.png)
 
 ![Macro ROC curves](figures/roc_curves_k5.png)
+
+An ROC curve is threshold-independent. The low-FAR panel marks the validation-calibrated security operating point and the 1-in-50,000 policy target. The target lies below this study's empirical resolution and is shown as a policy reference, not as a validated point on the population ROC.
 
 ## Classical baselines
 
@@ -672,6 +853,7 @@ The one-sided alternative is that genuine scores exceed impostor scores. Bootstr
 - One participant has only three eligible sessions, which makes that verifier's held-out estimates especially discrete and uncertain.
 - Macro metrics weight each claimed identity equally; pooled confusion counts weight individual decisions.
 - A lower FAR is not free: a stricter threshold generally raises FRR. Both are shown so the security gain is not presented without its usability cost.
+- A study of {impostor_trials} pooled impostor decisions cannot validate a 1-in-50,000 FAR. Approximately {required_zero_event_trials:,} zero-false-accept trials are needed for a one-sided 95% upper bound below that rate.
 - The paper's blank result tables are now filled from this dataset; these measurements should replace placeholders only if this is the intended study cohort.
 - Classical baselines use documented temporal summary features. The paper names the baselines but does not specify every hyperparameter, so the exact reproducible choices remain in `model/model.py`.
 
@@ -685,7 +867,7 @@ python -m pip install -r model/requirements-results.txt
 python model/model.py experiment \\
   --data /path/to/paper-dataset.json \\
   --output-dir artifacts/paper-experiment \\
-  --target-far {target:.4f} \\
+  --target-far {target:.8f} \\
   --seed {summary['runtime']['seed']} \\
   --permutations 10000 \\
   --bootstrap-samples 1000
@@ -703,9 +885,23 @@ Raw participant data, trained weights, and per-attempt scores are intentionally 
         "dataset": dataset,
         "split_type": summary["split_type"],
         "target_far": target,
+        "target_far_label": target_label,
         "cnn_gru_k5_balanced": balanced,
         "cnn_gru_k5_security": security,
-        "target_far_met_on_held_out_test": target_met,
+        "security_target_evidence": {
+            "held_out_impostor_trials": impostor_trials,
+            "false_accepts": int(security["fp"]),
+            "observed_pooled_far": pooled_security_far,
+            "observed_macro_far": float(security["far"]),
+            "one_sided_95_percent_far_upper_bound": upper_far_95,
+            "zero_event_trials_required_for_95_percent_validation": (
+                required_zero_event_trials
+            ),
+            "observed_far_at_or_below_policy_target": (
+                observed_at_or_below_target
+            ),
+            "statistically_validated_at_95_percent": statistically_validated,
+        },
         "neural_models": {
             MODEL_LABELS[name]: aggregate_k(configurations[name])
             for name in neural_names

@@ -4,7 +4,9 @@
 
 The proposed CNN–GRU achieved **96.13% macro ROC-AUC**, **89.23% macro accuracy**, **8.31% FAR**, **30.00% FRR**, and **7.56% EER** at the paper's K=5 EER-balanced operating point.
 
-For the security operating point, thresholds were selected independently for each claimed identity using validation data only with a FAR target of 5.00%. Held-out K=5 FAR was **1.69%** and FRR was **46.67%**. The held-out goal was met. This operating point is the default used by `model.py predict`; `--operating-point balanced` retains the paper comparison threshold.
+For the security operating point, thresholds were selected independently for each claimed identity using validation data only with a policy target of **1 in 50,000 (0.0020%)**. 4 false acceptances were observed in 234 pooled impostor decisions. Held-out K=5 macro FAR was **1.6862%**, pooled FAR was **1.7094%**, and macro FRR was **51.67%**.
+
+This experiment **does not validate a true 1-in-50,000 FAR**. The one-sided exact 95% upper bound is **3.8688%**, compared with the 0.0020% target. Even with zero false acceptances, approximately **149,786 independent impostor trials** are required to place a 95% upper bound below the target. The target therefore defines threshold policy; it is not a measured population-level guarantee.
 
 ## Data and protocol
 
@@ -35,10 +37,16 @@ For the security operating point, thresholds were selected independently for eac
 
 ## Security operating point and confusion matrix
 
-| Operating point | Accuracy | Precision | Recall | F1 | ROC-AUC | FAR | FRR | EER | TN | FP | FN | TP |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| EER-balanced | 89.23% | 69.33% | 70.00% | 60.46% | 96.13% | 8.31% | 30.00% | 7.56% | 214 | 20 | 8 | 18 |
-| Validation FAR target | 94.23% | 77.50% | 53.33% | 60.24% | 96.13% | 1.69% | 46.67% | 7.56% | 230 | 4 | 11 | 15 |
+| Operating point | Policy target | Accuracy | Precision | Recall | F1 | ROC-AUC | FAR | FRR | EER | TN | FP | FN | TP |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EER-balanced | Not applicable | 89.23% | 69.33% | 70.00% | 60.46% | 96.13% | 8.31% | 30.00% | 7.56% | 214 | 20 | 8 | 18 |
+| Validation FAR target | 1 in 50,000 (0.0020%) | 93.85% | 72.50% | 48.33% | 55.24% | 96.13% | 1.69% | 51.67% | 7.56% | 230 | 4 | 12 | 14 |
+
+### Evidence for the 1-in-50,000 target
+
+| Policy FAR target | Held-out impostor trials | False accepts | Observed pooled FAR | Macro FAR | One-sided 95% FAR upper bound | Zero-event trials required for 95% validation | Statistically validated |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 in 50,000 (0.0020%) | 234 | 4 | 1.7094% | 1.6862% | 3.8688% | 149786 | No |
 
 ![CNN–GRU K=5 confusion matrices](figures/confusion_matrix_k5.png)
 
@@ -55,6 +63,8 @@ The confusion matrices pool decisions across the ten per-user verifiers. Percent
 ![Neural model comparison](figures/neural_model_comparison.png)
 
 ![Macro ROC curves](figures/roc_curves_k5.png)
+
+An ROC curve is threshold-independent. The low-FAR panel marks the validation-calibrated security operating point and the 1-in-50,000 policy target. The target lies below this study's empirical resolution and is shown as a policy reference, not as a validated point on the population ROC.
 
 ## Classical baselines
 
@@ -126,6 +136,7 @@ The one-sided alternative is that genuine scores exceed impostor scores. Bootstr
 - One participant has only three eligible sessions, which makes that verifier's held-out estimates especially discrete and uncertain.
 - Macro metrics weight each claimed identity equally; pooled confusion counts weight individual decisions.
 - A lower FAR is not free: a stricter threshold generally raises FRR. Both are shown so the security gain is not presented without its usability cost.
+- A study of 234 pooled impostor decisions cannot validate a 1-in-50,000 FAR. Approximately 149,786 zero-false-accept trials are needed for a one-sided 95% upper bound below that rate.
 - The paper's blank result tables are now filled from this dataset; these measurements should replace placeholders only if this is the intended study cohort.
 - Classical baselines use documented temporal summary features. The paper names the baselines but does not specify every hyperparameter, so the exact reproducible choices remain in `model/model.py`.
 
@@ -139,7 +150,7 @@ python -m pip install -r model/requirements-results.txt
 python model/model.py experiment \
   --data /path/to/paper-dataset.json \
   --output-dir artifacts/paper-experiment \
-  --target-far 0.0500 \
+  --target-far 0.00002000 \
   --seed 42 \
   --permutations 10000 \
   --bootstrap-samples 1000

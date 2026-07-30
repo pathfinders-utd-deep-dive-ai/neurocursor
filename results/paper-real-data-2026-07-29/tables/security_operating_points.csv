@@ -1,3 +1,3 @@
-Operating point,Accuracy,Precision,Recall,F1,ROC-AUC,FAR,FRR,EER,TN,FP,FN,TP
-EER-balanced,89.23%,69.33%,70.00%,60.46%,96.13%,8.31%,30.00%,7.56%,214,20,8,18
-Validation FAR target,94.23%,77.50%,53.33%,60.24%,96.13%,1.69%,46.67%,7.56%,230,4,11,15
+Operating point,Policy target,Accuracy,Precision,Recall,F1,ROC-AUC,FAR,FRR,EER,TN,FP,FN,TP
+EER-balanced,Not applicable,89.23%,69.33%,70.00%,60.46%,96.13%,8.31%,30.00%,7.56%,214,20,8,18
+Validation FAR target,"1 in 50,000 (0.0020%)",93.85%,72.50%,48.33%,55.24%,96.13%,1.69%,51.67%,7.56%,230,4,12,14

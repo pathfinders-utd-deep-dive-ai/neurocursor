@@ -11,6 +11,9 @@ from model import reporting
 
 
 class SecurityThresholdTests(unittest.TestCase):
+    def test_default_policy_target_is_one_in_fifty_thousand(self):
+        self.assertEqual(model.DEFAULT_TARGET_FAR, 1.0 / 50_000.0)
+
     def test_far_target_is_applied_without_test_labels(self):
         validation_labels = np.asarray([0, 0, 0, 0, 1, 1])
         validation_scores = np.asarray([0.1, 0.2, 0.3, 0.9, 0.7, 0.8])
@@ -39,6 +42,12 @@ class SecurityThresholdTests(unittest.TestCase):
 
 
 class ReportingAggregationTests(unittest.TestCase):
+    def test_one_in_fifty_thousand_requires_about_150k_zero_events(self):
+        required = reporting.zero_event_trials_required(1.0 / 50_000.0)
+        self.assertEqual(required, 149_786)
+        upper = reporting.binomial_upper_bound(0, required)
+        self.assertLessEqual(upper, 1.0 / 50_000.0)
+
     def test_macro_metrics_and_pooled_confusion_counts_are_distinct(self):
         configuration = {
             "users": {

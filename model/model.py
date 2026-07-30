@@ -65,6 +65,7 @@ SEED = 42
 EPSILON = 1e-8
 SEQUENCE_LENGTH = 128
 INTERACTION_COUNTS = (1, 3, 5)
+DEFAULT_TARGET_FAR = 1.0 / 50_000.0
 
 RAW_FEATURES = (
     "x_normalized",
@@ -811,7 +812,7 @@ def calibrate_eer_threshold(labels, scores) -> dict[str, float]:
 def calibrate_far_threshold(
     labels,
     scores,
-    target_far: float = 0.05,
+    target_far: float = DEFAULT_TARGET_FAR,
 ) -> dict[str, float]:
     """Choose the lowest-FRR validation threshold whose FAR is within target."""
     if not 0.0 <= target_far < 1.0:
@@ -1863,10 +1864,10 @@ def _add_training_arguments(parser):
     parser.add_argument(
         "--target-far",
         type=float,
-        default=0.05,
+        default=DEFAULT_TARGET_FAR,
         help=(
             "Validation FAR target for the security operating point "
-            "(default: 0.05)."
+            "(default: 1/50,000 = 0.00002)."
         ),
     )
     parser.add_argument("--verbose", type=int, choices=(0, 1, 2), default=1)
