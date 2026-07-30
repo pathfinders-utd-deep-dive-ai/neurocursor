@@ -1,0 +1,5 @@
+Stage,Users,Sessions,Reason
+Source file,49,951,All supplied records
+Legacy schema,not separately retained,683,Missing target/full-schema fields required by the paper representation
+Full schema,11,268,Supports target-relative features
+Final eligible cohort,10,266,At least three sessions for train/validation/test separation

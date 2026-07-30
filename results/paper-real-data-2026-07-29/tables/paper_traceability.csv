@@ -1,0 +1,11 @@
+Paper component,Paper reference,Implementation,Status
+Sequence interpolation,Eq. 41,resample_sequence,Implemented
+Training normalization,Eq. 40,"fit_standardizer, standardize",Implemented
+Session separation,Section VI-B,"create_split, _group_split",Implemented; paper appendix name differs
+CNN–GRU,Table II,build_model,Implemented
+Binary cross-entropy,Eq. 45,Keras binary_crossentropy,Implemented
+Class weighting,Eq. 46,class_weights,Implemented
+Attempt aggregation,Eq. 6,aggregate_attempt_scores,Implemented
+Biometric metrics,Eqs. 48–51,biometric_metrics,Implemented
+Validation-only threshold,Section VI-C,"calibrate_eer_threshold, calibrate_far_threshold",Implemented
+Repeated-split robustness,RQ5 and limitations,sensitivity,Added for honest robustness evaluation

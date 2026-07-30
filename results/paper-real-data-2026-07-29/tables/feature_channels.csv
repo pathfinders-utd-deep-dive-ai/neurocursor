@@ -1,0 +1,6 @@
+Group,Features
+Raw,"normalized x/y, elapsed time, delta time, button state"
+Spatial,"delta x/y, path progress"
+Kinematic,"velocity x/y, speed, acceleration x/y/magnitude, jerk x/y/magnitude"
+Geometric,"heading, angular velocity, curvature"
+Target-relative,"target displacement x/y, distance, closure rate, heading error, cross-track error"

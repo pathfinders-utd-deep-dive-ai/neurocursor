@@ -1,0 +1,9 @@
+Check,Result,Status,Impact
+Composite movement keys,0,Pass,Duplicate identifiers would multiply observations.
+Exact duplicate samples,0,Pass,Duplicates could inflate apparent generalization.
+Missing session IDs,0,Pass,Session isolation requires complete identifiers.
+Missing attempt IDs,0,Pass,K-movement aggregation requires attempt identifiers.
+Movements per attempt,5–5,Pass,Ensures K=1/3/5 comparisons use complete attempts.
+Session overlap across repeated splits,0,Pass,Prevents same-session leakage.
+Collection provenance,Not independently verified,Open,"File integrity is verified, but participant and collection authenticity require owner documentation."
+Hardware/device labels,Unavailable,Open,Cross-device generalization and acquisition confounding cannot be tested.

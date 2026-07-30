@@ -1,0 +1,13 @@
+Layer,Configuration,Activation
+Input,128 × d,—
+Conv1D,"32 filters, kernel 5",ReLU
+Batch normalization,—,—
+Max pooling,pool size 2,—
+Dropout,0.20,—
+Conv1D,"64 filters, kernel 3",ReLU
+Batch normalization,—,—
+Max pooling,pool size 2,—
+GRU,64 units,tanh/sigmoid gates
+Dense,32 units,ReLU
+Dropout,0.30,—
+Dense,1 unit,Sigmoid

@@ -42,6 +42,27 @@ class SecurityThresholdTests(unittest.TestCase):
 
 
 class ReportingAggregationTests(unittest.TestCase):
+    def test_exact_binomial_interval_does_not_collapse_at_zero(self):
+        lower, upper = reporting.binomial_interval(0, 23)
+        self.assertEqual(lower, 0.0)
+        self.assertGreater(upper, 0.0)
+        self.assertAlmostEqual(upper, 0.148185, places=5)
+
+    def test_metric_context_exposes_reject_all_accuracy(self):
+        context = reporting.metric_context(
+            {
+                "tn": 234,
+                "fp": 0,
+                "fn": 5,
+                "tp": 21,
+                "far": 0.0,
+                "frr": 1.0 / 6.0,
+            }
+        )
+        self.assertAlmostEqual(context["pooled_accuracy"], 255 / 260)
+        self.assertAlmostEqual(context["reject_all_accuracy"], 0.9)
+        self.assertAlmostEqual(context["pooled_balanced_accuracy"], 47 / 52)
+
     def test_security_model_selection_uses_validation_far_then_frr(self):
         def configuration(far, frr):
             return {
@@ -121,6 +142,16 @@ class ReportingAggregationTests(unittest.TestCase):
         self.assertEqual(aggregate["tn"], 3)
         self.assertEqual(aggregate["attempts"], 6)
         self.assertAlmostEqual(aggregate["average_duration_seconds"], 5.0)
+
+
+class SensitivitySummaryTests(unittest.TestCase):
+    def test_distribution_summary_reports_full_range(self):
+        summary = model._distribution_summary([0.0, 0.1, 0.2, 0.3])
+        self.assertAlmostEqual(summary["mean"], 0.15)
+        self.assertAlmostEqual(summary["median"], 0.15)
+        self.assertEqual(summary["minimum"], 0.0)
+        self.assertEqual(summary["maximum"], 0.3)
+        self.assertEqual(summary["count"], 4)
 
 
 if __name__ == "__main__":

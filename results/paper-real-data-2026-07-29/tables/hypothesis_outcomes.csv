@@ -1,0 +1,5 @@
+Hypothesis,Outcome,Evidence
+H1: CNN–GRU has lower EER than CNN-only and GRU-only,Rejected,CNN–GRU 7.56%; CNN-only 6.79%; GRU-only 4.01% EER.
+H2: K=5 improves over K=1,Partially supported,"CNN–GRU FAR/EER improve from 25.19%/13.09% at K=1 to 8.31%/7.56% at K=5, but K=3 has the lowest EER (2.91%) and K=5 FRR rises to 30.00%."
+H3: Derived features outperform raw coordinates,Mixed,"Full features improve AUC (96.13% vs 95.77%) and FAR (8.31% vs 13.11%), but raw has slightly lower EER (7.00% vs 7.56%)."
+H4: Session separation performs worse than random samples,Rejected on this dataset,Session-separated movement AUC/FAR/EER are 88.90%/16.33%/16.56% versus 85.96%/20.71%/17.19% for random sample splitting.

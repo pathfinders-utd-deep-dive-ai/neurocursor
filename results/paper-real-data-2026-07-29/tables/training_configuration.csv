@@ -1,0 +1,11 @@
+Setting,Value
+Optimizer,Adam
+Initial learning rate,0.001
+Objective,Binary cross-entropy
+Maximum epochs,50
+Batch size,32
+Early-stopping patience,8 epochs
+Checkpoint criterion,Minimum validation loss
+Class imbalance,Inverse-frequency class weights
+Primary seed,42 (descriptive snapshot)
+Sensitivity seeds,"0–29, all reported"

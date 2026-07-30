@@ -1,0 +1,12 @@
+Category,Configuration
+Proposed,CNN–GRU
+Neural baseline,CNN-only
+Neural baseline,GRU-only
+Classical baseline,Logistic regression
+Classical baseline,Support-vector machine
+Classical baseline,Random forest
+Classical baseline,k-nearest neighbors
+Classical baseline,Gradient boosting
+Feature ablation,Raw channels
+Feature ablation,Raw + kinematic
+Feature ablation,Full target-relative

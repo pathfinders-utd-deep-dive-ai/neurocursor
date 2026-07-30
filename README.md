@@ -54,7 +54,15 @@
 
 ## 🏗 System Architecture
 
-### 1. Neural Architecture (CNN-GRU Feature Extractor)
+The interactive demo and the paper evaluator are separate implementations.
+The PyTorch extractor described below supports the legacy demo workflow. The
+paper-aligned experiments use the TensorFlow/Keras implementation in
+`model/model.py`: Conv1D(32, kernel 5), Conv1D(64, kernel 3), GRU(64),
+Dense(32), and a binary sigmoid output for each one-versus-rest verifier.
+The complete mapping between the paper, code, and evaluated configurations is
+in the [real-data evaluation](results/paper-real-data-2026-07-29/README.md).
+
+### 1. Legacy demo neural architecture (CNN-GRU feature extractor)
 
 The pretrained neural network leverages 1D Convolutional layers for spatially-local kinematics extraction, followed by GRU recurrent layers for sequential trajectory dynamics.
 
@@ -84,7 +92,7 @@ The pretrained neural network leverages 1D Convolutional layers for spatially-lo
 * `best_neurocursor_model.pth`
 * `best_neurocursor_val_model.pth`
 
-### 2. Verification Classifier Stage
+### 2. Legacy demo verification classifier stage
 
 ```
 Recorded Cursor Session
@@ -238,27 +246,30 @@ python3 test.py
 ## 📊 Experimental Results
 
 The paper-aligned pipeline was evaluated on 1,330 movements from 266
-anonymized user sessions using a session-separated train/validation/test
-protocol. Thresholds were selected on validation data only.
+anonymized user sessions. The primary robustness result reports all 30
+session-separated train/validation/test splits in the fixed consecutive seed
+grid 0–29 using a fixed full-feature logistic verifier configuration, refit
+within each split. Per-user thresholds were calibrated on validation data
+only.
 
-| K=5 operating point | Accuracy | ROC-AUC | FAR | FRR | EER |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Paper EER-balanced** | 89.23% | 96.13% | 8.31% | 30.00% | 7.56% |
-| **Validation-selected strict security** | 98.08% | 99.13% | 0.00% | 16.67% | 1.30% |
+| K=5 result | Accuracy | Balanced accuracy | ROC-AUC | FAR | FRR | EER |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **30-split mean (primary)** | 96.05% | 82.82% | 98.78% | 0.63% | 35.89% | 1.49% |
+| **Paper CNN–GRU, seed 42** | 89.23% | 80.34% | 96.13% | 8.31% | 30.00% | 7.56% |
 
-The strict security configuration is logistic regression with full features.
-It was selected without test metrics by minimizing validation FRR among models
-with zero empirical validation FAR. On held-out data it produced zero false
-accepts across 234 pooled impostor decisions and five false rejections across
-26 genuine decisions. The zero observed FAR is not a population guarantee;
-its one-sided exact 95% upper bound is `1.2721%`.
+The ordinary accuracy is inflated by the 9:1 impostor-to-genuine decision
+ratio, so balanced accuracy, FAR, FRR, ROC-AUC, and EER must be read alongside
+it. Across the 30 fixed splits, macro FAR ranged from 0.00% to 2.14% and macro
+FRR ranged from 13.33% to 58.33%. The previously highlighted seed-42
+zero-observed-FAR result is retained in the full report only as a descriptive,
+post-hoc reproducibility snapshot; it is not the primary estimate.
 
 See the
 [complete real-data evaluation](results/paper-real-data-2026-07-29/README.md)
-for the confusion matrix, ROC curves, neural and classical model comparisons,
-K=1/3/5 analysis, feature ablation, split sensitivity analysis, statistical
-tests, training diagnostics, CSV tables, machine-readable results, and
-checksums.
+for confusion matrices, ROC curves, all 30 split outcomes, neural and
+classical model comparisons, K=1/3/5 analysis, feature ablation, split
+sensitivity, statistical analysis, data-quality evidence, per-user results,
+CSV tables, machine-readable results, and checksums.
 
 ---
 

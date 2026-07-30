@@ -1,60 +1,159 @@
 {
-  "dataset": {
-    "source_format": "raw-events",
-    "users": 10,
-    "movements": 1330,
-    "sessions": 266,
-    "attempts": 266,
-    "metadata": {
-      "source_sha256": "ef556fd906849ff5e188e1794f33df0f394753e879648648a377522c738c923d",
-      "eligibility": "at least 3 full-schema sessions with 5 movements",
-      "excluded_legacy_sessions": 683,
-      "eligible_user_count": 10,
-      "eligible_session_count": 266
+  "result_status": "share with caveats",
+  "primary_result": {
+    "analysis": "all 30 fixed session splits, seeds 0\u201329",
+    "model": "logistic regression, full features, K=5",
+    "threshold_policy": "Per-user threshold calibrated for zero empirical validation false accepts.",
+    "summary": {
+      "accuracy": {
+        "count": 30,
+        "mean": 0.9605128205128204,
+        "median": 0.9596153846153846,
+        "standard_deviation": 0.009253582184295756,
+        "minimum": 0.9384615384615385,
+        "q1": 0.9538461538461538,
+        "q3": 0.9653846153846153,
+        "maximum": 0.9807692307692308
+      },
+      "balanced_accuracy": {
+        "count": 30,
+        "mean": 0.817393236714976,
+        "median": 0.8197463768115942,
+        "standard_deviation": 0.04724558452215593,
+        "minimum": 0.7043333333333333,
+        "q1": 0.7849565217391306,
+        "q3": 0.8472826086956522,
+        "maximum": 0.9313333333333335
+      },
+      "pooled_accuracy": {
+        "count": 30,
+        "mean": 0.9605128205128204,
+        "median": 0.9596153846153846,
+        "standard_deviation": 0.009253582184295714,
+        "minimum": 0.9384615384615385,
+        "q1": 0.9538461538461539,
+        "q3": 0.9653846153846154,
+        "maximum": 0.9807692307692307
+      },
+      "pooled_balanced_accuracy": {
+        "count": 30,
+        "mean": 0.8282051282051283,
+        "median": 0.8258547008547008,
+        "standard_deviation": 0.04386438792431614,
+        "minimum": 0.7264957264957266,
+        "q1": 0.7884615384615384,
+        "q3": 0.8600427350427351,
+        "maximum": 0.920940170940171
+      },
+      "precision": {
+        "count": 30,
+        "mean": 0.8277777777777777,
+        "median": 0.85,
+        "standard_deviation": 0.0821272880543812,
+        "minimum": 0.6,
+        "q1": 0.79375,
+        "q3": 0.9,
+        "maximum": 0.95
+      },
+      "recall": {
+        "count": 30,
+        "mean": 0.6411111111111112,
+        "median": 0.6416666666666666,
+        "standard_deviation": 0.0959658836782139,
+        "minimum": 0.4166666666666667,
+        "q1": 0.575,
+        "q3": 0.7,
+        "maximum": 0.8666666666666666
+      },
+      "f1_score": {
+        "count": 30,
+        "mean": 0.6925714285714285,
+        "median": 0.7111904761904762,
+        "standard_deviation": 0.07678092231836502,
+        "minimum": 0.5066666666666666,
+        "q1": 0.6484523809523809,
+        "q3": 0.7364285714285714,
+        "maximum": 0.8766666666666666
+      },
+      "roc_auc": {
+        "count": 30,
+        "mean": 0.9878338164251208,
+        "median": 0.9902028985507247,
+        "standard_deviation": 0.009888806459478148,
+        "minimum": 0.9478260869565218,
+        "q1": 0.9848405797101449,
+        "q3": 0.993927536231884,
+        "maximum": 1.0
+      },
+      "far": {
+        "count": 30,
+        "mean": 0.006324637681159421,
+        "median": 0.004347826086956522,
+        "standard_deviation": 0.006078208892470187,
+        "minimum": 0.0,
+        "q1": 0.001,
+        "q3": 0.008695652173913044,
+        "maximum": 0.021391304347826087
+      },
+      "frr": {
+        "count": 30,
+        "mean": 0.3588888888888889,
+        "median": 0.3583333333333333,
+        "standard_deviation": 0.09596588367821392,
+        "minimum": 0.13333333333333333,
+        "q1": 0.3,
+        "q3": 0.425,
+        "maximum": 0.5833333333333333
+      },
+      "eer": {
+        "count": 30,
+        "mean": 0.0148512077294686,
+        "median": 0.008608695652173913,
+        "standard_deviation": 0.014354215374705619,
+        "minimum": 0.0,
+        "q1": 0.006347826086956522,
+        "q3": 0.017043478260869566,
+        "maximum": 0.05489855072463769
+      },
+      "pooled_far": {
+        "count": 30,
+        "mean": 0.006410256410256412,
+        "median": 0.004273504273504274,
+        "standard_deviation": 0.006121299465241267,
+        "minimum": 0.0,
+        "q1": 0.0010683760683760685,
+        "q3": 0.008547008547008548,
+        "maximum": 0.021367521367521368
+      },
+      "pooled_frr": {
+        "count": 30,
+        "mean": 0.3371794871794872,
+        "median": 0.34615384615384615,
+        "standard_deviation": 0.08902389201588826,
+        "minimum": 0.15384615384615385,
+        "q1": 0.2692307692307692,
+        "q3": 0.4230769230769231,
+        "maximum": 0.5384615384615384
+      },
+      "average_duration_seconds": {
+        "count": 30,
+        "mean": 4.433482694625854,
+        "median": 4.453878879547119,
+        "standard_deviation": 0.19616694852919797,
+        "minimum": 4.0654497146606445,
+        "q1": 4.270751118659973,
+        "q3": 4.492339253425598,
+        "maximum": 4.861765384674072
+      },
+      "zero_false_accept_splits": 8
     }
   },
-  "split_type": "session-separated",
-  "cnn_gru_k5_balanced": {
-    "accuracy": 0.8923076923076924,
-    "precision": 0.6932539682539682,
-    "recall": 0.7,
-    "f1_score": 0.6046031746031746,
-    "roc_auc": 0.9613079710144927,
-    "far": 0.08308695652173911,
-    "frr": 0.3,
-    "eer": 0.07555072463768116,
-    "tp": 18,
-    "tn": 214,
-    "fp": 20,
-    "fn": 8,
-    "users": 10,
-    "attempts": 260,
-    "average_duration_seconds": 4.557137966156006
-  },
-  "cnn_gru_k5_strict": {
-    "accuracy": 0.9384615384615385,
-    "precision": 0.725,
-    "recall": 0.4833333333333333,
-    "f1_score": 0.5523809523809524,
-    "roc_auc": 0.9613079710144927,
-    "far": 0.01686231884057971,
-    "frr": 0.5166666666666666,
-    "eer": 0.07555072463768116,
-    "tp": 14,
-    "tn": 230,
-    "fp": 4,
-    "fn": 12,
-    "users": 10,
-    "attempts": 260,
-    "average_duration_seconds": 4.557137966156006
-  },
-  "recommended_strict_security": {
-    "configuration_key": "logistic-regression__full",
-    "configuration_label": "Logistic regression",
-    "selection_rule": "Minimum validation FRR among configurations with zero empirical validation FAR; test metrics excluded.",
+  "seed42_descriptive_snapshot": {
+    "configuration": "logistic-regression__full",
+    "selection_disclosure": "Post-hoc descriptive only; multiple test configurations were inspected before this result was highlighted.",
     "validation_macro_far": 0.0,
     "validation_macro_frr": 0.019999999999999997,
-    "held_out_metrics": {
+    "metrics": {
       "accuracy": 0.9807692307692308,
       "precision": 1.0,
       "recall": 0.8333333333333333,
@@ -71,10 +170,119 @@
       "attempts": 260,
       "average_duration_seconds": 4.557137966156006
     },
-    "held_out_impostor_trials": 234,
-    "false_accepts": 0,
-    "observed_pooled_far": 0.0,
+    "metric_context": {
+      "pooled_accuracy": 0.9807692307692307,
+      "pooled_far": 0.0,
+      "pooled_frr": 0.19230769230769232,
+      "pooled_balanced_accuracy": 0.9038461538461539,
+      "macro_balanced_accuracy": 0.9166666666666667,
+      "reject_all_accuracy": 0.9,
+      "impostor_decision_share": 0.9
+    },
     "one_sided_95_percent_far_upper_bound": 0.012720674150193349
+  },
+  "paper_cnn_gru_k5_balanced": {
+    "accuracy": 0.8923076923076924,
+    "precision": 0.6932539682539682,
+    "recall": 0.7,
+    "f1_score": 0.6046031746031746,
+    "roc_auc": 0.9613079710144927,
+    "far": 0.08308695652173911,
+    "frr": 0.3,
+    "eer": 0.07555072463768116,
+    "tp": 18,
+    "tn": 214,
+    "fp": 20,
+    "fn": 8,
+    "users": 10,
+    "attempts": 260,
+    "average_duration_seconds": 4.557137966156006
+  },
+  "paper_cnn_gru_k5_strict": {
+    "accuracy": 0.9384615384615385,
+    "precision": 0.725,
+    "recall": 0.4833333333333333,
+    "f1_score": 0.5523809523809524,
+    "roc_auc": 0.9613079710144927,
+    "far": 0.01686231884057971,
+    "frr": 0.5166666666666666,
+    "eer": 0.07555072463768116,
+    "tp": 14,
+    "tn": 230,
+    "fp": 4,
+    "fn": 12,
+    "users": 10,
+    "attempts": 260,
+    "average_duration_seconds": 4.557137966156006
+  },
+  "hypothesis_outcomes": {
+    "H1: CNN\u2013GRU has lower EER than CNN-only and GRU-only": {
+      "outcome": "Rejected",
+      "evidence": "CNN\u2013GRU 7.56%; CNN-only 6.79%; GRU-only 4.01% EER."
+    },
+    "H2: K=5 improves over K=1": {
+      "outcome": "Partially supported",
+      "evidence": "CNN\u2013GRU FAR/EER improve from 25.19%/13.09% at K=1 to 8.31%/7.56% at K=5, but K=3 has the lowest EER (2.91%) and K=5 FRR rises to 30.00%."
+    },
+    "H3: Derived features outperform raw coordinates": {
+      "outcome": "Mixed",
+      "evidence": "Full features improve AUC (96.13% vs 95.77%) and FAR (8.31% vs 13.11%), but raw has slightly lower EER (7.00% vs 7.56%)."
+    },
+    "H4: Session separation performs worse than random samples": {
+      "outcome": "Rejected on this dataset",
+      "evidence": "Session-separated movement AUC/FAR/EER are 88.90%/16.33%/16.56% versus 85.96%/20.71%/17.19% for random sample splitting."
+    }
+  },
+  "dataset": {
+    "source_format": "raw-events",
+    "users": 10,
+    "movements": 1330,
+    "sessions": 266,
+    "attempts": 266,
+    "metadata": {
+      "source_sha256": "ef556fd906849ff5e188e1794f33df0f394753e879648648a377522c738c923d",
+      "eligibility": "at least 3 full-schema sessions with 5 movements",
+      "excluded_legacy_sessions": 683,
+      "eligible_user_count": 10,
+      "eligible_session_count": 266
+    }
+  },
+  "dataset_quality": {
+    "dataset_sha256": "ef5df46c0f3c02bf458084e435079c4911026d81cea36f391823ec63f0570a95",
+    "samples": 1330,
+    "users": 10,
+    "sessions": 266,
+    "attempts": 266,
+    "duplicate_composite_keys": 0,
+    "duplicate_exact_samples": 0,
+    "missing_session_ids": 0,
+    "missing_attempt_ids": 0,
+    "minimum_movements_per_attempt": 5,
+    "maximum_movements_per_attempt": 5,
+    "screen_sizes": [
+      {
+        "width": 1400,
+        "height": 600
+      }
+    ],
+    "metadata": {
+      "source_sha256": "ef556fd906849ff5e188e1794f33df0f394753e879648648a377522c738c923d",
+      "eligibility": "at least 3 full-schema sessions with 5 movements",
+      "excluded_legacy_sessions": 683,
+      "eligible_user_count": 10,
+      "eligible_session_count": 266
+    }
+  },
+  "source_cohort": {
+    "source_sha256": "ef556fd906849ff5e188e1794f33df0f394753e879648648a377522c738c923d",
+    "source_users": 49,
+    "source_sessions": 951,
+    "legacy_schema_sessions": 683,
+    "full_schema_sessions": 268,
+    "users_with_full_schema": 11,
+    "eligible_users_at_three_sessions": 10,
+    "eligible_full_schema_sessions": 266,
+    "excluded_full_schema_sessions_for_insufficient_history": 2
   },
   "neural_models": {
     "CNN\u2013GRU": {

@@ -1,4 +1,4 @@
-Configuration,Selection,Accuracy,Precision,Recall,F1,ROC-AUC,FAR,FRR,EER,TN,FP,FN,TP
-CNN–GRU balanced,Paper operating point,89.23%,69.33%,70.00%,60.46%,96.13%,8.31%,30.00%,7.56%,214,20,8,18
-CNN–GRU strict,Zero empirical validation FAR,93.85%,72.50%,48.33%,55.24%,96.13%,1.69%,51.67%,7.56%,230,4,12,14
-Logistic regression strict,Lowest validation FRR among zero-validation-FAR models,98.08%,100.00%,83.33%,90.00%,99.13%,0.00%,16.67%,1.30%,234,0,5,21
+Configuration,Status,Ordinary accuracy,Balanced accuracy,Macro FAR,Macro FRR,ROC-AUC,TN,FP,FN,TP
+CNN–GRU balanced,Paper validation-EER threshold,89.23%,80.34%,8.31%,30.00%,96.13%,214,20,8,18
+CNN–GRU strict,Zero empirical validation false accepts,93.85%,76.07%,1.69%,51.67%,96.13%,230,4,12,14
+Logistic regression strict,Post-hoc descriptive seed-42 snapshot,98.08%,90.38%,0.00%,16.67%,99.13%,234,0,5,21

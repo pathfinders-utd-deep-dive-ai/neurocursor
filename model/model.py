@@ -17,6 +17,7 @@ those results from supplied data; it never embeds or fabricates measurements.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -66,6 +67,16 @@ EPSILON = 1e-8
 SEQUENCE_LENGTH = 128
 INTERACTION_COUNTS = (1, 3, 5)
 DEFAULT_TARGET_FAR = 0.0
+METRIC_NAMES = (
+    "accuracy",
+    "precision",
+    "recall",
+    "f1_score",
+    "roc_auc",
+    "far",
+    "frr",
+    "eer",
+)
 
 RAW_FEATURES = (
     "x_normalized",
@@ -1193,6 +1204,47 @@ def summarize_sequences(
     )
 
 
+def classical_summary_feature_names(
+    feature_names: Sequence[str],
+) -> list[str]:
+    """Name every fixed-dimensional feature emitted by summarize_sequences."""
+    names = [
+        f"{statistic}:{feature}"
+        for statistic in ("mean", "std", "min", "max")
+        for feature in feature_names
+    ]
+    required = {
+        "elapsed_time",
+        "delta_time",
+        "button_state",
+        "delta_x",
+        "delta_y",
+        "speed",
+        "acceleration",
+        "jerk",
+        "target_distance",
+    }
+    if required.issubset(feature_names):
+        names.extend(
+            [
+                "derived:duration",
+                "derived:path_length",
+                "derived:straight_distance",
+                "derived:path_efficiency",
+                "derived:mean_speed",
+                "derived:max_speed",
+                "derived:mean_acceleration",
+                "derived:max_acceleration",
+                "derived:pause_duration",
+                "derived:click_timing",
+                "derived:acceleration_energy",
+                "derived:jerk_energy",
+                "derived:dimensionless_jerk",
+            ]
+        )
+    return names
+
+
 def build_classical_model(model_type: str, seed: int):
     if model_type == "logistic-regression":
         return LogisticRegression(
@@ -1676,6 +1728,499 @@ def experiment(args):
     print(f"\nSaved paper experiment suite to {output_directory}")
 
 
+def _attempt_count(dataset: CursorDataset, indexes: np.ndarray) -> int:
+    return len(
+        set(
+            zip(
+                dataset.user_ids[indexes].tolist(),
+                dataset.session_ids[indexes].tolist(),
+                dataset.attempt_ids[indexes].tolist(),
+            )
+        )
+    )
+
+
+def _aggregate_sensitivity_metrics(
+    user_metrics: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    if not user_metrics:
+        raise ValueError("Sensitivity aggregation requires user metrics.")
+    aggregate = {
+        name: float(np.mean([metrics[name] for metrics in user_metrics]))
+        for name in METRIC_NAMES
+    }
+    for name in ("tp", "tn", "fp", "fn"):
+        aggregate[name] = int(
+            sum(int(metrics[name]) for metrics in user_metrics)
+        )
+    aggregate["validation_far"] = float(
+        np.mean([metrics["validation_far"] for metrics in user_metrics])
+    )
+    aggregate["validation_frr"] = float(
+        np.mean([metrics["validation_frr"] for metrics in user_metrics])
+    )
+    aggregate["balanced_accuracy"] = float(
+        np.mean(
+            [
+                ((1.0 - metrics["far"]) + (1.0 - metrics["frr"]))
+                / 2.0
+                for metrics in user_metrics
+            ]
+        )
+    )
+    total = sum(aggregate[name] for name in ("tp", "tn", "fp", "fn"))
+    negatives = aggregate["tn"] + aggregate["fp"]
+    positives = aggregate["tp"] + aggregate["fn"]
+    aggregate["pooled_accuracy"] = (
+        (aggregate["tn"] + aggregate["tp"]) / total if total else 0.0
+    )
+    aggregate["pooled_far"] = (
+        aggregate["fp"] / negatives if negatives else 0.0
+    )
+    aggregate["pooled_frr"] = (
+        aggregate["fn"] / positives if positives else 0.0
+    )
+    aggregate["pooled_balanced_accuracy"] = (
+        ((1.0 - aggregate["pooled_far"]) + (1.0 - aggregate["pooled_frr"]))
+        / 2.0
+    )
+    aggregate["reject_all_accuracy"] = negatives / total if total else 0.0
+    aggregate["decisions"] = int(total)
+    aggregate["impostor_decisions"] = int(negatives)
+    aggregate["genuine_decisions"] = int(positives)
+    aggregate["users"] = len(user_metrics)
+    aggregate["average_duration_seconds"] = float(
+        np.mean(
+            [metrics["average_duration_seconds"] for metrics in user_metrics]
+        )
+    )
+    return aggregate
+
+
+def _distribution_summary(values: Sequence[float]) -> dict[str, float]:
+    array = np.asarray(values, dtype=float)
+    return {
+        "count": int(array.size),
+        "mean": float(np.mean(array)),
+        "median": float(np.median(array)),
+        "standard_deviation": float(np.std(array, ddof=1)),
+        "minimum": float(np.min(array)),
+        "q1": float(np.percentile(array, 25)),
+        "q3": float(np.percentile(array, 75)),
+        "maximum": float(np.max(array)),
+    }
+
+
+def _audit_dataset_document(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file:
+        document = json.load(file)
+    samples = document.get("samples", []) if isinstance(document, Mapping) else []
+    keys = []
+    payload_hashes = []
+    attempt_sizes: dict[tuple[str, str, str], int] = {}
+    screens = set()
+    missing_session_ids = 0
+    missing_attempt_ids = 0
+    for sample in samples:
+        key = (
+            str(sample.get("user_id", "")),
+            str(sample.get("session_id", "")),
+            str(sample.get("attempt_id", "")),
+            int(sample.get("movement_index", -1)),
+        )
+        keys.append(key)
+        attempt = key[:3]
+        attempt_sizes[attempt] = attempt_sizes.get(attempt, 0) + 1
+        screen = sample.get("screen", {})
+        screens.add((screen.get("width"), screen.get("height")))
+        missing_session_ids += not bool(key[1])
+        missing_attempt_ids += not bool(key[2])
+        payload_hashes.append(
+            hashlib.sha256(
+                json.dumps(
+                    sample,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+        )
+    return {
+        "dataset_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "samples": len(samples),
+        "users": len({key[0] for key in keys}),
+        "sessions": len({key[:2] for key in keys}),
+        "attempts": len(attempt_sizes),
+        "duplicate_composite_keys": len(keys) - len(set(keys)),
+        "duplicate_exact_samples": len(payload_hashes)
+        - len(set(payload_hashes)),
+        "missing_session_ids": int(missing_session_ids),
+        "missing_attempt_ids": int(missing_attempt_ids),
+        "minimum_movements_per_attempt": int(min(attempt_sizes.values())),
+        "maximum_movements_per_attempt": int(max(attempt_sizes.values())),
+        "screen_sizes": [
+            {"width": width, "height": height}
+            for width, height in sorted(screens)
+        ],
+        "metadata": (
+            dict(document.get("metadata", {}))
+            if isinstance(document, Mapping)
+            else {}
+        ),
+    }
+
+
+def _audit_source_cohort(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as file:
+        document = json.load(file)
+    if not isinstance(document, Mapping):
+        raise ValueError("Source cohort data must map identities to sessions.")
+    legacy_sessions = 0
+    full_schema_sessions = 0
+    full_sessions_by_user = []
+    for sessions in document.values():
+        if not isinstance(sessions, list):
+            continue
+        user_full = 0
+        for session in sessions:
+            first = session[0] if isinstance(session, list) and session else {}
+            if isinstance(first, Mapping) and {
+                "target_x",
+                "target_y",
+                "movement_index",
+            }.issubset(first):
+                full_schema_sessions += 1
+                user_full += 1
+            else:
+                legacy_sessions += 1
+        if user_full:
+            full_sessions_by_user.append(user_full)
+    eligible = [count for count in full_sessions_by_user if count >= 3]
+    ineligible = [count for count in full_sessions_by_user if count < 3]
+    return {
+        "source_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "source_users": len(document),
+        "source_sessions": int(
+            sum(len(sessions) for sessions in document.values())
+        ),
+        "legacy_schema_sessions": int(legacy_sessions),
+        "full_schema_sessions": int(full_schema_sessions),
+        "users_with_full_schema": len(full_sessions_by_user),
+        "eligible_users_at_three_sessions": len(eligible),
+        "eligible_full_schema_sessions": int(sum(eligible)),
+        "excluded_full_schema_sessions_for_insufficient_history": int(
+            sum(ineligible)
+        ),
+    }
+
+
+def sensitivity(args):
+    """Evaluate one fixed classical verifier across a fixed split-seed grid."""
+    if args.seed_count <= 1:
+        raise ValueError("Sensitivity analysis requires at least two seeds.")
+    if args.model_type not in CLASSICAL_MODELS:
+        raise ValueError("Sensitivity analysis currently supports classical models.")
+    dataset_path = Path(args.data)
+    dataset = load_dataset(str(dataset_path))
+    selected_indexes = feature_indexes(
+        dataset.feature_names,
+        args.feature_set,
+    )
+    unstandardized = prepare_sequences(
+        dataset.sequences,
+        args.sequence_length,
+        selected_indexes,
+    )
+    summary_features = summarize_sequences(
+        unstandardized,
+        FEATURE_SETS[args.feature_set],
+    )
+    feature_names = classical_summary_feature_names(
+        FEATURE_SETS[args.feature_set]
+    )
+    if summary_features.shape[1] != len(feature_names):
+        raise AssertionError("Classical summary feature names are inconsistent.")
+
+    seeds = list(range(args.seed_start, args.seed_start + args.seed_count))
+    runs = []
+    coefficient_rows = []
+    user_history: dict[str, dict[str, list[dict[str, float]]]] = {
+        str(count): {} for count in INTERACTION_COUNTS
+    }
+    for seed in seeds:
+        split = create_split(
+            dataset,
+            test_size=args.test_size,
+            validation_size=args.validation_size,
+            seed=seed,
+            mode=args.split_mode,
+        )
+        train_indexes, validation_indexes, test_indexes, split_type = split
+        split_groups = []
+        for indexes in (train_indexes, validation_indexes, test_indexes):
+            split_groups.append(
+                set(
+                    zip(
+                        dataset.user_ids[indexes].tolist(),
+                        dataset.session_ids[indexes].tolist(),
+                    )
+                )
+            )
+        if (
+            split_groups[0] & split_groups[1]
+            or split_groups[0] & split_groups[2]
+            or split_groups[1] & split_groups[2]
+        ):
+            raise AssertionError("A session appears in multiple splits.")
+
+        mean = summary_features[train_indexes].mean(axis=0, keepdims=True)
+        standard_deviation = summary_features[train_indexes].std(
+            axis=0,
+            keepdims=True,
+        )
+        standard_deviation[standard_deviation < 1e-7] = 1.0
+        classical_data = (
+            summary_features - mean
+        ) / standard_deviation
+
+        metrics_by_count: dict[str, list[dict[str, Any]]] = {
+            str(count): [] for count in INTERACTION_COUNTS
+        }
+        for claimed_user in sorted(np.unique(dataset.user_ids)):
+            y_train = (
+                dataset.user_ids[train_indexes] == claimed_user
+            ).astype(int)
+            y_validation = (
+                dataset.user_ids[validation_indexes] == claimed_user
+            ).astype(int)
+            y_test = (
+                dataset.user_ids[test_indexes] == claimed_user
+            ).astype(int)
+            model = build_classical_model(args.model_type, seed)
+            model.fit(classical_data[train_indexes], y_train)
+            validation_scores = model.predict_proba(
+                classical_data[validation_indexes]
+            )[:, 1]
+            test_scores = model.predict_proba(
+                classical_data[test_indexes]
+            )[:, 1]
+            if hasattr(model, "coef_"):
+                for name, value in zip(
+                    feature_names,
+                    np.abs(model.coef_[0]),
+                ):
+                    coefficient_rows.append(
+                        {
+                            "seed": seed,
+                            "claimed_user": str(claimed_user),
+                            "feature": name,
+                            "absolute_standardized_coefficient": float(value),
+                        }
+                    )
+
+            for count in INTERACTION_COUNTS:
+                validation_attempts = aggregate_attempt_scores(
+                    validation_scores,
+                    y_validation,
+                    dataset.user_ids[validation_indexes],
+                    dataset.session_ids[validation_indexes],
+                    dataset.attempt_ids[validation_indexes],
+                    dataset.movement_indexes[validation_indexes],
+                    dataset.durations[validation_indexes],
+                    count,
+                )
+                test_attempts = aggregate_attempt_scores(
+                    test_scores,
+                    y_test,
+                    dataset.user_ids[test_indexes],
+                    dataset.session_ids[test_indexes],
+                    dataset.attempt_ids[test_indexes],
+                    dataset.movement_indexes[test_indexes],
+                    dataset.durations[test_indexes],
+                    count,
+                )
+                if validation_attempts is None or test_attempts is None:
+                    raise ValueError(
+                        f"K={count} attempts are unavailable for seed {seed}."
+                    )
+                validation_attempt_scores, validation_attempt_labels, _ = (
+                    validation_attempts
+                )
+                test_attempt_scores, test_attempt_labels, test_durations = (
+                    test_attempts
+                )
+                calibration = calibrate_far_threshold(
+                    validation_attempt_labels,
+                    validation_attempt_scores,
+                    target_far=args.target_far,
+                )
+                metrics = biometric_metrics(
+                    test_attempt_labels,
+                    test_attempt_scores,
+                    calibration["threshold"],
+                )
+                metrics["validation_far"] = calibration["far"]
+                metrics["validation_frr"] = calibration["frr"]
+                metrics["average_duration_seconds"] = float(
+                    np.mean(test_durations)
+                )
+                metrics_by_count[str(count)].append(metrics)
+                user_history[str(count)].setdefault(
+                    str(claimed_user),
+                    [],
+                ).append(
+                    {
+                        name: float(metrics[name])
+                        for name in (
+                            "accuracy",
+                            "far",
+                            "frr",
+                            "roc_auc",
+                            "eer",
+                        )
+                    }
+                )
+
+        runs.append(
+            {
+                "seed": seed,
+                "split_type": split_type,
+                "split": {
+                    "train_movements": int(len(train_indexes)),
+                    "validation_movements": int(len(validation_indexes)),
+                    "test_movements": int(len(test_indexes)),
+                    "train_attempts": _attempt_count(
+                        dataset,
+                        train_indexes,
+                    ),
+                    "validation_attempts": _attempt_count(
+                        dataset,
+                        validation_indexes,
+                    ),
+                    "test_attempts": _attempt_count(
+                        dataset,
+                        test_indexes,
+                    ),
+                    "session_overlap_count": 0,
+                },
+                "interaction_counts": {
+                    count: _aggregate_sensitivity_metrics(values)
+                    for count, values in metrics_by_count.items()
+                },
+            }
+        )
+        print(
+            f"seed={seed} "
+            f"K=5 FAR={runs[-1]['interaction_counts']['5']['far']:.4f} "
+            f"FRR={runs[-1]['interaction_counts']['5']['frr']:.4f}"
+        )
+
+    tracked = (
+        "accuracy",
+        "balanced_accuracy",
+        "pooled_accuracy",
+        "pooled_balanced_accuracy",
+        "precision",
+        "recall",
+        "f1_score",
+        "roc_auc",
+        "far",
+        "frr",
+        "eer",
+        "pooled_far",
+        "pooled_frr",
+        "average_duration_seconds",
+    )
+    summaries = {}
+    for count in map(str, INTERACTION_COUNTS):
+        summaries[count] = {
+            name: _distribution_summary(
+                [run["interaction_counts"][count][name] for run in runs]
+            )
+            for name in tracked
+        }
+        summaries[count]["zero_false_accept_splits"] = int(
+            sum(
+                run["interaction_counts"][count]["fp"] == 0
+                for run in runs
+            )
+        )
+
+    user_summaries = {}
+    for count, users in user_history.items():
+        user_summaries[count] = {
+            user: {
+                metric: _distribution_summary(
+                    [row[metric] for row in history]
+                )
+                for metric in ("accuracy", "far", "frr", "roc_auc", "eer")
+            }
+            for user, history in users.items()
+        }
+
+    feature_influence = []
+    if coefficient_rows:
+        grouped: dict[str, list[float]] = {}
+        for row in coefficient_rows:
+            grouped.setdefault(row["feature"], []).append(
+                row["absolute_standardized_coefficient"]
+            )
+        feature_influence = sorted(
+            [
+                {
+                    "feature": name,
+                    **{
+                        f"coefficient_{key}": value
+                        for key, value in _distribution_summary(values).items()
+                    },
+                }
+                for name, values in grouped.items()
+            ],
+            key=lambda row: row["coefficient_mean"],
+            reverse=True,
+        )
+
+    runtime = runtime_metadata()
+    runtime["global_import_seed"] = runtime.pop("seed")
+    runtime["split_and_model_seeds"] = seeds
+    result = {
+        "analysis_type": "fixed-grid repeated session-split sensitivity",
+        "protocol": {
+            "model_type": args.model_type,
+            "feature_set": args.feature_set,
+            "interaction_counts": list(INTERACTION_COUNTS),
+            "threshold_policy": (
+                "Per-user threshold calibrated for zero empirical "
+                "validation false accepts."
+            ),
+            "target_far": float(args.target_far),
+            "seed_start": args.seed_start,
+            "seed_count": args.seed_count,
+            "seeds": seeds,
+            "test_size": args.test_size,
+            "validation_size": args.validation_size,
+            "split_mode": args.split_mode,
+            "selection_policy": (
+                "All fixed consecutive seeds are reported; no seed is selected "
+                "from performance."
+            ),
+        },
+        "dataset_quality": _audit_dataset_document(dataset_path),
+        "source_cohort": (
+            _audit_source_cohort(Path(args.source_data))
+            if args.source_data
+            else None
+        ),
+        "runs": runs,
+        "summary_by_interaction_count": summaries,
+        "user_summary_by_interaction_count": user_summaries,
+        "feature_influence": feature_influence,
+        "runtime": runtime,
+    }
+    output = Path(args.output_file)
+    save_json(output, result)
+    print(f"Saved sensitivity analysis to {output}")
+
+
 def _load_prediction_movements(path: str, preprocessing: Mapping[str, Any]):
     with open(path, "r", encoding="utf-8") as file:
         document = json.load(file)
@@ -1901,6 +2446,54 @@ def make_parser():
     )
     _add_training_arguments(experiment_parser)
     experiment_parser.set_defaults(function=experiment)
+
+    sensitivity_parser = subparsers.add_parser(
+        "sensitivity",
+        help=(
+            "Run a fixed-grid repeated session-split sensitivity analysis "
+            "without selecting favorable seeds."
+        ),
+    )
+    sensitivity_parser.add_argument("--data", required=True)
+    sensitivity_parser.add_argument("--source-data")
+    sensitivity_parser.add_argument(
+        "--output-file",
+        default="artifacts/sensitivity_summary.json",
+    )
+    sensitivity_parser.add_argument(
+        "--model-type",
+        choices=CLASSICAL_MODELS,
+        default="logistic-regression",
+    )
+    sensitivity_parser.add_argument(
+        "--feature-set",
+        choices=tuple(FEATURE_SETS),
+        default="full",
+    )
+    sensitivity_parser.add_argument(
+        "--sequence-length",
+        type=int,
+        default=SEQUENCE_LENGTH,
+    )
+    sensitivity_parser.add_argument("--test-size", type=float, default=0.10)
+    sensitivity_parser.add_argument(
+        "--validation-size",
+        type=float,
+        default=0.15,
+    )
+    sensitivity_parser.add_argument(
+        "--split-mode",
+        choices=("session", "trial"),
+        default="session",
+    )
+    sensitivity_parser.add_argument("--seed-start", type=int, default=0)
+    sensitivity_parser.add_argument("--seed-count", type=int, default=30)
+    sensitivity_parser.add_argument(
+        "--target-far",
+        type=float,
+        default=DEFAULT_TARGET_FAR,
+    )
+    sensitivity_parser.set_defaults(function=sensitivity)
 
     predict_parser = subparsers.add_parser(
         "predict", help="Verify one claimed identity."

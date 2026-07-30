@@ -1,0 +1,7 @@
+Research question,Answer,Evidence
+RQ1: Does CNN–GRU outperform the baselines?,No,GRU-only and multiple classical models outperform CNN–GRU on key reported metrics.
+RQ2: How does K change performance?,Non-monotonic tradeoff,"More movements reduce FAR overall, but K=3 has lower CNN–GRU EER and K=5 has higher FRR."
+RQ3: Which features contribute?,Timing and click dynamics dominate logistic coefficients,"Mean/max delta time, pause duration, button-state variation, jerk, and click timing rank highest."
+RQ4: How does threshold affect errors?,Stricter thresholds reduce FAR by increasing FRR,"The ROC, confusion matrices, and strict-versus-balanced table show the tradeoff directly."
+RQ5: Is performance stable across sessions?,No; material split sensitivity remains,"Across 30 splits, K=5 FAR ranges 0.00%–2.14% and FRR ranges 13.33%–58.33%."
+RQ6: Hardware/target/sampling sensitivity?,Not established,Hardware and device labels are absent; timing-heavy coefficients make acquisition confounding plausible.

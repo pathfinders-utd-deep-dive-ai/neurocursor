@@ -1,0 +1,17 @@
+Paper item,Status,Report artifact
+Table I feature channels,Complete,feature_channels.csv and methods section
+Table II CNN–GRU architecture,Complete,architecture.csv
+Table III model configurations,Complete,model_configurations.csv
+Table IV neural comparison,Complete,table_iv_neural_models.csv
+Table V K=1/3/5,Complete,table_v_interaction_counts.csv and sensitivity_by_interaction_count.csv
+Table VI feature ablation,Complete,table_vi_feature_ablation.csv
+Table VII split comparison,Complete,table_vii_split_comparison.csv
+Table VIII implementation traceability,Complete with corrected function name,paper_traceability.csv
+"Accuracy, precision, recall, F1",Complete with imbalance context,model tables and metric_definitions.csv
+"FAR, FRR, EER, ROC-AUC",Complete,"all model tables, ROC, sensitivity figures"
+Confusion matrix,Complete,confusion_matrix_k5.png
+Statistical tests and intervals,Complete for seed-42 CNN–GRU,statistical_analysis_k5.csv
+Session stability,Complete as repeated-split sensitivity,sensitivity_all_seeds.csv and sensitivity figures
+Hardware sensitivity,Not measurable from supplied data,Explicit limitation and open question
+Imitation/replay resistance,Not tested,Explicit limitation and next step
+Ethics/privacy,Addressed narratively,limitations and deployment section

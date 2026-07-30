@@ -1,0 +1,15 @@
+Section,Question,Chart,Family,Claim
+Accuracy interpretation,Why is ordinary accuracy high?,accuracy_context.png,Composition + distribution,The 9:1 decision imbalance inflates ordinary accuracy.
+Robustness,How variable are metrics across splits?,sensitivity_distributions.png,Distribution,Performance varies materially across all 30 fixed splits.
+Security tradeoff,How do FAR and FRR co-vary?,sensitivity_far_frr.png,Relationship,Seed 42 is favorable but not the primary estimate.
+Security snapshot,What decisions were made?,confusion_matrix_k5.png,Matrix,Seed-42 counts are reproducible but descriptive.
+Interaction count,Does more movement help consistently?,repeated_split_k_tradeoff.png,Uncertainty,K changes FAR/FRR with non-monotonic tradeoffs.
+Model comparison,Does CNN–GRU win?,neural_model_comparison.png,Grouped comparison,The hybrid model does not dominate neural baselines.
+Classical comparison,How do classical models compare?,classical_model_comparison.png,Grouped comparison,Classical baselines are competitive.
+Threshold behavior,How strong is score ranking?,roc_curves_k5.png,ROC,Ranking is strong but low-FAR evidence is discrete.
+Feature groups,Do engineered channels help?,feature_ablation.png,Grouped comparison,Feature gains are mixed across metrics.
+Feature influence,Which summaries drive logistic models?,feature_influence_logistic.png,Ranked bar,Timing and click dynamics dominate coefficients.
+Per-user robustness,Which identities are unstable?,per_user_robustness.png,Heatmap,Error rates vary by claimed identity.
+Cohort,How was the final cohort formed?,cohort_construction.png,Stage comparison,Schema eligibility substantially narrows the source cohort.
+Split comparison,Does random splitting inflate results?,split_comparison.png,Grouped comparison,The expected inflation is not observed here.
+Training,How stable is neural training?,training_history.png,Trend,Per-user training histories expose convergence variation.

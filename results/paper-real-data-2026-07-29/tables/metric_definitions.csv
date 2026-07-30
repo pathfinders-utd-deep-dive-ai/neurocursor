@@ -1,0 +1,9 @@
+Metric,Definition,Use
+Ordinary accuracy,(TP + TN) / all decisions,Reported for paper compatibility; inflated by 9:1 impostor/genuine decision composition.
+Balanced accuracy,(true-accept rate + true-reject rate) / 2,Primary accuracy context for imbalanced verification decisions.
+FAR,FP / (FP + TN),Unauthorized acceptance rate; macro values average user verifiers.
+FRR,FN / (FN + TP),Legitimate-user rejection rate; report macro and pooled values separately.
+EER,Approximate point where FAR equals FRR,Threshold-independent score-separation summary derived from ROC points.
+ROC-AUC,Area under true-accept versus false-accept curve,Ranking quality across thresholds; does not guarantee a deployable FAR.
+Macro average,Equal average across ten user-specific verifiers,Prevents high-volume users from dominating a metric.
+Pooled rate,Rate recomputed from summed confusion counts,Represents the decision-weighted aggregate; may differ from macro rates.
