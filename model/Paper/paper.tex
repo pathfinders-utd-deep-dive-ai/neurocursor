@@ -15,17 +15,18 @@
 
 \author{
 \IEEEauthorblockN{
-Shaurya Saxena,
-Chetan Gangireddy,
+Shaurya Saxena\textsuperscript{*},
 Shreehan Aalok Pathak,
-and Hamid Abdul Mossa
+Hamid Abdul Mossa,
+and Chetan Gangireddy
 }
 \IEEEauthorblockA{
-July 2026\\
-Computer Science Department\\
-The University of Texas at Dallas\\
-Richardson, Texas, United States
-%ORCID
+\textit{Department of Computer Science}\\
+\textit{The University of Texas at Dallas}\\
+Richardson, TX, USA\\
+\textsuperscript{*}Corresponding author:
+\texttt{shaurya.saxena090@gmail.com}\\
+ORCID: 0009-0001-6684-1377
 }
 }
 
@@ -1294,6 +1295,70 @@ The most compelling evidence provided by this study is derived from the comprehe
 
 Contrary to initial hypotheses, the anticipated performance superiority of the CNN--GRU architecture was not realized during evaluation. In the fixed neural comparison, the GRU-only model achieved superior metrics with lower FAR, FRR, and EER values, while several classical baseline configurations demonstrated competitive performance. Furthermore, experiments involving interaction-count variations and feature-ablation studies produced heterogeneous outcomes rather than consistently favorable trends. These negative results are deliberately retained within the analysis, as the selective reporting of only the optimal model, feature subset, or data split would constitute an unjustifiable overstatement of the empirical evidence.
 
+\subsection{Comparison with Prior Mouse-Dyanmics Results}
+
+Table~\ref{tab:prior_work_comparison} presents the findings from NeuroCursor alongside a selection of established results in the field of mouse-dynamics authentication. It is important to note that these figures are intended to offer numerical context rather than serve as a definitive ranking. The reason is that comparing them directly is difficult due to the wide variety of methodologies used across different studies. Specifically, researchers often employ different datasets and interaction tasks, while the lengths of decision units and the strategies for constructing negative samples also vary. Furthermore, differences in class balance, data split procedures, and the specific methods used for threshold calibration mean that these results exist within their own distinct experimental frameworks.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Numerical Context from Prior Mouse-Dynamics Studies. These Results
+Do Not Constitute a Head-to-Head Benchmark.}
+\label{tab:prior_work_comparison}
+\begin{tabular}{p{2.4cm}p{4.8cm}p{2.5cm}cccc}
+\toprule
+\textbf{Study} &
+\textbf{Dataset and Evaluation} &
+\textbf{Decision Unit} &
+\textbf{AUC (\%)} &
+\textbf{EER (\%)} &
+\textbf{FAR (\%)} &
+\textbf{FRR (\%)} \\
+\midrule
+\textbf{NeuroCursor} &
+10 identities; randomized challenge; 30 session-separated logistic fits &
+5 directed movements &
+98.78 &
+1.49 &
+0.63$^{*}$ &
+35.89$^{*}$ \\
+
+Antal and Fej\ 'er \cite{antalFejer2020} & Balabit; 10 users; 1D-CNN authentication using all available blocks and 128 mouse events & 
+98.00 &
+-- &
+-- &
+-- \\
+
+Antal and Egyed-Zsigmond \cite{antalEgyed2019} &
+Balabit benchmark test data; scenario B; set-of-actions evaluation &
+20 mouse actions &
+89.94 &
+18.80 &
+-- &
+-- \\
+
+Wang \textit{et al.} \cite{wang2025Mouse} &
+Balabit; LT-AMouse blind-attack evaluation &
+MAU length 90--130 &
+97.73 &
+6.14 &
+-- &
+-- \\
+\bottomrule
+\end{tabular}
+
+\vspace{1mm}
+\begin{minipage}{0.97\textwidth}
+\footnotesize
+
+$^{*}$The FAR and FRR for NeuroCursor are specifically calculated at its strict operating point, which was calibrated during the validation phase. It is worth noting that the EER comes from the score distributions separately; because of this, it is not a simultaneous measurement with the strict FAR and FRR mentioned above. In cases where a dash appears, that just means the authors did not report that particular metric for the given configuration.
+\end{minipage}
+\end{table*}
+
+In terms of numerical performance, the mean ROC--AUC of 98.78\% achieved by NeuroCursor is comparable to the 98.00\% AUC reported by Antal and Fej\'er, as well as the 97.73\% AUC cited for LT-AMouse. While the mean EER for NeuroCursor (1.49\%) appears lower than the EER values associated with these external configurations, such disparities should not be viewed as definitive evidence of statistical superiority. This is because NeuroCursor utilizes a restricted, randomized challenge and a specific ten-identity cohort, whereas the benchmark studies rely on fundamentally different datasets and evaluation frameworks. Additionally, the strict operating point for NeuroCursor resulted in a mean FRR of 35.89\%, highlighting a notable trade-off in usability despite the strong classification metrics. Ultimately, a rigorous claim of superiority would necessitate a head-to-head evaluation where all systems are tested using identical data splits, decision units, and calibration procedures.
+
+The reported metrics for LT-AMouse are derived from Table III of \cite{wang2025Mouse}, which provides specific Balabit F1, AUC, and EER values of 94.65\%, 97.73\%, and 6.14\%. Although the abstract of that study identifies 94.65\% as the Balabit AUC, the more granular data from the comparison table is utilized here to ensure precision regarding the source of these values.
+
 \subsection{Security and Usability Implications}
 
 NeuroCursor is most appropriately categorized as a supplemental authentication signal within a multi-layered security framework. In a practical deployment scenario, a low behavioral score could be utilized to trigger step-up authentication mechanisms rather than serving as a basis for an immediate denial of access. While increasing the number of movements $K$ was shown to improve the repeated strict-verifier averages, this improvement came at a temporal cost, as the mean duration of the challenge increased from 0.98 s at $K=1$ to 4.43 s at $K=5$. Furthermore, the selection of a more rigorous threshold successfully reduced the FAR but simultaneously led to a higher FRR. Consequently, the establishment of a deployment threshold must carefully account for the specific threat model, user accessibility requirements, the cost of account recovery, and the relative operational consequences of both false acceptance and false rejection.
@@ -1390,6 +1455,51 @@ Results &
 
 \FloatBarrier
 
+\subsection{AI-Assisted Development Disclosure}
+
+\section*{AI-Assisted Development Disclosure}
+
+The initial conception of NeuroCursor, the design of its data-acquisition framework, and the selection of the CNN--GRU architecture arose from the authors' independent research. The core implementation and experimental methodology were likewise completed by the authors prior to the introduction of automated assistance. OpenAI Codex, accessed through the ChatGPT desktop interface using the GPT-5.6 Sol model, was subsequently employed in a limited supplementary capacity. Its technical contribution was confined to assisting with the implementation of a small number of additional engineered features and the configuration of the $K=1$, $K=3$, and $K=5$ evaluation workflows \cite{openaiCodexModels}. All such extensions were specified, reviewed, and empirically verified by the authors, who independently interpreted the resulting data and retain sole responsibility for the methodology, findings, conclusions, and submitted manuscript.
+
+\section*{Author Contributions}
+
+\textbf{Shaurya Saxena:} Lead authorship, research direction, and primary
+responsibility for the preparation, organization, and revision of the
+manuscript, including the literature review, mathematical formulation,
+experimental methodology, results, discussion, and final presentation of the
+research. Additional contributions included project conceptualization,
+particularly the framing of NeuroCursor as a supplemental two-factor or
+multi-factor authentication mechanism; development of the advance research
+outline that defined the proposed workflow and evaluation framework;
+presentation development; mathematical feature design; experimental
+evaluation; formal analysis; validation of reported findings; and
+interpretation of results.
+
+\textbf{Hamid Abdul Mossa:} Original project conceptualization and primary
+technical responsibility for the design and development of NeuroCursor,
+including its model architecture and end-to-end software system. He led the
+detailed design, refinement, implementation, and integration of the
+machine-learning model, translating the research outline and project
+requirements into an operational architecture. His contributions also
+included backend and frontend development, machine-learning pipeline
+integration, end-to-end system integration, software testing and debugging,
+and contributions to experimental analysis and interpretation of results.
+
+\textbf{Shreehan Aalok Pathak:} Frontend design and development, including
+the implementation of interactive interface components and integration of
+the user interface with the broader NeuroCursor workflow. Additional
+contributions included supporting model development and assisting with the
+connection between the model and application interface.
+
+\textbf{Chetan Gangireddy:} Early contributions to model-architecture
+development, including participation in the initial exploration of model
+designs and system requirements. Additional contributions included
+background research, the ideation of candidate behavioral features, and
+support for data loading and initial data-ingestion workflows.
+
+All authors reviewed the completed work, approved the final manuscript, and
+accept responsibility for their respective contributions.
+
 \section*{Acknowledgment}
 The authors gratefully acknowledge Dr. Anurag Nagar for his guidance and mentorship throughout this research process. The authors also thank Hamid Rouhani, a Ph.D. student in computer science at The University of Texas at Dallas, for his valuable research guidance and support.
 
@@ -1430,6 +1540,14 @@ M. Antal and N. Fej{\'e}r,
 vol. 12, no. 1, pp. 39--50, 2020,
 doi: 10.2478/ausi-2020-0003.
 
+\bibitem{antalEgyed2019}
+M. Antal and E. Egyed-Zsigmond,
+``Intrusion detection using mouse dynamics,''
+
+\emph{IET Biometrics},
+vol. 8, no. 5, pp. 285--294, 2019,
+doi: 10.1049/iet-bmt.2018.5126.
+
 \bibitem{wang2025Mouse}
 Y. Wang, C. Wu, Y. Liao, and M. You,
 ``Optimizing mouse dynamics for user authentication by machine learning:
@@ -1457,6 +1575,14 @@ Google,
 [Online]. Available:
 \url{https://developers.google.com/recaptcha/docs/v3}.
 Accessed: Jul. 2026.
+
+\bibitem{openaiCodexModels}
+OpenAI,
+``Models,''
+\emph{ChatGPT Learn}.
+[Online]. Available:
+\url{https://learn.chatgpt.com/docs/models}.
+Accessed: Jul. 30, 2026.
 
 \bibitem{acien2020BeCAPTCHA}
 A. Acien, A. Morales, J. Fierrez, and R. Vera-Rodriguez,
