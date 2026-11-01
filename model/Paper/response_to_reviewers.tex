@@ -43,10 +43,10 @@ CNN--GRU justification & No longer recommends or ``retains'' CNN--GRU; reports
 it as a tested negative result because GRU-only and classical models perform
 better on key metrics. \\
 Enrollment sufficiency & Clarifies that three sessions is a split-eligibility
-rule, not a stable minimum; adds a prespecified learning-curve protocol. \\
+rule, not a stable minimum; adds a nested learning curve across three splits. \\
 Temporal dependence & Removes any implication that mutual information was
-demonstrated; specifies permutation, reversal, and matched-capacity controls
-required to test it. \\
+demonstrated; adds retrained time-permutation and low-order feature controls
+for CNN--GRU and GRU-only. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -107,10 +107,15 @@ noise-sensitive differentiation, while explicitly avoiding causal claims.}
 explains why correlated standardized coefficients are descriptive rather than
 causal. The Discussion identifies two plausible but unproven explanations for
 the hybrid's underperformance---redundancy with engineered channels and greater
-estimation difficulty in a small cohort. Because the current study did not run
-a nested enrollment learning curve, we do not invent a data-volume threshold;
-instead, we add the exact experiment and stopping criterion required to
-establish one.}
+estimation difficulty in a small cohort. We additionally ran a nested logistic
+learning curve across seeds 0, 1, and 2, and retrained CNN--GRU and GRU-only with
+full ordered, full time-permuted, and low-order inputs at seed 42. Removing
+acceleration, jerk, angular velocity, and curvature reduces hybrid EER from
+7.76\% to 2.52\%, but raises GRU-only EER from 1.09\% to 7.86\%.
+The low-order logistic representation also performs worse overall. These
+architecture-dependent outcomes support a cautious feature-quality explanation,
+not a blanket claim that derivative features are harmful. The new Results
+subsection reports all conditions, including unfavorable findings.}
 
 \section*{Reviewer 2}
 
@@ -133,20 +138,23 @@ movement decisions.}
 
 \subsection*{Comment 3: Does training-data scale affect accuracy, and what is the minimum enrollment data?}
 
-\response{The current experiment cannot support a credible numerical minimum.
-The ten-identity cohort is small, one identity has only three eligible sessions,
-and no nested enrollment-size sweep was performed. We now state this as a
-limitation rather than treating the three-session eligibility rule as evidence
-of stability. This change prevents an unsupported operational recommendation.}
+\response{Yes, training scale materially affects the measured performance.
+We ran new logistic learning curves across seeds 0, 1, and 2 with nested
+training-session caps of 1, 3, 5, 10, 20, and all available sessions. Within
+each split, validation and test sessions remain fixed, preprocessing is fitted
+on the selected training sessions, and thresholds are recalibrated exclusively
+on validation data. Mean strict FRR falls from 82.22\% at one session to
+37.78\% at the five-session cap and 32.78\% at the full budget.}
 
-\change{A new ``Enrollment-Size and Temporal-Dependence Scope'' subsection
-specifies a follow-up learning curve with fixed validation/test sessions,
-increasing training budgets (for example 3, 5, 10, 15, and 20 sessions),
-repeated subsampling, FAR/FRR/EER confidence intervals, and
-failure-to-enroll reporting. It also requires an a priori stability rule, such
-as two consecutive budget increments with changes below a prespecified
-tolerance. The Limitations and Conclusion now say explicitly that the minimum
-enrollment requirement remains unestablished.}
+\change{The new Results subsection includes a complete FAR/FRR/EER table and
+archives actual per-user session counts. Budgets are capped by available
+history: one identity has only one training session, while the others have
+17--25 at the full budget. FRR is nonmonotonic across intermediate budgets and
+the full-budget FRR ranges from 21.67\% to 45.00\% across the three splits.
+Accordingly, the observed data do not support a stable universal minimum.
+The three-session eligibility rule remains a splitting requirement. Larger
+longitudinal cohorts and replicated learning curves are required to estimate
+a deployment enrollment minimum.}
 
 \subsection*{Comment 4: What justifies retaining CNN--GRU after H1 is rejected?}
 
@@ -164,18 +172,23 @@ support retaining the hybrid.}
 
 \subsection*{Comment 5: Does the model capture mutual information across sampling points rather than acceleration-like features?}
 
-\response{The current experiment does not demonstrate that claim. A recurrent
-architecture has the capacity to use temporal order, but architecture alone is
-not empirical evidence of cross-sample mutual information. GRU-only's stronger
-result is indirect and is confounded by architecture, optimization, and
-parameter-count differences. We removed language that could be read as proof
-of mutual-information capture.}
+\response{Architecture alone does not demonstrate cross-sample mutual
+information. We therefore added a direct order-sensitivity control: retrain
+both networks after independently permuting the 128 sample vectors within each
+trajectory. This preserves each channel's marginal distribution and the
+cross-channel relationships at each sample, while destroying chronological
+order. Splits, architecture, epoch limit, early stopping, and initialization
+seed are held fixed across the fresh conditions.}
 
-\change{The new scope subsection specifies the missing controls: retrain the
-same model after within-trajectory time-index permutation while preserving
-channel marginals, compare with time reversal, and include a summary-only and
-matched-capacity baseline. The Limitations and Conclusion now identify this as
-an unresolved question.}
+\change{Fresh seed-42 GRU-only EER rises from 1.09\% with ordered full inputs
+to 8.10\% after permutation, consistent with useful chronological structure.
+CNN--GRU EER instead falls from 7.76\% to 4.86\%, so this control does not
+support temporal-order benefit for the hybrid. Low-order feature controls are
+also reported. These are new fits, distinct from the historical comparison;
+stochastic fitting can yield different weights despite the same nominal seed.
+One-split controls cannot establish causality or estimate mutual information.
+We removed any implication that such information was demonstrated, and state
+that reversal, matched-capacity controls, and replication remain necessary.}
 
 \subsection*{Comment 6: Major revision is required}
 

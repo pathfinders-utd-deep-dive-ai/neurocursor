@@ -42,7 +42,7 @@ serve as a supplemental behavioral identity signal. Each movement is represented
 by raw, spatial, kinematic, geometric, and target-relative time-series channels.
 We compare a candidate convolutional neural network--gated recurrent unit
 (CNN--GRU), CNN-only and GRU-only networks, five classical classifiers, three
-feature sets, and decisions formed from one, three, or five movements. The
+primary feature sets, and decisions formed from one, three, or five movements. The
 evaluable cohort contains 10 anonymized identities, 266 sessions, and 1,330
 movements; sessions are isolated across training, validation, and test subsets,
 and user-specific thresholds are calibrated only on validation data. Across 30
@@ -54,8 +54,8 @@ observed false accepts. GRU-only and several classical baselines outperform the
 CNN--GRU on key metrics, while feature ablations show mixed rather than uniform
 benefit from higher-order channels. These results support cursor dynamics as a
 research direction for step-up authentication, but the small cohort, high FRR,
-split sensitivity, absent device metadata, and unmeasured enrollment-size and
-sequence-order effects preclude deployment claims.
+split sensitivity, absent device metadata, and limited enrollment-size and
+sequence-order evidence preclude deployment claims.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -89,7 +89,7 @@ The evaluable dataset contains 10 anonymized identities, 266 sessions, and
 1,330 movements. All movements from a session remain in the same training,
 validation, or test subset. User-specific thresholds are calibrated on
 validation data and then frozen for testing. We compare a candidate CNN--GRU,
-CNN-only and GRU-only networks, five classical classifiers, three feature sets,
+CNN-only and GRU-only networks, five classical classifiers, three primary feature sets,
 and 30 fixed session-separated splits. The repeated-split strict logistic
 verifier at $K=5$ achieves mean pooled balanced accuracy of 82.82\%, mean macro
 FAR of 0.63\%, mean macro FRR of 35.89\%, and mean macro ROC--AUC of 98.78\%.
@@ -191,8 +191,8 @@ NeuroCursor &
 Randomized point-and-click challenge; 10 identities and 266 sessions &
 27 temporal channels; neural and 121-value classical representations &
 Session-isolated $K=1,3,5$ decisions and target-relative analysis &
-Small cohort; no device labels, longitudinal external cohort, or direct
-enrollment-size sweep \\
+Small cohort; no device labels or longitudinal external cohort; limited
+enrollment-size and order controls \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -537,8 +537,8 @@ running path efficiency, $d_x,d_y,d,c$, heading error, cross-track error \\
 
 Table~\ref{tab:model_inputs} states the exact tensors and summary vectors used
 by each model family. Neural models receive the complete ordered sequence. The
-classical models receive four distributional statistics for every selected
-channel. For the full representation, they also receive 13 movement-level
+classical models receive mean, standard deviation, minimum, and maximum for
+every selected channel. For the full representation, they also receive 13 movement-level
 statistics: duration, path length, start-to-target distance, path efficiency,
 mean and maximum speed, mean and maximum acceleration, pause duration, click
 timing, acceleration energy, jerk energy, and dimensionless jerk. Consequently,
@@ -556,6 +556,7 @@ not the same mathematical representation.
 Raw & 5 & $128\times5$ & $4d=20$ values \\
 Raw + spatial + kinematic & 17 & $128\times17$ & $4d=68$ values \\
 Full & 27 & $128\times27$ & $4d+13=121$ values \\
+Added low-order control & 19 & $128\times19$ & $4d=76$ values \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -589,7 +590,7 @@ Dropout & 0.20 & -- \\
 Conv1D & 64 filters, kernel 3 & ReLU \\
 Batch normalization & -- & -- \\
 Max pooling & pool size 2 & -- \\
-GRU & 64 units & tanh/sigmoid gates \\
+GRU & 64 units; dropout 0.20 & tanh/sigmoid gates \\
 Dense & 32 units & ReLU \\
 Dropout & 0.30 & -- \\
 Dense & 1 unit & Sigmoid \\
@@ -794,26 +795,29 @@ Only attempts containing at least $K$ valid movements are included.
 
 The eligibility rule of at least three sessions per identity exists only to
 permit disjoint training, validation, and test subsets. It is not evidence that
-three sessions are enough for stable enrollment. This study does not perform a
-nested enrollment learning curve, so it cannot state a minimum number of
-sessions or minutes per user. A defensible follow-up should hold validation and
-test sessions fixed, refit each user verifier with increasing training-session
-budgets (for example 3, 5, 10, 15, and 20 sessions), repeat the subsampling, and
-report FAR, FRR, EER, confidence intervals, and failure-to-enroll rates. A
-minimum should be declared only after an a priori stability criterion is met,
-such as two consecutive budget increments whose confidence intervals and error
-rates change by less than a prespecified tolerance.
+three sessions are enough for stable enrollment. In the revision, we added a
+nested logistic learning curve for seeds 0, 1, and 2. Within each split,
+validation and test sessions remain fixed. Training sessions are independently
+ordered per identity and nested caps of 1, 3, 5, 10, 20, and all available
+sessions are used to refit preprocessing, classifiers, and validation thresholds.
+Each session supplies five movements. A cap uses all available sessions when
+an identity has fewer than requested; actual per-identity counts are archived.
+Thus the curves preserve the ten-identity cohort and do not imply that every
+identity supplies the nominal budget. These retrospective development analyses
+quantify training-scale sensitivity; they do not establish a population minimum.
 
-Likewise, the current experiment does not estimate mutual information between
-time steps and does not include an order-destruction control. GRU-only
-outperforming CNN-only and CNN--GRU is consistent with useful temporal order,
-but it does not prove that interpretation because architecture, optimization,
-and parameter count also differ. The appropriate control is to retrain the same
-model after independently permuting time indices within each trajectory, while
-preserving each channel's marginal distribution, and compare it with a
-time-reversal control and a summary-only baseline. Until that experiment is
-performed, this paper describes the network as capable of temporal modeling and
-does not claim that it has measured cross-sample mutual information.
+To test temporal-order reliance, we retrain CNN--GRU and GRU-only at seed 42
+on ordered full features, time-permuted full features, and ordered low-order
+features. Permutation occurs after interpolation to 128 steps and jointly
+reorders multichannel sample vectors independently within each movement, in
+training, validation, and test data. This preserves channel marginals and
+contemporaneous cross-channel relationships while destroying chronological
+order. The original architecture and training settings are held fixed and the
+random seed is reset for each condition. These fresh fits are reported separately
+from the historical seed-42 table because stochastic training need not reproduce
+the earlier fitted weights. This is an order-sensitivity control, not a direct
+mutual-information estimator. Time reversal and matched-capacity controls remain
+future work.
 
 \subsection{Evaluation Metrics}
 
@@ -1113,6 +1117,78 @@ splits. Error bars show split variation.}
 \label{fig:feature_influence}
 \end{figure}
 
+\subsection{Additional Enrollment and Feature-Quality Experiments}
+\label{sec:reviewer_experiments}
+
+Table~\ref{tab:enrollment_curve} reports the added learning curve at $K=5$.
+Training-data scale materially affects discrimination and legitimate-user
+rejection. The one-session cap has mean strict FRR 82.22\%, compared with
+32.78\% using all available training sessions. Gains are not monotonic:
+FRR at caps 5, 10, and 20 is 37.78\%, 39.44\%, and 38.33\%, respectively.
+The full-budget FRR ranges from 21.67\% to 45.00\% across these three splits.
+Consequently, these results do not demonstrate stable FAR/FRR at a universal
+minimum enrollment budget. One identity has only one training session in each
+split; the other identities have 17--25 at the full budget. The three overlapping
+holdouts are sensitivity estimates rather than independent population replicates.
+
+\begin{table}[t]
+\centering
+\caption{Added Logistic Learning Curve: Means Over Three Session Splits (\%)}
+\label{tab:enrollment_curve}
+\begin{tabular}{lrrr}
+\toprule
+Training-session cap & Strict FAR & Strict FRR & EER \\
+\midrule
+1 & 2.02 & 82.22 & 17.60 \\
+3 & 1.00 & 63.33 & 11.42 \\
+5 & 1.70 & 37.78 & 5.63 \\
+10 & 0.71 & 39.44 & 2.85 \\
+20 & 0.71 & 38.33 & 0.57 \\
+All & 0.71 & 32.78 & 0.65 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+An additional low-order representation removes acceleration and jerk channels,
+angular velocity, and curvature, leaving 19 temporal channels. For logistic
+regression this also removes the 13 extra derived summaries because the original
+summary routine requires the omitted channels, yielding 76 distributional
+statistics. Its mean strict FAR/FRR/EER are 1.01\%/48.33\%/1.72\%, compared
+with 0.71\%/32.78\%/0.65\% for the full-budget full representation. This
+comparison changes both temporal channels and derived summaries, so it cannot
+isolate one noisy derivative. It does show that this feature-removal strategy
+does not improve the logistic verifier overall.
+
+The new neural controls (Table~\ref{tab:order_controls}) show different responses
+to time permutation. GRU-only EER increases from 1.09\% to 8.10\%, consistent
+with useful chronological structure in that fresh fit. CNN--GRU EER instead
+decreases from 7.76\% to 4.86\%, providing no evidence of a temporal-order
+advantage for the hybrid. Removing higher-order channels reduces CNN--GRU EER
+to 2.52\% but raises GRU-only EER to 7.86\%. Thus noise-sensitive feature
+quality is a plausible contributor to the hybrid's underperformance, but the
+effect depends on architecture and metric. These six fits use one split, so no
+statistical or population-level causal conclusion follows. In particular, they
+do not measure mutual information or distinguish time dependence in explicit
+timing/kinematic channels from other sequential structure.
+
+\begin{table}[t]
+\centering
+\caption{Fresh Seed-42 Neural Controls at $K=5$ (\%)}
+\label{tab:order_controls}
+\begin{tabular}{llrrrr}
+\toprule
+Model & Input & AUC & FAR & FRR & EER \\
+\midrule
+CNN--GRU & Ordered full & 95.73 & 8.74 & 33.33 & 7.76 \\
+CNN--GRU & Permuted full & 96.26 & 6.89 & 36.67 & 4.86 \\
+CNN--GRU & Low-order & 96.81 & 11.82 & 18.33 & 2.52 \\
+GRU-only & Ordered full & 99.13 & 6.21 & 26.67 & 1.09 \\
+GRU-only & Permuted full & 95.83 & 5.93 & 20.00 & 8.10 \\
+GRU-only & Low-order & 95.69 & 11.23 & 18.33 & 7.86 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Session-Separated Evaluation}
 
 The fixed movement-level comparison did not show the expected inflation from
@@ -1206,8 +1282,8 @@ the fixed neural comparison, GRU-only had lower FAR, FRR, and EER, while several
 classical configurations were also stronger. The available sample therefore
 does not support the extra convolutional stage: local filters may be redundant
 with the engineered channels, and the larger hybrid may be harder to estimate
-from this cohort. Those explanations remain hypotheses because no matched
-capacity control or enrollment-size learning curve was run. For the present
+from this cohort. The added learning curve and feature-removal controls support
+data and feature sensitivity, while no matched-capacity control was run. For the present
 data, CNN--GRU is an evaluated negative result rather than a retained system
 choice. Interaction-count and feature-ablation experiments are likewise mixed,
 and the paper reports those outcomes rather than selecting only the most
@@ -1381,13 +1457,14 @@ This investigation is subject to several critical limitations. The evaluable
 cohort is restricted to 10 anonymized identities and 266 sessions; one identity
 contributed only three eligible sessions, making some validation and test rates
 highly discrete. Thirty repeated splits reuse this same cohort and measure
-partition sensitivity, not population generalization. The study does not vary
-the amount of enrollment data, so it establishes neither a minimum number of
-sessions nor a minimum collection duration for stable FAR and FRR. The
-three-session inclusion rule is a splitting requirement only.
+partition sensitivity, not population generalization. The added enrollment
+curve covers three splits with capped budgets and unequal per-user history;
+it establishes neither a population minimum number of sessions nor a minimum
+collection duration for stable FAR and FRR. The three-session inclusion rule
+is a splitting requirement only.
 
-The sequence experiments also omit time-index permutation, reversal, and
-matched-capacity controls. Consequently, the architecture comparison does not
+The added time-index permutation experiment covers one split and omits reversal
+and matched-capacity controls. Consequently, the architecture comparison does not
 demonstrate mutual information across sampling points or prove that the GRU
 uses temporal order rather than acceleration-like and timing marginals. The
 feature ablations and grouped logistic coefficients instead show that timing,
@@ -1429,12 +1506,14 @@ achieved mean pooled balanced accuracy of 82.82\%, mean macro FAR of 0.63\%,
 mean macro FRR of 35.89\%, and mean macro ROC--AUC of 98.78\%. Performance
 varied materially across splits, and CNN--GRU failed to outperform GRU-only or
 the strongest classical models. We therefore do not recommend retaining the
-hybrid on the present evidence. The study also does not establish enrollment
-sufficiency or whether temporal order, rather than marginal kinematic features,
-drives sequence-model performance. NeuroCursor remains an exploratory framework
+hybrid on the present evidence. The added enrollment curve shows substantial
+training-scale sensitivity without establishing a stable minimum. Time
+permutation degrades GRU-only EER but improves hybrid EER in fresh seed-42 fits;
+feature removal also has architecture-dependent effects. These controls do not
+establish cross-sample mutual information. NeuroCursor remains an exploratory framework
 for supplemental verification, not a deployment-ready replacement for an
 established factor. Confirmatory work requires an untouched external cohort,
-an enrollment learning curve, sequence-order controls, longitudinal and
+replicated enrollment and sequence-order controls, longitudinal and
 cross-device metadata, rare-event impostor trials, accessibility analysis, and
 explicit replay and imitation attacks.
 
