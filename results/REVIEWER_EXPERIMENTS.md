@@ -1,4 +1,9 @@
-# Additional reviewer experiments
+# Initial additional reviewer experiments (archived)
+
+The manuscript now uses the stronger replicated controls described in
+`REPLICATED_REVIEWER_PROTOCOL.md`. This file documents the initial revision
+experiments, preserved for traceability; its capped budgets and one-split
+neural controls should not be confused with the strengthened results.
 
 These retrospective development experiments address Reviewer 1 comment 3 and
 Reviewer 2 questions about enrollment scale, feature quality, and temporal order.

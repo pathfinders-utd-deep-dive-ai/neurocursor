@@ -1322,7 +1322,15 @@ def run_configuration(
     feature_set: str,
     persist_models: bool,
     include_statistics: bool = True,
+    sequence_transform=None,
+    classical_distribution_only: bool = False,
 ):
+    if persist_models and (
+        sequence_transform is not None or classical_distribution_only
+    ):
+        raise ValueError(
+            "Experimental input controls cannot be exported as production models."
+        )
     train_indexes, validation_indexes, test_indexes, split_type = split
     selected_indexes = feature_indexes(dataset.feature_names, feature_set)
     unstandardized_data = prepare_sequences(
@@ -1330,6 +1338,8 @@ def run_configuration(
         args.sequence_length,
         selected_indexes,
     )
+    if sequence_transform is not None:
+        unstandardized_data = sequence_transform(unstandardized_data)
     mean, standard_deviation = fit_standardizer(
         unstandardized_data[train_indexes]
     )
@@ -1342,7 +1352,7 @@ def run_configuration(
     if model_type in CLASSICAL_MODELS:
         classical_data = summarize_sequences(
             unstandardized_data,
-            FEATURE_SETS[feature_set],
+            None if classical_distribution_only else FEATURE_SETS[feature_set],
         )
         classical_mean = classical_data[train_indexes].mean(
             axis=0, keepdims=True
@@ -1555,7 +1565,7 @@ def run_configuration(
         "split_type": split_type,
         "users": user_results,
         "mean_user_metrics": _mean_user_metrics(user_results),
-        "runtime": runtime_metadata(),
+        "runtime": {**runtime_metadata(), "seed": int(args.seed)},
         "implementation_notes": {
             "neural_baselines": (
                 "The paper names CNN-only and GRU-only baselines but does "
@@ -1563,8 +1573,10 @@ def run_configuration(
                 "corresponding proposed-model component and Dense head."
             ),
             "classical_features": (
-                "Classical models use per-channel distribution summaries "
-                "plus Eqs. 26-35 when the full channels are available."
+                "Mean, standard deviation, minimum and maximum per channel only."
+                if classical_distribution_only else
+                "Per-channel distribution summaries plus 13 derived summaries "
+                "when all required source channels are available."
             ),
             "feature_channels": (
                 "The full set is the union of Table I and the prose list in "

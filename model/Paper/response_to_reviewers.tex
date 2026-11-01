@@ -43,10 +43,11 @@ CNN--GRU justification & No longer recommends or ``retains'' CNN--GRU; reports
 it as a tested negative result because GRU-only and classical models perform
 better on key metrics. \\
 Enrollment sufficiency & Clarifies that three sessions is a split-eligibility
-rule, not a stable minimum; adds a nested learning curve across three splits. \\
+rule, not a stable minimum; adds exact-budget learning curves for three model
+families on a fixed eligible cohort across three splits. \\
 Temporal dependence & Removes any implication that mutual information was
-demonstrated; adds retrained time-permutation and low-order feature controls
-for CNN--GRU and GRU-only. \\
+demonstrated; adds timing-free ordered, permuted, and reversed coordinate
+controls for both networks across three splits plus an invariant comparator. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -103,19 +104,19 @@ raw plus spatial and kinematic features have slightly worse AUC, FRR, and EER
 than raw channels in the fixed CNN--GRU ablation. This provides evidence consistent with
 noise-sensitive differentiation, while explicitly avoiding causal claims.}
 
-\change{The Feature Ablation subsection now includes the grouped analysis and
-explains why correlated standardized coefficients are descriptive rather than
-causal. The Discussion identifies two plausible but unproven explanations for
-the hybrid's underperformance---redundancy with engineered channels and greater
-estimation difficulty in a small cohort. We additionally ran a nested logistic
-learning curve across seeds 0, 1, and 2, and retrained CNN--GRU and GRU-only with
-full ordered, full time-permuted, and low-order inputs at seed 42. Removing
-acceleration, jerk, angular velocity, and curvature reduces hybrid EER from
-7.76\% to 2.52\%, but raises GRU-only EER from 1.09\% to 7.86\%.
-The low-order logistic representation also performs worse overall. These
-architecture-dependent outcomes support a cautious feature-quality explanation,
-not a blanket claim that derivative features are harmful. The new Results
-subsection reports all conditions, including unfavorable findings.}
+\change{The grouped coefficient analysis remains descriptive. We strengthened
+the additional experiments in three ways: exact-budget enrollment curves
+cover logistic regression, CNN--GRU, and GRU-only on a fixed eligible cohort;
+coordinate-only temporal controls cover three splits; and both arms of the
+classical feature-removal comparison use the same four-statistic summary
+rule, with the 13 additional derived summaries excluded from both. All
+conditions and unfavorable outcomes are retained. The Results and Limitations
+distinguish measured effects from causal explanations.}
+
+The corrected full-versus-low-order logistic comparison yields mean strict
+FAR/FRR and EER of 0.71\%/40.56\%/1.15\% versus
+1.01\%/48.33\%/1.72\%. Removing the higher-order channel group does not
+improve these mean metrics under the common summary rule.
 
 \section*{Reviewer 2}
 
@@ -138,23 +139,27 @@ movement decisions.}
 
 \subsection*{Comment 3: Does training-data scale affect accuracy, and what is the minimum enrollment data?}
 
-\response{Yes, training scale materially affects the measured performance.
-We ran new logistic learning curves across seeds 0, 1, and 2 with nested
-training-session caps of 1, 3, 5, 10, 20, and all available sessions. Within
-each split, validation and test sessions remain fixed, preprocessing is fitted
-on the selected training sessions, and thresholds are recalibrated exclusively
-on validation data. Mean strict FRR falls from 82.22\% at one session to
-37.78\% at the five-session cap and 32.78\% at the full budget.}
+\response{We added exact-budget learning curves for logistic regression,
+CNN--GRU, and GRU-only across seeds 0, 1, and 2. The fixed eligible cohort
+contains seven identities, each with enough history to supply exactly 1, 5,
+10, and 20 training sessions after the holdouts, plus an all-available-session
+condition. Validation/test sessions remain fixed within each split. Training
+sets are nested; preprocessing and thresholds use only the selected training
+and unchanged validation subsets, respectively.}
 
-\change{The new Results subsection includes a complete FAR/FRR/EER table and
-archives actual per-user session counts. Budgets are capped by available
-history: one identity has only one training session, while the others have
-17--25 at the full budget. FRR is nonmonotonic across intermediate budgets and
-the full-budget FRR ranges from 21.67\% to 45.00\% across the three splits.
-Accordingly, the observed data do not support a stable universal minimum.
-The three-session eligibility rule remains a splitting requirement. Larger
-longitudinal cohorts and replicated learning curves are required to estimate
-a deployment enrollment minimum.}
+\change{The Results table reports all models and budgets, with split ranges
+and actual per-user counts archived. Before examining the strengthened grid,
+we specified an exploratory operational criterion: strict FAR at most 1\%
+and FRR at most 10\% in every split, with changes no greater than 1 percentage
+point FAR and 5 percentage points FRR at every larger tested budget. The paper
+evaluates this rule instead of choosing a favorable minimum after inspection.
+It explains that this cohort differs from the ten-identity primary study and
+that impostor training quantity changes with the budgets. No tested budget
+meets the fixed criterion for any model family. At 20 sessions per identity,
+mean strict FRR is 26.98\% for logistic regression, 47.62\% for CNN--GRU,
+and 39.68\% for GRU-only. The revision therefore reports that no usable stable
+minimum was demonstrated within the tested range; a population enrollment
+recommendation still requires larger longitudinal data.}
 
 \subsection*{Comment 4: What justifies retaining CNN--GRU after H1 is rejected?}
 
@@ -173,22 +178,25 @@ support retaining the hybrid.}
 \subsection*{Comment 5: Does the model capture mutual information across sampling points rather than acceleration-like features?}
 
 \response{Architecture alone does not demonstrate cross-sample mutual
-information. We therefore added a direct order-sensitivity control: retrain
-both networks after independently permuting the 128 sample vectors within each
-trajectory. This preserves each channel's marginal distribution and the
-cross-channel relationships at each sample, while destroying chronological
-order. Splits, architecture, epoch limit, early stopping, and initialization
-seed are held fixed across the fresh conditions.}
+information. The strengthened controls exclude elapsed time, inter-event time,
+derivatives, path progress, button state, and target channels: only normalized
+$x,y$ coordinates remain. CNN--GRU and GRU-only are each retrained on ordered,
+independently time-permuted, and reversed 128-sample trajectories across three
+session splits. Parameter counts, input dimensions, and fitting settings stay
+fixed within each architecture. Joint permutation preserves coordinate pairs
+and channel marginals.}
 
-\change{Fresh seed-42 GRU-only EER rises from 1.09\% with ordered full inputs
-to 8.10\% after permutation, consistent with useful chronological structure.
-CNN--GRU EER instead falls from 7.76\% to 4.86\%, so this control does not
-support temporal-order benefit for the hybrid. Low-order feature controls are
-also reported. These are new fits, distinct from the historical comparison;
-stochastic fitting can yield different weights despite the same nominal seed.
-One-split controls cannot establish causality or estimate mutual information.
-We removed any implication that such information was demonstrated, and state
-that reversal, matched-capacity controls, and replication remain necessary.}
+\change{A logistic comparator receives eight order-invariant coordinate
+summaries. Thus chronology is tested against an invariant representation
+without explicit timing or acceleration-like features. Deterministic operations
+and reset seeds improve reproducibility. All 21 conditions and split variation
+are reported. CNN--GRU's shuffled-minus-ordered EER differences are
+$-15.43$, $+1.08$, and $+15.47$ percentage points across the three splits.
+GRU-only EER improves after shuffling in all three splits. There is therefore
+no consistent chronological advantage in these timing-free inputs. These
+tests assess functional order sensitivity, not a numerical mutual-information
+estimate. The stronger claim is removed; geometric trajectory structure and
+reuse of the development cohort remain limitations.}
 
 \subsection*{Comment 6: Major revision is required}
 
