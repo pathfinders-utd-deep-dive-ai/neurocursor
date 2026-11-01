@@ -20,7 +20,7 @@ Initial reviewer runs remain archived separately in
 
 All 72 configurations passed independent reconstruction of session counts and split
 isolation from the source data, metric aggregation, exact nested budgets,
-dataset fingerprint, permutation/reversal invariants, and twelve regression
+dataset fingerprint, permutation/reversal invariants, and fifteen regression
 tests. Citations/references resolve, and all 19 manuscript pages and four
 response pages were rendered and visually inspected. The AI-Assisted
 Development section is byte-identical to its pre-change version.
@@ -31,6 +31,28 @@ documented the non-conservative resampled summary estimators, and qualified
 test isolation per fit rather than claiming untouched confirmatory evaluation.
 Coordinate-only controls are not described as eliminating all implicit timing
 or acquisition information. All 64 labels and 16 cited bibliography keys resolve.
+
+The subsequent audit corrected all three additional findings: the pooled
+binomial FAR bound is explicitly illustrative under independence and common
+error probability, not validated population coverage; pause/click summaries
+now have exact operational definitions and regression tests (including the
+fractional button-state and missing-click cases); and the research-question
+subsection now has a substantive summary rather than a floating table alone.
+The report generator preserves the same dependence caveat. Bootstrap and
+permutation summaries are disclosed as not participant-cluster adjusted.
+
+Repeatable read-only evidence audit (private dataset required):
+
+```sh
+python -m model.Paper.final_revision_audit --data /path/to/paper-dataset.json
+python -m unittest model.test_paper_pipeline model.test_reviewer_controls
+```
+
+The audit checks 72 configurations, 585 verifiers, 21,060 confusion-derived
+metric identities, ROC/AUC/EER consistency, threshold provenance, source session
+membership, nested exact training budgets, all 43 archived evidence hashes,
+document references, and the protected disclosure hash. It does not rerun
+neural fitting or certify participant provenance, consent, or population validity.
 
 Scope: the strengthened learning curves and temporal controls cover three
 overlapping splits. Enrollment covers seven eligible identities and temporal

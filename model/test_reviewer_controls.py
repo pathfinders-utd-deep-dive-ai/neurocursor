@@ -6,6 +6,36 @@ from model.Paper.reviewer_experiments import permute_time
 
 
 class ReviewerControlTests(unittest.TestCase):
+    def summary_fixture(self):
+        names=p.FULL_FEATURE_NAMES
+        x=np.zeros((1,11,len(names)),dtype=np.float32)
+        positions={name:i for i,name in enumerate(names)}
+        x[0,:,positions['elapsed_time']]=np.arange(11)/10
+        x[0,1:,positions['delta_time']]=.1
+        x[0,:,positions['speed']]=[0,.05,.1,1,2,3,4,5,6,7,8]
+        output_names=p.classical_summary_feature_names(names)
+        return x,positions,output_names
+
+    def test_pause_summary_uses_within_movement_speed_percentile(self):
+        x,pos,names=self.summary_fixture()
+        actual=p.summarize_sequences(x,p.FULL_FEATURE_NAMES)
+        # The 10th percentile is .05: first two samples qualify, but the
+        # first sample has zero elapsed interval. This is not a fixed-speed
+        # inactivity detector.
+        self.assertAlmostEqual(actual[0,names.index('derived:pause_duration')],.1)
+
+    def test_click_summary_uses_first_positive_including_fractional_state(self):
+        x,pos,names=self.summary_fixture()
+        x[0,4,pos['button_state']]=.2
+        x[0,5,pos['button_state']]=1
+        actual=p.summarize_sequences(x,p.FULL_FEATURE_NAMES)
+        self.assertAlmostEqual(actual[0,names.index('derived:click_timing')],.4)
+
+    def test_click_summary_without_positive_state_falls_back_to_duration(self):
+        x,pos,names=self.summary_fixture()
+        actual=p.summarize_sequences(x,p.FULL_FEATURE_NAMES)
+        self.assertAlmostEqual(actual[0,names.index('derived:click_timing')],1.)
+
     def test_experimental_inputs_cannot_export_incompatible_manifest(self):
         for options in ({'sequence_transform':lambda x:x},
                         {'classical_distribution_only':True}):

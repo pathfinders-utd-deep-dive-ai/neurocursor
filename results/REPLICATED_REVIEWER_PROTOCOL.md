@@ -12,6 +12,7 @@ python -m model.Paper.reviewer_replicated_controls --data /path/to/paper-dataset
 python -m model.Paper.reviewer_replicated_controls --data /path/to/paper-dataset.json --mode temporal
 python -m model.Paper.reviewer_replicated_controls --data /path/to/paper-dataset.json --mode feature
 python -m model.Paper.reviewer_strengthened_report --data /path/to/paper-dataset.json
+python -m model.Paper.final_revision_audit --data /path/to/paper-dataset.json
 python -m unittest model.test_paper_pipeline model.test_reviewer_controls
 ```
 
@@ -69,3 +70,10 @@ on validation data only. Report K=5 macro FAR/FRR/EER and pooled counts, all
 three splits, per-user outcomes, and paired differences; distinguish strict
 operating-point rates from ROC-derived EER. Overlapping splits are not independent
 population replications. Preserve the original AI-Assisted Development section.
+
+Uncertainty qualification: pooling reused attempts across verifiers does not
+create independent Bernoulli trials with a common error probability. Binomial
+intervals from this evaluation are illustrative under that assumption, not
+validated population coverage. The archived bootstrap and permutation
+summaries are not participant/session-cluster adjusted. External confirmation
+must prespecify dependence-aware inference appropriate to its sampling design.

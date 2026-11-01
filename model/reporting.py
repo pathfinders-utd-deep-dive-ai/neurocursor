@@ -218,7 +218,12 @@ def binomial_upper_bound(
     impostor_trials: int,
     confidence: float = 0.95,
 ) -> float:
-    """One-sided exact Clopper-Pearson upper bound for pooled FAR."""
+    """One-sided Clopper-Pearson bound under an iid Bernoulli model.
+
+    Pooling reused attempts across verifiers does not establish independence
+    or a common error probability. In that setting this is an illustrative
+    model-based calculation, not validated population coverage.
+    """
     if impostor_trials <= 0:
         raise ValueError("At least one impostor trial is required.")
     if false_accepts >= impostor_trials:
@@ -1677,7 +1682,7 @@ Each of the 26 seed-42 test sessions is evaluated once against its genuine verif
 
 ![Seed-42 K=5 confusion matrices](figures/confusion_matrix_k5.png)
 
-The logistic strict snapshot observed zero false accepts in 234 impostor decisions and five false rejects in 26 genuine decisions. That zero is not a population guarantee: its one-sided exact 95% FAR upper bound is **{precise_percent(upper_far_95)}**. The test results of multiple configurations had already been inspected before this configuration was highlighted, so this split cannot serve as an untouched final confirmation.
+The logistic strict snapshot observed zero false accepts in 234 impostor decisions and five false rejects in 26 genuine decisions. Under an independent, common-probability Bernoulli model, the illustrative one-sided 95% FAR upper bound is **{precise_percent(upper_far_95)}**. The 234 decisions reuse 26 physical attempts across verifiers; participant/session dependence and heterogeneous error probabilities are not accounted for. Nominal population coverage is therefore not established. The test results of multiple configurations had already been inspected before this configuration was highlighted, so this split cannot serve as an untouched final confirmation.
 
 {markdown_table(seed42_user_rows)}
 
@@ -1805,7 +1810,7 @@ The implementation uses training-only normalization, per-user one-versus-rest cl
 
 {markdown_table(statistics)}
 
-The one-sided permutation tests compare genuine and impostor scores for each claimed identity in the seed-42 CNN–GRU snapshot. ROC-AUC intervals use class-stratified bootstrap resampling; FAR and FRR use two-sided exact Clopper–Pearson binomial intervals so zero observed events do not produce a misleading 0%–0% interval. Several intervals span nearly the full possible range because each user has only one to three genuine seed-42 test attempts; statistical significance must not be interpreted as deployment readiness.
+The one-sided permutation tests compare genuine and impostor scores for each claimed identity in the seed-42 CNN–GRU snapshot. ROC-AUC intervals use class-stratified bootstrap resampling; FAR and FRR use Clopper–Pearson binomial intervals so zero observed events do not produce a misleading 0%–0% interval. These are descriptive calculations under their sampling assumptions, not participant/session-cluster-adjusted population inference. Several intervals span nearly the full possible range because each user has only one to three genuine seed-42 test attempts; statistical significance must not be interpreted as deployment readiness.
 
 ## Training diagnostics expose per-user convergence variation
 
@@ -1913,6 +1918,11 @@ Raw participant data, per-attempt scores, and trained weights are intentionally 
             "metrics": selected_security,
             "metric_context": selected_context,
             "one_sided_95_percent_far_upper_bound": upper_far_95,
+            "far_bound_assumptions": (
+                "Illustrative iid Bernoulli calculation, not validated "
+                "population coverage: attempts are reused across verifiers "
+                "and participant/session clustering is not modeled."
+            ),
         },
         "paper_cnn_gru_k5_balanced": balanced,
         "paper_cnn_gru_k5_strict": primary_security,

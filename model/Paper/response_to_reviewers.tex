@@ -90,6 +90,14 @@ pause duration, click timing, acceleration energy, jerk energy, and
 dimensionless jerk. The architecture section also clarifies that the CNN emits
 an ordered $32\times64$ representation to the GRU.}
 
+The revision also specifies the implemented pause and click estimators:
+pause duration sums resampled intervals at or below the movement's
+10th-percentile speed; click timing uses the first positive interpolated
+button state, falling back to movement duration. We distinguish these proxies
+from inactivity, press duration, and reaction latency, and disclose that
+interpolation can shift the apparent press time. Summary path efficiency is
+also distinguished from the clipped running-efficiency channel.
+
 \subsection*{Comment 3: Additional experiments should explain model and feature behavior}
 The reviewer noted that GRU-only and logistic regression outperform CNN--GRU
 and that the full feature set is not consistently best, and suggested analyses
@@ -216,5 +224,13 @@ We also checked every numerical value against the archived result files,
 verified that all cross-references resolve, confirmed that no new performance
 result was asserted without a reproducible source, and confirmed that every
 review comment is mapped to a manuscript change above.
+
+The final statistical audit also qualifies the illustrative 1.2721\% binomial
+FAR bound. The 234 impostor decisions reuse 26 physical attempts across
+verifiers and are not established independent, common-probability trials.
+The manuscript no longer presents the nominal bound as validated population
+coverage; its bootstrap and permutation summaries are also identified as not
+participant-cluster adjusted. These qualifications do not change the observed
+confusion counts or descriptive performance metrics.
 
 \end{document}

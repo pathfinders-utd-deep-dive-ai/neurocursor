@@ -565,6 +565,18 @@ conservative under summation. Their names describe implemented estimators,
 not exact recovery of physical path length or continuous-time energy. This
 also leaves sensitivity to original event density and acquisition conditions.
 
+For reproducibility, pause duration is the sum of resampled inter-event
+intervals whose associated speed is at or below that movement's 10th-percentile
+resampled speed; it is a relative low-speed proxy, not a fixed physical-speed
+or inactivity threshold. Click timing is the elapsed time at the first
+resampled positive button-state value, or the movement duration if none is
+positive. Button state is interpolated with the other channels, so this
+estimator can precede the original recorded press. It measures neither
+press-to-release duration nor reaction latency from target appearance.
+Summary path efficiency divides the initial target distance by the resampled
+path-length estimator (zero when that length is negligible); unlike the
+running-efficiency channel, this summary is not clipped to $[0,1]$.
+
 \begin{table*}[t]
 \centering
 \caption{Exact Inputs Used by Model Family}
@@ -934,6 +946,16 @@ Interpretation of ROC curves and EER follows established ROC-analysis and biomet
 \subsection{Statistical Analysis}
 
 In the fixed seed-42 CNN--GRU analysis, we compare genuine and impostor scores for each user using a one-sided permutation test of the hypothesis $\mathbb{E}[S_G]>\mathbb{E}[S_I]$. Cohen's $d$ quantifies the degree of separation \cite{cohenPower}. For performance intervals, we use class-stratified bootstrap resampling for ROC--AUC \cite{efronBootstrap} and exact binomial Clopper--Pearson limits \cite{clopperPearson} for FAR and FRR. We interpret statistical significance in conjunction with observed effect sizes and biometric error rates. The distribution across the 30 repeated splits is summarized using the mean, median, interquartile range, minimum, and maximum. Because these splits repeatedly use the same user cohort, we do not assign an independence-based confidence interval to these results.
+
+These interval and permutation calculations are conditional, descriptive
+summaries, not cluster-adjusted population inference. Binomial coverage
+requires independent Bernoulli trials with a common error probability.
+Here, each physical attempt is reused across verifiers, and sessions from the
+same participant can remain dependent. Pooling decisions therefore does not
+create independent trials or establish a common population error probability.
+The bootstrap and permutation procedures also do not model participant-level
+clustering. A confirmatory study needs a prespecified participant/session-aware
+analysis; the present calculations do not resolve that dependence.
 
 \subsection{Reproducibility}
 
@@ -1319,11 +1341,24 @@ Logistic, strict & 98.08 & 90.38 & 0.00 & 16.67 & 234 & 0 & 5 & 21 \\
 \end{figure}
 
 Zero observed false accepts among 234 impostor decisions is not a population
-guarantee. The corresponding one-sided exact 95\% FAR upper bound is 1.2721\%.
+guarantee. An independent, common-probability binomial calculation gives a
+one-sided 95\% upper bound of 1.2721\%. This is only an illustrative bound
+under those assumptions: the 234 decisions reuse 26 physical attempts across
+verifiers, with additional potential dependence within participants. Its
+nominal coverage is not established for this clustered evaluation, and it
+must not be treated as a validated population FAR bound.
 Likewise, ROC--AUC measures ranking across thresholds and cannot establish a
 deployment-grade rare-event FAR from this sample size.
 
 \subsection{Answers to the Research Questions}
+
+Table~\ref{tab:rq_outcomes} consolidates the answers. The hybrid-superiority
+hypothesis is rejected; movement-count and feature effects are mixed, while
+the strict threshold produces the expected false-accept/false-reject tradeoff.
+Neither split stability nor device robustness is established. The additional
+controls likewise establish no usable stable enrollment minimum and provide
+no consistent chronological advantage or cross-sample mutual-information
+evidence.
 
 \begin{table*}[t]
 \centering
@@ -1440,7 +1475,14 @@ NeuroCursor is most appropriately categorized as a supplemental authentication s
 
 The present evaluation focuses on verifying claimed identities against typical human impostors. In this context, an impostor sample is simply a real cursor trajectory from one participant that is tested against a different user's verifier. This setup is meant to see if the natural differences in how people move their cursors are enough to tell them apart. It is important to note, however, that this doesn't prove the system can stop a determined attacker who might record and replay a user's movements, inject fake events, mimic someone's style, or mess with the browser and device settings.
 
-This distinction is key when interpreting the reported False Acceptance Rate (FAR). The mean macro FAR we found in the repeated strict-logistic tests only describes the errors within this specific group and their particular testing conditions. Even in cases where we saw zero false accepts in a split, that doesn't mean the actual population FAR is zero. For instance, the seed-42 result had 234 impostor decisions with zero errors, which translates to a one-sided exact 95\% FAR upper bound of 1.2721\%. To prove the system works at much rarer error rates, we would need a significantly larger pool of independent impostor trials collected under a pre-set testing protocol \cite{isoBiometricTesting}.
+The repeated strict-logistic macro FAR describes errors within this cohort and
+its testing conditions, not a population security guarantee. Zero observed
+false accepts does not establish zero population FAR. The seed-42 snapshot's
+1.2721\% illustrative binomial upper bound additionally assumes independent,
+common-probability decisions, which is not established when physical attempts
+are reused across verifiers. Rare-event claims require substantially more
+external trials and an analysis that addresses participant, session, and
+verifier dependence \cite{isoBiometricTesting}.
 
 \begin{table*}[t]
 \centering
@@ -1504,7 +1546,15 @@ A confirmatory evaluation should be finalized prior to any further model selecti
 
 Data collection should systematically document the pointing device, operating system, browser, display resolution, cursor sensitivity, and—where available—DPI, along with participant handedness and relevant accessibility conditions. To ensure the evaluation assesses longitudinal stability rather than short-term repetition, each participant should complete multiple sessions distributed over several days or weeks. Furthermore, the protocol should incorporate controlled cross-device and cross-browser sessions. All samples derived from a single participant session must be maintained within the same data split, and the final test cohort must remain inaccessible until the feature set, model configuration, aggregation rules, and calibration procedures have been finalized and locked.
 
-The external evaluation should maintain a strict distinction between ordinary human impostors and deliberate adversarial attacks. Dedicated test sets should examine replayed trajectories, synthetic event injection, and informed imitation conducted after an attacker observes representative movements. Given that claims regarding rare-event false-acceptance rates require substantially more independent impostor decisions than the current dataset provides, the FAR should be reported alongside exact binomial confidence bounds. This practice must include cases with zero observed false accepts to ensure the metric is not interpreted solely from the point estimate \cite{clopperPearson}.
+The external evaluation should distinguish ordinary human impostors from
+deliberate adversarial attacks. Dedicated test sets should examine replayed
+trajectories, synthetic event injection, and informed imitation after an
+attacker observes representative movements. Rare-event FAR claims need more
+external trials and uncertainty estimates appropriate to the sampling design.
+Exact binomial bounds are appropriate only when independent,
+common-probability trials are justified; reused attempts and repeated sessions
+instead require explicit dependence-aware analysis. Zero observed false accepts
+must not be reported as proof of zero population risk \cite{clopperPearson}.
 
 Performance reporting should encompass ROC--AUC, EER, FAR, FRR, accuracy, balanced accuracy, and confusion counts at the prespecified operating point. Results must be presented both in aggregate and disaggregated by participant, session, device category, and movement count. Furthermore, confidence intervals and bootstrap estimates should accompany the principal metrics where appropriate \cite{efronBootstrap}. Adherence to this protocol would provide a substantially stronger basis for assessing generalization, usability, and security, thereby positioning the present study as an exploratory development evaluation rather than as definitive confirmatory evidence.
 
