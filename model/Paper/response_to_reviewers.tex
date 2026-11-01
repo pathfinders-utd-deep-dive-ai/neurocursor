@@ -9,6 +9,7 @@
 \definecolor{responseblue}{RGB}{24,72,120}
 \newcommand{\response}[1]{\par\noindent\textcolor{responseblue}{\textbf{Response:}} #1\par}
 \newcommand{\change}[1]{\par\noindent\textcolor{responseblue}{\textbf{Revision:}} #1\par}
+\newcommand{\location}[1]{\par\noindent\textit{Manuscript location: #1.}\par}
 
 \title{Response to Reviewers\\
 \large Manuscript HCCOM-D-26-00263\\
@@ -23,7 +24,7 @@ We thank the editor and reviewers. The revision shortens the manuscript,
 clarifies model inputs, adds enrollment, feature-quality, and temporal-order
 controls, and reports CNN--GRU as a negative result. It distinguishes measured
 performance from unsupported enrollment, mutual-information, and deployment
-claims. Changes and responses follow.
+claims. Locations below refer to the revised manuscript's sections and tables.
 
 \begin{center}
 \begin{tabular}{p{0.29\textwidth}p{0.62\textwidth}}
@@ -53,6 +54,7 @@ controls for both networks across three splits plus an invariant comparator. \\
 \section*{Reviewer 1}
 
 \subsection*{Comment 1: Introduction and Related Work are repetitive}
+\location{Sections I--II; Table I}
 The reviewer observed that both sections repeatedly motivate mouse-based
 authentication and the CNN/GRU architecture, and asked that Related Work focus
 on differences from prior systems.
@@ -72,10 +74,14 @@ tables, empirical results, and essential statistical limitations are retained.
 
 \change{The revised Related Work includes Table~I, ``Positioning Relative to
 Representative Mouse-Dynamics Studies,'' which directly contrasts Antal and
-Fej\'er, Antal and Egyed-Zsigmond, Kuric \textit{et al.}, LT-AMouse, and
-NeuroCursor. It also states that the CNN--GRU architecture is not the novelty.}
+Fej\'er, Antal and Egyed-Zsigmond, BeCAPTCHA-Mouse, Dave \textit{et al.},
+Kuric \textit{et al.}, LT-AMouse, Jin and Liao, Tao \textit{et al.},
+Sasikumar and Nagarajan, and NeuroCursor. Four additional 2024--2026 studies
+are discussed alongside the restored published BeCAPTCHA-Mouse article.
+The section states that the CNN--GRU architecture is not the novelty.}
 
 \subsection*{Comment 2: Defined features and actual model inputs are unclear}
+\location{Section V; Tables II--IV; Section VI-K for code/data access}
 The reviewer requested a summary of the features supplied to the neural models
 and the statistics used by the classical models.
 
@@ -103,6 +109,7 @@ interpolation can shift the apparent press time. Summary path efficiency is
 also distinguished from the clipped running-efficiency channel.
 
 \subsection*{Comment 3: Additional experiments should explain model and feature behavior}
+\location{Sections VI-G and VII-E--F; Tables XII--XIV}
 The reviewer noted that GRU-only and logistic regression outperform CNN--GRU
 and that the full feature set is not consistently best, and suggested analyses
 of data availability and noise-sensitive features.
@@ -133,6 +140,7 @@ improve these mean metrics under the common summary rule.
 \section*{Reviewer 2}
 
 \subsection*{Comment 1: The Introduction is overly long and the contributions are hard to identify}
+\location{Section I, including the four-item contribution list}
 
 \response{We agree. The Introduction was rewritten from four subsections into
 a compact narrative. It now reports the primary repeated-split result early and
@@ -140,16 +148,26 @@ ends with four numbered contributions. Repeated explanations of passwords,
 biometrics, trajectory equations, and CNN/GRU roles were removed.}
 
 \subsection*{Comment 2: Related Work is fragmented, verbose, and unclear about recent work}
+\location{Section II; Table I; updated bibliography}
 
 \response{We agree. Related Work is now a single comparative narrative with no
-architecture equations and a five-row positioning table. The revision states
+architecture equations and a ten-row positioning table. The revision states
 the strength and limitation of each representative study. In particular, it
 acknowledges that LT-AMouse is stronger on explicit data-sufficiency analysis,
 segment-length analysis, public-dataset coverage, and attack settings, whereas
 NeuroCursor studies a bounded randomized target challenge and one-to-five
 movement decisions.}
 
+We added task-context authentication (Dave \textit{et al.}, 2024), the published
+shared-classifier trajectory-similarity approach (Jin and Liao, 2025),
+sLSTM--MixConv personalization (Tao \textit{et al.}, 2026), and privacy/robustness
+evaluation with a Transformer--CNN (Sasikumar and Nagarajan, 2026). We restored
+BeCAPTCHA-Mouse using its 2022 journal citation and distinguish bot detection
+from human-identity verification. LT-AMouse is cited as arXiv v2 because the
+verified record does not identify a journal publication.
+
 \subsection*{Comment 3: Does training-data scale affect accuracy, and what is the minimum enrollment data?}
+\location{Sections VI-G and VII-F; Table XIII}
 
 \response{We added exact-budget learning curves for logistic regression,
 CNN--GRU, and GRU-only across seeds 0, 1, and 2. The fixed eligible cohort
@@ -174,6 +192,7 @@ minimum was demonstrated within the tested range; a population enrollment
 recommendation still requires larger longitudinal data.}
 
 \subsection*{Comment 4: What justifies retaining CNN--GRU after H1 is rejected?}
+\location{Sections V, VII-B, VIII-A, and IX; Table VIII}
 
 \response{Nothing in the present dataset justifies choosing CNN--GRU over
 GRU-only. We revised the manuscript accordingly. The hybrid is included only
@@ -188,6 +207,7 @@ classical models are also stronger, and that the present evidence does not
 support retaining the hybrid.}
 
 \subsection*{Comment 5: Does the model capture mutual information across sampling points rather than acceleration-like features?}
+\location{Sections VI-G and VII-F; Table XIV; Section VIII-D}
 
 \response{Architecture alone does not demonstrate cross-sample mutual
 information. The strengthened controls exclude elapsed time, inter-event time,
@@ -212,23 +232,6 @@ position differences may retain implicit motion/acquisition information;
 removing explicit channels is not complete removal of such cues. Reuse of
 the development cohort also remains a limitation.}
 
-\subsection*{Comment 6: Major revision is required}
 
-\response{We agree and performed a substantive revision across the Abstract,
-Introduction, Related Work, model-input description, architecture
-interpretation, methodology scope, feature analysis, Discussion, Limitations,
-and Conclusion. We also added a small reproducibility script that recomputes
-the reviewer-requested input dimensions and grouped coefficient statistics
-from the archived result bundle.}
-
-\section*{Final verification}
-
-We rebuilt and visually inspected both documents, checked numerical results
-against archived evidence, resolved all references, and mapped every comment
-to a revision. The illustrative 1.2721\% FAR bound is explicitly conditional:
-234 decisions reuse 26 attempts, so independence and common error probability
-are not established. Bootstrap and permutation summaries are likewise not
-participant-cluster adjusted. Observed counts and descriptive metrics are
-unchanged.
 
 \end{document}

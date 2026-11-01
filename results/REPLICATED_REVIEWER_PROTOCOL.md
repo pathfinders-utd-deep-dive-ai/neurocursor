@@ -69,7 +69,10 @@ intra/inter-op thread. Fit normalization on training data and calibrate threshol
 on validation data only. Report K=5 macro FAR/FRR/EER and pooled counts, all
 three splits, per-user outcomes, and paired differences; distinguish strict
 operating-point rates from ROC-derived EER. Overlapping splits are not independent
-population replications. Preserve the original AI-Assisted Development section.
+population replications. The original AI section was preserved during these
+fits; on 2026-11-01 the user explicitly requested an updated, consolidated
+disclosure covering code, additional analyses, manuscript revision, and the
+response letter. That later disclosure does not change experimental records.
 
 Uncertainty qualification: pooling reused attempts across verifiers does not
 create independent Bernoulli trials with a common error probability. Binomial

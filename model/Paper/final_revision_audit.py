@@ -17,7 +17,9 @@ from model import model as p, reporting
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_HASH = 'ef5df46c0f3c02bf458084e435079c4911026d81cea36f391823ec63f0570a95'
-DISCLOSURE_HASH = '4dbe7fd254a231104f1c53659fa05b6bd0be1ad4c16a9e16df0d16a2b4c7b935'
+# Updated with the user's explicit 2026-11-01 request to disclose writing,
+# response-letter, and additional-analysis assistance as well as coding.
+DISCLOSURE_HASH = '670a3343fdcc542b285a2745a15dce2fc96b76fb6791a5ccb4543a4fcc47918e'
 
 
 def check(condition, message):
@@ -118,7 +120,7 @@ def main():
     text = (ROOT/'model/Paper/paper.tex').read_text()
     start = text.index('\\section*{AI-Assisted Development')
     disclosure = text[start:text.index('\\FloatBarrier', start)]
-    check(hashlib.sha256(disclosure.encode()).hexdigest() == DISCLOSURE_HASH, 'Protected disclosure')
+    check(hashlib.sha256(disclosure.encode()).hexdigest() == DISCLOSURE_HASH, 'Revision disclosure content')
     labels = re.findall(r'\\label\{([^}]+)\}', text)
     refs = re.findall(r'\\(?:ref|eqref)\{([^}]+)\}', text)
     check(len(labels) == len(set(labels)), 'Duplicate labels')
@@ -130,7 +132,7 @@ def main():
     print(f'PASS: {configurations} configurations, {verifiers} verifiers, '
           f'{metric_checks} confusion-derived metric checks, {archived} archived hashes.')
     print(f'PASS: ROC/AUC/EER, calibration provenance, split isolation, nested budgets, '
-          f'{len(labels)} labels, {len(cites)} cited keys, and protected disclosure.')
+          f'{len(labels)} labels, {len(cites)} cited keys, and revision disclosure.')
 
 
 if __name__ == '__main__':

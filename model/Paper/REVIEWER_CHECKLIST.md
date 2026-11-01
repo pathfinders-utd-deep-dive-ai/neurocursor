@@ -1,82 +1,87 @@
-# Reviewer request traceability
+# Reviewer and resubmission traceability
 
-| Request | Revision and evidence |
+## Original reviewer requests
+
+| Request | Current revision and location |
 | --- | --- |
-| R1.1: Remove overlap between Introduction and Related Work | Both sections rewritten; Related Work compares task, inputs, strengths, and limitations in the positioning table. |
-| R1.2: State exact inputs and classical summary statistics | Temporal channel table plus exact input table: 5/17/27 primary channels, 19-channel added control; classical dimensions 20/68/121/76. Mean, standard deviation, minimum, maximum and all 13 extra summaries explicitly identified. |
-| R1.3: Explain model/feature behavior using more experiments | Strengthened grid: 45 enrollment, 6 corrected classical feature-quality, and 21 coordinate-only temporal configurations. All three split seeds and all conditions retained. |
-| R2.1: Shorten Introduction and clarify contributions | Compact narrative with four numbered contributions and no introductory equations. |
-| R2.2: Consolidate Related Work and explain recent work | Single comparative narrative and positioning table; explicit LT-AMouse and device-confounding comparisons. |
-| R2.3: Training scale and minimum stable enrollment | Fixed seven-identity eligible cohort; exact nested 1/5/10/20/all-session budgets for logistic, CNN-GRU, and GRU-only, across three splits. Holdouts fixed. An explicit study-specific error/stability criterion is evaluated; no universal population minimum is implied. |
-| R2.4: Justify retaining CNN-GRU after rejected H1 | No recommendation to select hybrid. It is documented as the tested candidate and a negative result; GRU-only/classical comparisons retained. |
-| R2.5: Temporal information versus acceleration-like features | Normalized x/y only; no explicit time, derivatives, progress, button or target channels. Ordered/permuted/reversed fits for both networks across three splits plus order-invariant logistic comparator. Marginals and model parameter counts held fixed within architecture. No measured-mutual-information claim. |
-| R2 overall: Major revision | Manuscript, response, experiment runner, protocol, full aggregate records, feature accounting and figure updated. |
+| R1.1: Introduction/Related Work overlap | Separate concise Introduction and comparative Related Work; Sections I--II, Table I. |
+| R1.2: Actual neural/classical inputs | Exact channel groups, dimensions, four summary statistics, 13 additional statistics, operational estimators, and architecture; Section V, Tables II--IV. |
+| R1.3: Additional data/feature experiments | 45 enrollment, 21 temporal, and 6 corrected feature-quality configurations; Sections VI-G and VII-E--F, Tables XII--XIV. |
+| R2.1: Long Introduction/unclear contributions | Compact narrative and four numbered contributions; Section I. |
+| R2.2: Fragmented Related Work/latest strengths and limits | Comparative prose and ten-row positioning table; four added 2024--2026 papers plus restored published 2022 BeCAPTCHA-Mouse; Section II, Table I. |
+| R2.3: Training scale/minimum enrollment | Three model families, three split seeds, seven eligible identities, exact nested 1/5/10/20/all-session budgets and fixed holdouts; Sections VI-G/VII-F, Table XIII. No tested budget meets the stated stability criterion. |
+| R2.4: Justification for retaining CNN--GRU | Retained as a tested negative result, not the recommended architecture; Sections V, VII-B, VIII-A, IX, Table VIII. |
+| R2.5: Mutual information versus kinematics | Coordinate-only ordered/permuted/reversed fits across three splits with invariant comparator; Sections VI-G/VII-F, Table XIV. No measured-mutual-information claim. |
 
-Strengthened protocol: `results/REPLICATED_REVIEWER_PROTOCOL.md`.
-Validated aggregates: `results/reviewer-strengthened/summary.json` and
-the enrollment/temporal/feature `results.json` files below that directory.
-Initial reviewer runs remain archived separately in
-`results/reviewer-experiments` and `results/reviewer-neural-controls`.
+The response letter gives a section/table location for each of these eight
+points. Its redundant overall-major-revision and internal verification blocks
+have been removed; the opening and point-by-point responses cover the revision.
 
-All 72 configurations passed independent reconstruction of session counts and split
-isolation from the source data, metric aggregation, exact nested budgets,
-dataset fingerprint, permutation/reversal invariants, and sixteen regression
-tests. Citations/references resolve, and all 15 manuscript pages and four
-response pages were rendered and visually inspected. The AI-Assisted
-Development section is byte-identical to its pre-change version.
+## Follow-up audit corrections
 
-Final wording audit also aligned the discrete EER definition with the code,
-identified canvas-normalized derivative units and training-only scaling,
-documented the non-conservative resampled summary estimators, and qualified
-test isolation per fit rather than claiming untouched confirmatory evaluation.
-Coordinate-only controls are not described as eliminating all implicit timing
-or acquisition information. All 60 labels and 16 cited bibliography keys resolve.
+- Every one of 19 tables and eight figures now has an in-text reference outside
+  its floating environment. A regression test enforces this.
+- Table XV identifies seed 42, full-feature CNN--GRU, validation-EER calibration,
+  and individual-movement scores without K-movement aggregation. It is not the
+  first-movement-only K=1 attempt protocol.
+- Section VI-K links the verified public repository's shaurya branch and names
+  the canonical implementation, runners, protocols, and result records. The
+  package does not redistribute the private processed dataset or fitted weights.
+- The feature-quality control explicitly covers session-split seeds 0, 1, and 2.
+- The alarming provenance sentence is replaced with the concrete limitation
+  that recruitment is not documented in the analysis file. Author collection,
+  supervision, recruitment, and sharing permissions await author confirmation;
+  no stronger collection claim has been invented.
+- At the user's explicit latest request, the previously preserved AI section
+  is now one consolidated development-and-writing disclosure, including
+  additional analyses, manuscript revision, and reviewer-response assistance.
+  The duplicate Section VI-J paragraph and unverified historical model-version
+  claim are removed. The audit records the new disclosure hash.
+- Heading punctuation is checked automatically. Speed/velocity terminology,
+  ROC-derived EER, and random ordering versus independence were clarified.
+- The abstract and conclusion lead with the measured five-movement protocol,
+  approximately 4.43 s mean completion time, and 98.78% mean ROC--AUC. High FRR
+  and other necessary limitations remain explicit without claiming deployment
+  readiness.
 
-The subsequent audit corrected all three additional findings: the pooled
-binomial FAR bound is explicitly illustrative under independence and common
-error probability, not validated population coverage; pause/click summaries
-now have exact operational definitions and regression tests (including the
-fractional button-state and missing-click cases); and the research-question
-subsection now has a substantive summary rather than a floating table alone.
-The report generator preserves the same dependence caveat. Bootstrap and
-permutation summaries are disclosed as not participant-cluster adjusted.
+## Literature verification
 
-Repeatable read-only evidence audit (private dataset required):
+Added primary-source references: Dave et al. (2024), DOI
+10.5121/ijcsit.2024.16103; Jin and Liao (2025), DOI
+10.1007/s00530-025-01897-0; Tao et al. (2026), DOI
+10.1016/j.comnet.2026.112502; Sasikumar and Nagarajan (2026), DOI
+10.3389/frai.2026.1914353. Restored Acien et al. using the published 2022
+Pattern Recognition article, DOI 10.1016/j.patcog.2022.108643.
+LT-AMouse is cited as arXiv:2504.21415v2; the checked record lists no journal
+reference, and a separate journal publication was not confirmed.
 
-```sh
+## Verification and boundaries
+
+The read-only audit checks 72 configurations, 585 verifiers, 21,060
+confusion-derived metric identities, ROC/AUC/EER consistency, threshold
+provenance, session isolation, nested exact budgets, all 43 original archived
+evidence hashes, 61 labels, 21 cited bibliography keys, and disclosure content.
+All 17 regression tests pass. Numerical result records and performance-table
+values are unchanged.
+
+The clean manuscript is 16 pages and response four pages. The modest increase
+from the prior 15-page manuscript supplies the requested recent comparisons,
+references, cross-references, and availability statement; no page target is
+imposed. A 23-page marked review copy compares the revised source with the
+original supplied main.tex. Its legend explains additions/deletions and the
+whole-block rather than granular equation comparison; the new positioning
+table is likewise marked as an added block. Clean files are the
+authoritative submission text. All clean/response/marked pages are rendered
+for visual inspection, with clean logs and no undefined references or overflow.
+
+These checks validate the saved evidence and documents, not participant
+provenance, consent, a population enrollment minimum, or mutual information.
+See AUTHOR_CONFIRMATIONS.md for the remaining author-side factual confirmations
+and the journal-specific marked-file requirement that could not be verified.
+
+Recheck from the repository root:
+
+~~~sh
 python -m model.Paper.final_revision_audit --data /path/to/paper-dataset.json
 python -m unittest model.test_paper_pipeline model.test_reviewer_controls
-```
-
-The audit checks 72 configurations, 585 verifiers, 21,060 confusion-derived
-metric identities, ROC/AUC/EER consistency, threshold provenance, source session
-membership, nested exact training budgets, all 43 archived evidence hashes,
-document references, and the protected disclosure hash. It does not rerun
-neural fitting or certify participant provenance, consent, or population validity.
-
-Final concision pass: the previous 19-page revision is reduced to 15 pages,
-with approximately 27% fewer visible-text words. During that pass, Introduction source-word count
-falls from 469 to 332; Related Work from 600 to 472 (including its unchanged
-comparison table). All 19 retained table environments were unchanged during
-that pass. The removed table only repeated future-validation
-requirements now summarized in prose. Redundant feature/evaluation explanations
-and overlapping deployment sections are consolidated; three generic neural
-representation equations are replaced by exact implemented baseline details.
-Experimental input definitions, all empirical tables, critical uncertainty
-caveats, reviewer-requested controls, and the protected AI disclosure remain.
-
-Final copyedit removes author-supplied periods from both IEEE run-in headings,
-preventing the template's automatic colon from producing `.:`. A regression
-test now checks every run-in heading. Terminology distinguishes speed from
-vector velocity, ROC-derived EER from calibrated operating-point rates, and
-the randomized training-session order from statistical independence. The
-low-order input-table row is clarified as a classical summary control, not an
-additional neural experiment. No performance-table values have changed.
-All eight primary model types and the canonical implementation remain included;
-the publication package intentionally excludes trained weights and private data.
-
-Scope: the strengthened learning curves and temporal controls cover three
-overlapping splits. Enrollment covers seven eligible identities and temporal
-controls all ten. These do not establish population stability or causality.
-Direct GitHub Codespaces access needs a token with `codespace` scope; the local
-checkout and remote `shaurya` branch are verified separately.
+~~~

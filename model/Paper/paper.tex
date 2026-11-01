@@ -38,7 +38,8 @@ ORCID: 0009-0001-6684-1377
 
 \begin{abstract}
 NeuroCursor evaluates whether a brief randomized point-and-click challenge can
-serve as a supplemental behavioral identity signal. Each movement is represented
+serve as a supplemental behavioral identity signal. A five-movement decision
+takes a mean 4.43 s in the repeated-split evaluation. Each movement is represented
 by raw, spatial, kinematic, geometric, and target-relative time-series channels.
 We compare a candidate convolutional neural network--gated recurrent unit
 (CNN--GRU), CNN-only and GRU-only networks, five classical classifiers, three
@@ -118,79 +119,101 @@ This work contributes:
 Mouse-dynamics studies differ in collection task, representation, classifier,
 and evaluation protocol. Limited public data, inconsistent protocols, and
 hardware variation complicate comparison \cite{khanMouseSurvey}.
-
 Antal and Fej\'er used fixed-size Balabit sequences and DFL transfer learning
 with a CNN \cite{antalFejer2020}; Antal and Egyed-Zsigmond studied continuous
-intrusion detection \cite{antalEgyed2019}. Their passive or differently
-segmented data differ from NeuroCursor's randomized target task.
+intrusion detection \cite{antalEgyed2019}. These passive-data protocols differ
+from a deliberate target-acquisition challenge.
 
-Recent work also exposes two limitations directly relevant here. Kuric
-\textit{et al.} found that mouse configuration can alter many commonly used
-metrics and distort downstream model performance \cite{kuricMouseCredibility}.
-Wang \textit{et al.} introduced LT-AMouse, combining a 1D residual network and a
-GRU, and used density and approximate-entropy analyses to study data volume and
-segment length on Balabit and DFL \cite{wang2025Mouse}. LT-AMouse is stronger
-than NeuroCursor on explicit data-sufficiency analysis and public-dataset
-coverage; NeuroCursor differs by testing a bounded, randomized challenge,
-target-relative channels, and decisions based on one to five deliberate
-movements. The protocols and cohorts are therefore complementary rather than
-interchangeable.
+Recent work addresses complementary weaknesses. Dave \textit{et al.} compare
+mouse authentication in high- and low-intensity games, exposing task context
+as an evaluation dimension rather than studying a fixed short challenge
+\cite{dave2024Clicks}. Kuric \textit{et al.} show that mouse configuration
+alters common metrics and downstream predictions \cite{kuricMouseCredibility}.
+Wang \textit{et al.}'s LT-AMouse combines 1D-ResNet and GRU with density-based
+data-volume analysis and approximate-entropy segment selection on Balabit and
+DFL \cite{wang2025Mouse}. Its data-sufficiency and attack analyses are broader
+than ours. We cite the verified arXiv v2 record; no journal publication is
+identified in that record.
+
+Newer architectures broaden both representation and evaluation. Jin and Liao
+use trajectory embeddings and a shared classifier for authentication and
+CAPTCHA-farm identity-inconsistency detection, reducing the need for separate
+per-user classifiers \cite{jin2025Similarity}. Tao \textit{et al.} combine
+switching LSTM, mixed depthwise convolution, and personalized isolation
+forests, with evaluation on Balabit and SapiMouse \cite{tao2026Spatiotemporal}.
+Sasikumar and Nagarajan combine a Transformer--CNN with federated learning,
+differential privacy, and robustness tests \cite{sasikumar2026Privacy}.
+These studies address scalability, temporal/spatial representation, or privacy
+more directly than NeuroCursor, but use different tasks and decision units;
+their reported metrics are not head-to-head comparisons with five-target
+verification.
+
+Bot detection must also be distinguished from claimed-user verification.
+Acien \textit{et al.}'s BeCAPTCHA-Mouse uses neuromotor features and synthetic
+trajectories to distinguish people from bots \cite{acien2022BeCAPTCHA}.
+It is directly relevant to trajectory modeling and synthetic attacks, but
+human-versus-bot accuracy does not establish human identity separation.
+Commercial descriptions similarly show operational interest without enough
+public detail to reproduce identity thresholds
+\cite{graboxyContinuous,graboxyMFA,googleRecaptchaV3}.
+Table~\ref{tab:related_work_positioning} summarizes these distinctions.
+NeuroCursor contributes a session-isolated, short randomized challenge with
+explicit calibration, classical comparators, and reported negative results,
+not a new biometric modality or a demonstrated need for CNN--GRU.
 
 \begin{table*}[t]
 \centering
+\small
 \caption{Positioning Relative to Representative Mouse-Dynamics Studies}
 \label{tab:related_work_positioning}
-\begin{tabular}{@{}p{2.7cm}p{3.0cm}p{3.4cm}p{3.5cm}p{3.3cm}@{}}
+\begin{tabular}{@{}p{2.3cm}p{2.4cm}p{3.0cm}p{4.0cm}p{4.0cm}@{}}
 \toprule
-\textbf{Study} & \textbf{Task and data} & \textbf{Representation/model} &
-\textbf{Primary strength} & \textbf{Limitation relative to this study} \\
+\textbf{Study} & \textbf{Task/data} & \textbf{Representation/model} &
+\textbf{Strength} & \textbf{Difference or limitation for this comparison} \\
 \midrule
-Antal and Fej\'er \cite{antalFejer2020} &
-Passive, fixed-size Balabit sequences; DFL transfer data &
-Raw event sequences with CNN and transfer learning &
-Demonstrates learned representations without a large handcrafted feature set &
-No randomized target challenge or short $K$-movement decision protocol \\
-
-Antal and Egyed-Zsigmond \cite{antalEgyed2019} &
-Continuous intrusion detection &
-Engineered mouse-dynamics representation &
-Evaluates identity change during ordinary use &
-Different task, segmentation, and operating context \\
-
-Kuric \textit{et al.} \cite{kuricMouseCredibility} &
-Controlled device/configuration study with 32 participants &
-108 mouse-dynamics measures and downstream prediction &
-Shows that acquisition settings can materially alter mouse signals &
-Not a verification benchmark; motivates controls absent from our dataset \\
-
-Wang \textit{et al.} \cite{wang2025Mouse} &
-Balabit and DFL; data-volume and segment-length analysis &
-Velocity sequences, 1D-ResNet, and GRU &
-Explicitly studies data sufficiency, sequence length, and attack settings &
-Uses long/passive public datasets rather than a five-target challenge \\
-
+Antal and Fej\'er (2020) \cite{antalFejer2020} &
+Balabit; DFL transfer & Raw sequences; CNN &
+Learns representations with little feature engineering &
+Passive sequences, not short randomized targets \\
+Antal and Egyed-Zsigmond (2019) \cite{antalEgyed2019} &
+Continuous intrusion detection & Engineered mouse features &
+Studies identity change during ordinary use &
+Different task and segmentation \\
+Acien \textit{et al.} (2022) \cite{acien2022BeCAPTCHA} &
+Human/synthetic trajectories & Neuromotor features; bot classification &
+Explicit synthetic-trajectory benchmark &
+Bot detection, not claimed-human identity verification \\
+Dave \textit{et al.} (2024) \cite{dave2024Clicks} &
+Two gaming contexts & Mouse features; multiple classifiers &
+Contrasts high- and low-intensity interaction &
+Game-specific tasks, not bounded $K$-movement challenges \\
+Kuric \textit{et al.} (2024) \cite{kuricMouseCredibility} &
+32-participant configuration study & 108 mouse measures; prediction &
+Tests acquisition-setting confounds &
+Not a verification benchmark \\
+Wang \textit{et al.} (2025) \cite{wang2025Mouse} &
+Balabit and DFL & 1D-ResNet--GRU; velocity sequences &
+Data-volume, segment-length, and attack analyses &
+Long/passive sequences; cited version is a preprint \\
+Jin and Liao (2025) \cite{jin2025Similarity} &
+Authentication; CAPTCHA-farm detection & Trajectory embeddings; shared classifier &
+Supports identity-consistency comparison without a per-user classifier &
+Different enrollment/task and decision protocol \\
+Tao \textit{et al.} (2026) \cite{tao2026Spatiotemporal} &
+Balabit and SapiMouse & sLSTM--MixConv; personalized iForest &
+Joint spatiotemporal modeling and personalization &
+Different data and decision unit; no direct short-challenge comparison \\
+Sasikumar and Nagarajan (2026) \cite{sasikumar2026Privacy} &
+Public mouse-dynamics data & Transformer--CNN; federated learning &
+Privacy and adversarial-robustness evaluations &
+Different classification/fold protocol and decision unit \\
 NeuroCursor &
-Randomized point-and-click challenge; 10 identities and 266 sessions &
-27 temporal channels; neural and 121-value classical representations &
-Session-isolated $K=1,3,5$ decisions and target-relative analysis &
-Small cohort; no device labels or longitudinal external cohort; limited
-enrollment-size and order controls \\
+10 identities; 266 sessions & 27 channels; neural/classical verifiers &
+Session-isolated $K=1,3,5$ target challenges and calibrated thresholds &
+Small cohort; absent device labels; limited enrollment/order evidence \\
 \bottomrule
 \end{tabular}
 \end{table*}
-
-Commercial behavioral-authentication services and bot detectors demonstrate
-operational interest in cursor signals \cite{graboxyContinuous,graboxyMFA,
-googleRecaptchaV3}, but public descriptions do not provide enough information
-to reproduce their identity-verification models or thresholds. Bot detection is
-also a different task: distinguishing automation from people does not establish
-that two human users can be reliably separated.
-
-Our contribution is the evaluation of a brief randomized challenge with
-session isolation, explicit calibration, classical comparators, and negative
-results (Table~\ref{tab:related_work_positioning}). Enrollment and order controls
-address, but do not establish, a stable enrollment minimum or learned mutual
-information (Sections~\ref{sec:scope_controls} and~\ref{sec:limitations}).
 
 \section{NeuroCursor System Design}
 
@@ -529,6 +552,7 @@ running path efficiency, $d_x,d_y,d,c$, heading error, cross-track error \\
 \end{tabular}
 \end{table}
 
+Table~\ref{tab:sequence_features} lists the temporal feature channels.
 Table~\ref{tab:model_inputs} states the exact tensors and summary vectors used
 by each model family. Neural models receive the complete ordered sequence. The
 classical models receive mean, standard deviation, minimum, and maximum for
@@ -581,7 +605,8 @@ Full distribution-only control & 27 & -- & $4d=108$ values \\
 
 \subsection{Implemented Network Configuration}
 
-The implemented CNN--GRU receives an input tensor of dimensions $128\times d$,
+Table~\ref{tab:model_architecture} specifies the implemented CNN--GRU.
+It receives an input tensor of dimensions $128\times d$,
 where $d$ is the number of selected feature channels. The first temporal
 convolution contains 32 filters with a kernel length of five, same padding, and
 ReLU activation. It is followed by batch normalization, max pooling with a pool
@@ -691,8 +716,8 @@ Final evaluation cohort & 10 & 266 \\
 
 Integrity checks found no duplicate composite movement identifiers, exact
 duplicate samples, missing session/attempt identifiers, or session overlap
-across subsets. These checks do not authenticate participants or collection
-provenance. Hardware, pointing-device, DPI, sensitivity, and browser labels
+across subsets. Records use anonymized identity and session labels.
+Hardware, pointing-device, DPI, sensitivity, and browser labels
 were unavailable.
 
 For each claimed user, genuine samples are formed from that specific user's authentication attempts. Impostor samples are obtained by comparing attempts from other users against the claimed user's biometric profile. This produces a binary verification dataset:
@@ -831,7 +856,9 @@ encode motion and event-delivery information. The control removes explicit
 timing and derivative channels; it does not eliminate every implicit
 kinematic or acquisition cue.
 
-For the classical feature-quality control, both full and low-order inputs use
+The classical feature-quality control is repeated across the same three
+session-split seeds (0, 1, and 2), yielding six configurations.
+Both full and low-order inputs use
 only mean, standard deviation, minimum, and maximum per channel. Neither arm
 receives the 13 extra derived statistics. Removing acceleration, jerk, angular
 velocity, and curvature therefore changes 108 summaries to 76 while preserving
@@ -925,24 +952,33 @@ analysis; the present calculations do not resolve that dependence.
 
 For the direct model evaluations, movement-count studies, feature-ablation tests, and split comparisons, we used a pseudorandom seed of 42 to ensure consistency. The robustness analysis reported results for every seed in a fixed grid from 0 to 29, with the verifier refitted for each split. This grid was established internally for the sensitivity analysis and was not externally preregistered. Preprocessing statistics were derived exclusively from the training subset and archived as part of the experimental record. These artifacts document feature names, sequence lengths, split assignments, training means, standard deviations, model configurations, and user-specific thresholds. The record also includes confusion counts and the resulting performance metrics. For the primary neural evaluation, the software environment consisted of TensorFlow 2.16.2, scikit-learn 1.6.1, and NumPy 1.26.4 running on an ARM64 CPU architecture.
 
-OpenAI Codex, accessed through the ChatGPT desktop interface, was used during
-software development to assist with a small number of engineered features and
-the $K=1$, $K=3$, and $K=5$ evaluation workflows. The authors specified,
-reviewed, and empirically verified those extensions; the tool did not replace
-the authors' model selection, statistical interpretation, or responsibility
-for the reported results.
+\subsection{Code and Data Availability}
+\label{sec:availability}
+
+The canonical model implementation, experiment runners, protocols, regression
+tests, and archived result summaries are available in the public repository:
+\url{https://github.com/pathfinders-utd-deep-dive-ai/neurocursor/tree/shaurya}.
+The paper pipeline is \texttt{model/model.py}; reviewer controls and the
+read-only evidence audit are in \texttt{model/Paper/}. The
+\texttt{results/} directory contains the primary and strengthened result
+records. The revision package does not redistribute the private processed
+participant dataset or fitted model weights. Requests concerning access to
+underlying participant data should be directed to the corresponding author;
+access depends on the applicable consent and privacy restrictions.
 
 \section{Results}
 
 \subsection{Primary Repeated-Split Performance}
 
-The most defensible aggregate result is the complete 30-split sensitivity
-distribution, rather than the most favorable individual seed. In every split,
+Table~\ref{tab:repeated_results} and Fig.~\ref{fig:sensitivity_distributions}
+summarize the complete 30-split distribution, our primary performance estimate.
+In every split,
 the full-feature logistic verifier was refitted and user-specific thresholds
 were calibrated for zero empirical validation false accepts. At $K=5$, mean
 pooled balanced accuracy was 82.82\%, mean macro FAR was 0.63\%, mean macro
 FRR was 35.89\%, and mean macro ROC--AUC was 98.78\%. Zero test false
-acceptances occurred in only 8 of 30 splits.
+acceptances occurred in only 8 of 30 splits. Figure~\ref{fig:sensitivity_far_frr}
+shows the joint FAR/FRR variation rather than a single favorable operating point.
 
 \begin{table*}[t]
 \centering
@@ -989,7 +1025,8 @@ are therefore more informative than ordinary accuracy.
 
 \subsection{Neural Architecture Comparison}
 
-Table~\ref{tab:overall_results} reports the fixed seed-42 neural comparison at
+Table~\ref{tab:overall_results} and Fig.~\ref{fig:neural_comparison} report
+the fixed seed-42 neural comparison at
 the validation-EER operating point. The GRU-only model achieved lower FAR,
 FRR, and EER than the CNN--GRU. The candidate hybrid therefore did not
 outperform its component recurrent baseline, and H1 was rejected. There is no
@@ -1022,7 +1059,8 @@ verifiers.}
 
 \subsection{Classical Baselines}
 
-The classical models were competitive with and sometimes stronger than the
+Table~\ref{tab:classical_results} and Fig.~\ref{fig:classical_comparison}
+compare the five classical baselines. They were competitive with and sometimes stronger than the
 neural architectures. Logistic regression had the highest ordinary accuracy
 and lowest FAR in this fixed classical comparison; random forest and gradient
 boosting achieved low ROC-derived EER. These rows are descriptive comparisons:
@@ -1055,7 +1093,8 @@ Gradient boosting & 86.15 & 81.63 & 81.67 & 72.43 & 99.66 & 12.61 & 18.33 & 0.42
 
 \subsection{Effect of the Number of Cursor Movements}
 
-Table~\ref{tab:k_results} reports the repeated strict-logistic tradeoff. Mean
+Table~\ref{tab:k_results} and Fig.~\ref{fig:k_tradeoff} report the repeated
+strict-logistic tradeoff. Mean
 FAR, FRR, and EER improved as more movements were aggregated, but mean duration
 increased from 0.98 s at $K=1$ to 4.43 s at $K=5$. The fixed seed-42 CNN--GRU
 result was less monotonic: $K=1$, 3, and 5 produced EERs of 13.09\%, 2.91\%,
@@ -1087,7 +1126,8 @@ Duration (s) & Zero-FP Splits \\
 
 \subsection{Feature Ablation Results}
 
-The complete target-relative representation improved CNN--GRU AUC and FAR
+Table~\ref{tab:feature_ablation} and Fig.~\ref{fig:feature_ablation} show
+that the complete target-relative representation improved CNN--GRU AUC and FAR
 relative to raw channels, but raw channels achieved a slightly lower EER.
 Consequently, H3 produced mixed evidence rather than a uniform improvement.
 
@@ -1113,6 +1153,7 @@ Full representation & 96.13 & 8.31 & 30.00 & 7.56 \\
 \label{fig:feature_ablation}
 \end{figure}
 
+Figure~\ref{fig:feature_influence} shows the coefficient-level analysis.
 Across the repeated logistic fits, the largest absolute standardized
 coefficients were associated with mean and maximum inter-event time, pause
 duration, button-state variation, jerk, and click timing. This analysis
@@ -1250,8 +1291,11 @@ Logistic & Invariant summaries & 71.46 & 34.58 & 39.44 & 34.47 & 29.56--37.97 \\
 
 \subsection{Session-Separated Evaluation}
 
-The fixed movement-level comparison did not show the expected inflation from
-random sample-level splitting. The session-separated evaluation yielded an
+Table~\ref{tab:split_comparison} compares the full-feature CNN--GRU at seed 42
+using every individual movement score, with validation-EER thresholds.
+There is no $K$-movement aggregation: this is not the first-movement-only
+$K=1$ attempt protocol. The comparison did not show the expected inflation
+from random sample-level splitting. The session-separated evaluation yielded an
 AUC of 88.90\%, FAR of 16.33\%, FRR of 19.67\%, and EER of 16.56\%. The random
 sample-level evaluation yielded an AUC of 85.96\%, FAR of 20.71\%, FRR of
 19.00\%, and EER of 17.19\%. H4 was therefore rejected on this dataset.
@@ -1261,7 +1305,8 @@ leakage.
 
 \begin{table}[t]
 \centering
-\caption{Fixed Movement-Level Split Comparison (\%)}
+\caption{Seed-42 Full-Feature CNN--GRU Split Comparison: Individual-Movement
+Scores, No $K$-Movement Aggregation (\%)}
 \label{tab:split_comparison}
 \begin{tabular}{lcccc}
 \toprule
@@ -1275,7 +1320,8 @@ Random sample-level & 85.96 & 20.71 & 19.00 & 17.19 \\
 
 \subsection{Thresholds and Confusion Matrices}
 
-Stricter thresholds reduced false acceptance at the cost of false rejection.
+Table~\ref{tab:operating_points} and Fig.~\ref{fig:confusion_matrices} show
+that stricter thresholds reduced false acceptance at the cost of false rejection.
 The seed-42 strict logistic snapshot produced 234 true rejects, no false
 accepts, five false rejects, and 21 true accepts. Its ordinary accuracy of
 98.08\% was aided by the 9:1 impostor/genuine decision imbalance; pooled
@@ -1483,8 +1529,8 @@ The corrected classical ablation isolates the channel-group change from
 removal of the 13 derived summaries, but correlated predictors still prevent
 causal attribution to an individual derivative.
 
-Participant provenance and the authenticity of collection were not
-independently verified. Hardware, input-device type (mouse versus trackpad),
+Participant recruitment is not documented in the analysis file.
+Hardware, input-device type (mouse versus trackpad),
 DPI, sensitivity, browser, handedness, fatigue, injury, and environmental
 labels were unavailable, preventing cross-device analysis and leaving
 acquisition confounding unresolved. The dataset contains no replay or deliberate
@@ -1511,8 +1557,9 @@ could stop at any time, and were not linked to a separate consent record.
 
 \section{Conclusion}
 
-NeuroCursor evaluates short randomized cursor challenges as a supplemental
-identity signal. Across 30 session-separated splits, strict full-feature
+NeuroCursor provides a randomized five-movement challenge with a mean completion
+time of 4.43 s and mean ROC--AUC of 98.78\% across 30 session-separated splits.
+It evaluates cursor behavior as a supplemental identity signal. Strict full-feature
 logistic verification at $K=5$ achieved mean pooled balanced accuracy 82.82\%,
 macro FAR 0.63\%, macro FRR 35.89\%, and macro ROC--AUC 98.78\%.
 High FRR and split variability preclude deployment claims. CNN--GRU did not
@@ -1651,9 +1698,15 @@ accept responsibility for their respective contributions.
 The authors sincerely thank Dr. Jeyakesavan Veerasamy, Dr. Anurag Nagar, and
 Hamid Rouhani for their research guidance and mentorship.
 
-\section*{AI-Assisted Development Disclosure}
+\section*{AI-Assisted Development and Writing Disclosure}
 
-The initial conception of NeuroCursor, the design of its data-acquisition framework, and the selection of the CNN--GRU architecture arose from the authors' independent research. The core implementation and experimental methodology were likewise completed by the authors prior to the introduction of automated assistance. OpenAI Codex, accessed through the ChatGPT desktop interface using the GPT-5.6 Sol model, was subsequently employed in a limited supplementary capacity. At that stage, its technical contribution was confined to assisting with the implementation of a small number of additional engineered features and the configuration of the $K=1$, $K=3$, and $K=5$ evaluation workflows \cite{openaiCodexModels}. All such extensions were specified, reviewed, and empirically verified by the authors, who independently interpreted the resulting data and retain sole responsibility for the methodology, findings, conclusions, and submitted manuscript.
+OpenAI Codex, accessed through the ChatGPT desktop interface, assisted with
+selected feature and evaluation-workflow implementation, additional
+reviewer-requested analyses, manuscript language and organization,
+cross-document consistency checks, and preparation of the response to
+reviewers \cite{openaiCodexModels}. The authors remain responsible for the
+research design, data, verification of code and results, interpretation,
+references, and final submitted text.
 
 \FloatBarrier
 
@@ -1706,7 +1759,38 @@ Y. Wang, C. Wu, Y. Liao, and M. You,
 ``Optimizing mouse dynamics for user authentication by machine learning:
 Addressing data sufficiency, accuracy-practicality trade-off, and model
 performance challenges,''
-\emph{arXiv preprint arXiv:2504.21415}, 2025.
+\emph{arXiv preprint arXiv:2504.21415v2}, 2025,
+doi: 10.48550/arXiv.2504.21415.
+
+\bibitem{acien2022BeCAPTCHA}
+A. Acien, A. Morales, J. Fierrez, and R. Vera-Rodriguez,
+``BeCAPTCHA-Mouse: Synthetic mouse trajectories and improved bot detection,''
+\emph{Pattern Recognition}, vol. 127, Art. no. 108643, 2022,
+doi: 10.1016/j.patcog.2022.108643.
+
+\bibitem{dave2024Clicks}
+R. Dave, M. Handoko, A. Rashid, and C. Schoenbauer,
+``From clicks to security: Investigating continuous authentication via mouse dynamics,''
+\emph{International Journal of Computer Science \& Information Technology},
+vol. 16, no. 1, pp. 29--44, 2024, doi: 10.5121/ijcsit.2024.16103.
+
+\bibitem{jin2025Similarity}
+R. Jin and Y. Liao,
+``CAPTCHA farm detection and user authentication via mouse-trajectory similarity measurement,''
+\emph{Multimedia Systems}, vol. 31, Art. no. 323, 2025,
+doi: 10.1007/s00530-025-01897-0.
+
+\bibitem{tao2026Spatiotemporal}
+X. Tao, Y. Huang, J. Liu, T. Wang, W. Zhao, C. Wang, and J. Fu,
+``User identity authentication via spatiotemporal mouse dynamics modeling,''
+\emph{Computer Networks}, vol. 287, Art. no. 112502, 2026,
+doi: 10.1016/j.comnet.2026.112502.
+
+\bibitem{sasikumar2026Privacy}
+K. Sasikumar and S. Nagarajan,
+``Privacy-preserving and robust mouse dynamics authentication using hybrid transformer-CNN and federated learning,''
+\emph{Frontiers in Artificial Intelligence}, vol. 9, Art. no. 1914353, 2026,
+doi: 10.3389/frai.2026.1914353.
 
 \bibitem{graboxyContinuous}
 Graboxy,
@@ -1762,11 +1846,11 @@ Geneva, Switzerland: International Organization for Standardization, 2021.
 
 \bibitem{openaiCodexModels}
 OpenAI,
-``Models,''
+``ChatGPT documentation,''
 \emph{ChatGPT Learn}.
 [Online]. Available:
-\url{https://learn.chatgpt.com/docs/models}.
-Accessed: Jul. 30, 2026.
+\url{https://learn.chatgpt.com/docs}.
+Accessed: Nov. 1, 2026.
 
 \end{thebibliography}
 

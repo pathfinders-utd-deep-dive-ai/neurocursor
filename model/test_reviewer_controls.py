@@ -8,6 +8,14 @@ from model.Paper.reviewer_experiments import permute_time
 
 
 class ReviewerControlTests(unittest.TestCase):
+    def test_every_table_and_figure_is_referenced_outside_floats(self):
+        source=(Path(__file__).parent/'Paper'/'paper.tex').read_text()
+        labels=re.findall(r'\\label\{((?:tab|fig):[^}]+)\}',source)
+        prose=re.sub(r'\\begin\{(table\*?|figure\*?)\}.*?\\end\{\1\}',
+                     '',source,flags=re.S)
+        for label in labels:
+            self.assertIn('\\ref{'+label+'}',prose,label)
+
     def test_run_in_headings_do_not_duplicate_template_punctuation(self):
         source=(Path(__file__).parent/'Paper'/'paper.tex').read_text()
         headings=re.findall(r'\\(?:paragraph|subparagraph)\*?\{([^{}]+)\}',source)
