@@ -1,5 +1,35 @@
 # Reviewer and resubmission traceability
 
+## Latest pre-submission audit (supersedes older status below)
+
+- Added matched identity-exclusion logistic control: 270 pairs, three splits,
+  identical test sessions, no held-identity training/validation/preprocessing.
+  Strict FAR 0.99% known versus 4.07% excluded; Table XVII.
+- Reported archived per-verifier permutation p, Cohen d, bootstrap AUC intervals,
+  and exact FAR/FRR intervals in Table XXI, with dependence limitations.
+- Added fixed classical hyperparameters and no-search disclosure; clarified
+  threshold policies, test-ROC EER, macro versus pooled aggregation, and the
+  distinct coefficient-group taxonomy including angular velocity.
+- Corrected H2 endpoint interpretation and H3 FRR tradeoff; added weak-baseline
+  limits to coordinate-order controls and anisotropic-normalization limitations.
+- Added speed magnitude to the channel prose; verified vector jerk equation and
+  target-center semantics against the acquisition code. Simplified EER brackets.
+- Removed revision-meta wording; neutral experiment/check entry points are named
+  in the manuscript. Figure 5 caption matches plotted quantities; Figure 7 uses
+  readable labels. Standardized random movement-level terminology.
+- Clarified Antal/Egyed-Zsigmond's configuration-specific versus best AUC and
+  LT-AMouse's segment-length strengths; replaced glossary support with NIST
+  SP 800-63B-4. Existing published references and AI disclosure retained.
+- Added author-confirmed July 1–31, 2026 dates, four-author collection, online/
+  UTD ECSS 2.415 recruitment, informed consent, no funding and no conflicts.
+- Removed unsupported legal-exemption claim. Written OHSP/IRB clarification is
+  still outstanding: see SUBMISSION_STATUS.md. No further emails authorized.
+- All eight original reviewer comments retain individual responses, now with
+  printed page references; the two Introduction run-in labels are acknowledged.
+
+The checks below describe prior revisions. Final build counts, test results,
+and package verification are recorded separately in FINAL_VERIFICATION.md.
+
 ## Original reviewer requests
 
 | Request | Current revision and location |

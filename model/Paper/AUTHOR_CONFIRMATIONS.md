@@ -1,11 +1,13 @@
 # Author confirmations before resubmission
 
 The technical revision is not a substitute for author approval of factual
-declarations. Please confirm the following before submitting.
+declarations. See SUBMISSION_STATUS.md for the latest confirmations and the
+outstanding written institutional ethics clarification. The following earlier
+questions are retained as a historical record, not current unresolved facts.
 
 1. Who collected the participant records, how participants were recruited,
    and who supervised collection. The analysis file does not establish these
-   facts; the manuscript does not invent an author-collection claim.
+   facts; author collection, dates, and recruitment were subsequently confirmed.
 2. The existing statements concerning faculty review, ethics status, verbal
    consent, intended publication, and anonymization accurately describe what
    occurred. These are author-provided facts, not independently certified by

@@ -809,7 +809,14 @@ def plot_feature_influence(
     path: Path,
 ) -> None:
     rows = sensitivity["feature_influence"][:15]
-    labels = [row["feature"].replace(":", ": ") for row in rows][::-1]
+    def readable_feature(name: str) -> str:
+        words = {"delta_time": "inter-event time", "button_state": "button state",
+                 "pause_duration": "pause duration", "click_timing": "click timing",
+                 "derived": "movement summary", "std": "standard deviation",
+                 "max": "maximum", "min": "minimum", "mean": "mean"}
+        return ": ".join(words.get(part, part.replace("_", " "))
+                         for part in name.split(":"))
+    labels = [readable_feature(row["feature"]) for row in rows][::-1]
     values = [row["coefficient_mean"] for row in rows][::-1]
     q1 = [row["coefficient_q1"] for row in rows][::-1]
     q3 = [row["coefficient_q3"] for row in rows][::-1]

@@ -245,6 +245,14 @@ python3 test.py
 
 ## 📊 Experimental Results
 
+Latest manuscript reporting corrections and the matched unseen-impostor
+control are documented in [the pre-submission audit](model/Paper/REVIEWER_CHECKLIST.md)
+and [the identity-exclusion results](results/unseen-impostor-control/README.md).
+The original dated result bundle below is an immutable historical archive;
+current scope clarifications supersede its older narrative. The main evaluation
+uses known impostor identities. Written institutional ethics clarification
+remains outstanding; see [submission status](model/Paper/SUBMISSION_STATUS.md).
+
 The paper-aligned pipeline was evaluated on 1,330 movements from 266
 anonymized user sessions. The primary robustness result reports all 30
 session-separated train/validation/test splits in the fixed consecutive seed

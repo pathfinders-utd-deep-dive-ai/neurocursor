@@ -35,6 +35,8 @@ ORCID: 0009-0001-6684-1377
 \begin{document}
 
 \maketitle
+\thispagestyle{plain}
+\pagestyle{plain}
 
 \begin{abstract}
 NeuroCursor evaluates whether a brief randomized point-and-click challenge can
@@ -132,7 +134,7 @@ alters common metrics and downstream predictions \cite{kuricMouseCredibility}.
 Wang \textit{et al.}'s LT-AMouse combines 1D-ResNet and GRU with density-based
 data-volume analysis and approximate-entropy segment selection on Balabit and
 DFL \cite{wang2025Mouse}. Its data-sufficiency and attack analyses are broader
-than ours. We cite the verified arXiv v2 record; no journal publication is
+than ours, including segment-length sensitivity and public-dataset coverage. We cite the verified arXiv v2 record; no journal publication is
 identified in that record.
 
 Newer architectures broaden both representation and evaluation. Jin and Liao
@@ -268,6 +270,8 @@ guarantee a balanced distribution of movement directions or magnitudes.
 
 The data-acquisition process uses a browser-based capture loop scheduled at approximately 60 Hz, although the resulting inter-sample intervals are nonuniform because of browser task scheduling and pointer-event delivery. Each discrete event record stores the elapsed time and the absolute coordinates of both the cursor and the intended target. The system also captures the relative position of the cursor and target, the current mouse-button state, and a movement index for sequence tracking. To preserve spatial context, each record includes the target dimensions and the overall canvas dimensions.
 
+Recorded target coordinates are target centers, not upper-left corners, as
+used by the acquisition interface's drawing and hit-testing functions.
 During each movement, NeuroCursor records cursor coordinates and their respective timestamps. A raw trajectory is represented as
 
 \begin{equation}
@@ -477,6 +481,11 @@ where $W$ and $H$ denote canvas dimensions ($1400\times600$ for this cohort),
 not independently measured physical display dimensions. Displacements,
 velocities, accelerations, jerk, and target-relative quantities are computed
 from these normalized coordinates; elapsed time is expressed in seconds.
+Because width and height differ, this anisotropic scaling changes angles,
+curvature, angular velocity, heading error, and cross-track geometry relative
+to pixel-space or isotropic coordinates. These are dimensionless canvas-space
+features, not physical motor measurements; an isotropic-normalization control
+was not conducted.
 The feature-extraction equations use this normalized coordinate convention in
 the implementation. After interpolation, all selected sequence channels are
 standardized using training-set means and standard deviations:
@@ -528,7 +537,7 @@ utility, not causality.
 
 The input to the neural model is a multivariate sequence $\mathbf{X}\in\mathbb{R}^{T\times d}$, where $T$ is the number of time steps and $d$ is the number of feature channels. Each row corresponds to one time step, and each column corresponds to one recorded or derived feature.
 
-The complete sequence representation contains normalized cursor coordinates, elapsed time, inter-sample time, button state, displacement, horizontal and vertical velocity, horizontal and vertical acceleration, acceleration magnitude, horizontal and vertical jerk, jerk magnitude, heading, angular velocity, curvature, cumulative path progress, running path efficiency, target-relative displacement, target distance, target-closure rate, target-heading error, and cross-track error.
+The complete sequence representation contains normalized cursor coordinates, elapsed time, inter-sample time, button state, displacement, horizontal and vertical velocity, speed magnitude, horizontal and vertical acceleration, acceleration magnitude, horizontal and vertical jerk, jerk magnitude, heading, angular velocity, curvature, cumulative path progress, running path efficiency, target-relative displacement, target distance, target-closure rate, target-heading error, and cross-track error.
 
 \begin{table}[t]
 \centering
@@ -691,7 +700,11 @@ belonging to class $c$.
 
 \subsection{Dataset Construction}
 
-Of 951 supplied sessions from 49 identity labels, 683 used a legacy schema
+The four authors recruited participants and collected 951 sessions from July 1
+to July 31, 2026, through an explanatory URL shared online and in room 2.415 of
+the ECSS building at The University of Texas at Dallas. Participants were
+informed about the research and intended publication and consented to
+participation. Of these sessions from 49 identity labels, 683 used a legacy schema
 without required target/movement fields. The full-schema subset contained
 268 sessions from 11 identities. Excluding one identity with only two sessions
 left 10 identities, 266 sessions, and 1,330 movements
@@ -733,6 +746,10 @@ y_i
 \end{equation}
 
 NeuroCursor trains a separate binary verification model for each enrolled user. For a model associated with a specific user $u$, movements from $u$ are assigned the genuine label $y=1$, whereas movements from every other participant are assigned the impostor label $y=0$. Consequently, a system containing $U$ enrolled users contains $U$ user-specific binary classifiers and decision thresholds.
+The main evaluation therefore tests new sessions from known impostor identities:
+test impostors also contribute training negatives and validation observations.
+It does not estimate rejection of previously unseen people. A separate
+identity-exclusion control is reported in Section~\ref{sec:unseen_control}.
 
 \subsection{Training, Validation, and Test Splits}
 
@@ -746,11 +763,13 @@ the reported metrics here.
 
 \subsection{Threshold Calibration}
 
-The operating threshold for each claimed user is selected exclusively using the validation set. In the primary configuration, the threshold is chosen at the validation operating point at which the false acceptance rate and false rejection rate are approximately equal. After calibration, the threshold is frozen and applied without modification to test scores. Within each fit, test labels are not used for preprocessing, parameter updates, early stopping, or threshold calibration. This procedural isolation does not make the overall study an untouched confirmation: earlier test comparisons informed subsequent development analyses, as disclosed below.
+The operating threshold for each claimed user is selected exclusively using the validation set. In the fixed model-comparison configuration, the threshold is chosen at the validation operating point at which the false acceptance rate and false rejection rate are approximately equal. After calibration, the threshold is frozen and applied without modification to test scores. Within each fit, test labels are not used for preprocessing, parameter updates, early stopping, or threshold calibration. This procedural isolation does not make the overall study an untouched confirmation: earlier test comparisons informed subsequent development analyses, as disclosed below.
 
 We evaluated a second, security-focused policy in a separate analysis. For each claimed identity, we defined the strict threshold as the lowest validation-set threshold that resulted in zero observed false accepts; when multiple thresholds met this criterion, we selected the one with the lower false rejection rate. The threshold was then frozen before test evaluation. Achieving zero observed false accepts on the validation set is a finite-sample calibration rule and should not be interpreted as a guarantee of zero false accepts in a larger population.
 
-The validation-EER policy is the primary standard used for the seed-42 neural-model comparison. The strict security policy was applied to the repeated logistic sensitivity analysis and the comparison of strict operating points.
+The validation-EER policy is the fixed standard for the seed-42 model comparison.
+The primary repeated-split performance estimate instead uses the strict logistic
+policy. These are distinct analyses, not interchangeable operating points.
 
 \subsection{Decision Construction and Evaluation Isolation}
 
@@ -761,7 +780,8 @@ movements are selected. Each physical attempt contributes one genuine
 comparison and $U-1$ impostor comparisons across $U$ verifiers, producing a
 9:1 impostor/genuine decision ratio here.
 
-Macro metrics average verifiers equally; pooled metrics use summed confusion
+Unless explicitly labeled pooled, table metrics (including model-comparison
+accuracy) average verifiers equally. Pooled metrics use summed confusion
 counts. All movements from a session stay together. Within each fit, training
 data determine preprocessing and parameters, validation data determine early
 stopping and thresholds, and the frozen pipeline is evaluated on test data.
@@ -772,6 +792,17 @@ analyses, not independent confirmation.
 \subsection{Baselines and Ablation Studies}
 
 The complete CNN--GRU model is compared with traditional machine-learning baselines, CNN-only and GRU-only neural baselines, and reduced feature configurations. Table~\ref{tab:experimental_configurations} summarizes the models and feature configurations included in the evaluation of the verification model.
+
+Classical settings were fixed, without a hyperparameter search. Logistic
+regression uses L2 regularization, $C=1$, LBFGS, 2,000 maximum iterations, and
+balanced class weights. SVM uses an RBF kernel, $C=1$, gamma set to
+\texttt{scale}, probability estimation, and balanced class weights. Random
+forest uses 300 bootstrapped Gini trees, unrestricted depth, square-root
+feature sampling, minimum split/leaf sizes 2/1, and balanced class weights.
+$k$-nearest neighbors uses $k=5$, uniform weights, and Euclidean distance.
+Gradient boosting uses 100 trees, learning rate 0.1, depth 3, subsample 1,
+log-loss, Friedman-MSE splits, and minimum split/leaf sizes 2/1. Other settings
+use scikit-learn 1.6.1 defaults; randomized estimators receive the split seed.
 
 \begin{table}[t]
 \centering
@@ -816,8 +847,8 @@ Only attempts containing at least $K$ valid movements are included.
 
 The eligibility rule of at least three sessions per identity exists only to
 permit disjoint training, validation, and test subsets. It is not evidence that
-three sessions are enough for stable enrollment. We added exact-budget learning
-curves for logistic regression, CNN--GRU, and GRU-only across session splits
+three sessions are enough for stable enrollment. Exact-budget learning
+curves evaluate logistic regression, CNN--GRU, and GRU-only across session splits
 0, 1, and 2. Eligibility is determined before fitting: the seven identities
 with at least 27 complete sessions can each supply 20 training sessions after
 the validation/test holdouts. This cohort contains 217 sessions and 1,085
@@ -833,7 +864,7 @@ The seven-identity results are not directly comparable to ten-identity primary
 results. All preprocessing and thresholds are refitted using only the selected
 training and unchanged validation subsets, respectively.
 
-Before inspecting this strengthened grid, we specified a study-specific
+Before inspecting this experiment grid, we specified a study-specific
 criterion for a usable stable budget: strict FAR at most 1\% and FRR at most
 10\% in every split, with changes no larger than 1 percentage point FAR and
 5 percentage points FRR at every larger tested budget. This is an exploratory
@@ -865,7 +896,7 @@ velocity, and curvature therefore changes 108 summaries to 76 while preserving
 the same summary rule for every retained channel. Deterministic TensorFlow
 operations are enabled, intra- and inter-operation parallelism are each set
 to one thread, and the random seed is reset before each condition.
-The strengthened grid contains 72 configurations;
+The experiment grid contains 72 configurations;
 all outcomes and actual session counts are archived. These are retrospective
 development experiments on reused data, not independent confirmation.
 
@@ -926,13 +957,15 @@ pair and averaging the two rates:
 \begin{aligned}
 \tau^* &= \arg\min_{\tau\in\mathcal{T}_{\mathrm{ROC}}}
 |\mathrm{FAR}(\tau)-\mathrm{FRR}(\tau)|,\\
-\widehat{\mathrm{EER}} &= \tfrac12\left[
-\mathrm{FAR}(\tau^*)+\mathrm{FRR}(\tau^*)\right].
+\widehat{\mathrm{EER}} &=
+\frac{\mathrm{FAR}(\tau^*)+\mathrm{FRR}(\tau^*)}{2}.
 \end{aligned}
 \label{eq:eer}
 \end{equation}
 
 Interpretation of ROC curves and EER follows established ROC-analysis and biometric performance-reporting guidance \cite{fawcettROC,isoBiometricTesting}.
+Reported EER is computed from the test-set ROC as a descriptive ranking
+summary; its threshold is not used for operational test predictions.
 
 \subsection{Statistical Analysis}
 
@@ -947,6 +980,9 @@ create independent trials or establish a common population error probability.
 The bootstrap and permutation procedures also do not model participant-level
 clustering. A confirmatory study needs a prespecified participant/session-aware
 analysis; the present calculations do not resolve that dependence.
+Table~\ref{tab:descriptive_statistics} reports the archived per-verifier results.
+No multiple-testing correction is applied, and these tests are not treated as
+confirmatory evidence of population-level significance.
 
 \subsection{Reproducibility}
 
@@ -958,9 +994,10 @@ For the direct model evaluations, movement-count studies, feature-ablation tests
 The canonical model implementation, experiment runners, protocols, regression
 tests, and archived result summaries are available in the public repository:
 \url{https://github.com/pathfinders-utd-deep-dive-ai/neurocursor/tree/shaurya}.
-The paper pipeline is \texttt{model/model.py}; reviewer controls and the
-read-only evidence audit are in \texttt{model/Paper/}. The
-\texttt{results/} directory contains the primary and strengthened result
+The paper pipeline is \texttt{model/model.py}; the experiment entry point
+\texttt{controlled\_experiments.py} and evidence entry point
+\texttt{reproducibility\_checks.py} are in \texttt{model/Paper/}. The
+\texttt{results/} directory contains the primary and controlled-experiment result
 records. The revision package does not redistribute the private processed
 participant dataset or fitted model weights. Requests concerning access to
 underlying participant data should be directed to the corresponding author;
@@ -1069,7 +1106,7 @@ development, so none is presented as an untouched selected winner.
 
 \begin{table*}[t]
 \centering
-\caption{Seed-42 Classical Verification Performance at $K=5$ (\%)}
+\caption{Seed-42 Classical Verification Performance at $K=5$, Validation-EER Thresholds, Macro Metrics (\%)}
 \label{tab:classical_results}
 \begin{tabular}{lcccccccc}
 \toprule
@@ -1098,8 +1135,10 @@ strict-logistic tradeoff. Mean
 FAR, FRR, and EER improved as more movements were aggregated, but mean duration
 increased from 0.98 s at $K=1$ to 4.43 s at $K=5$. The fixed seed-42 CNN--GRU
 result was less monotonic: $K=1$, 3, and 5 produced EERs of 13.09\%, 2.91\%,
-and 7.56\%, respectively. H2 is therefore partially supported rather than
-universally supported.
+and 7.56\%, respectively. The stated $K=5$ versus $K=1$ H2 comparison is
+supported for EER and FAR in both analyses, despite the neural $K=3$ optimum.
+It is not a uniform usability improvement: CNN--GRU FRR rises from 18.33\%
+to 30.00\% between $K=1$ and $K=5$.
 
 \begin{table*}[t]
 \centering
@@ -1120,7 +1159,7 @@ Duration (s) & Zero-FP Splits \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{repeated_split_k_tradeoff.png}
-\caption{Repeated-split interaction-count, error-rate, and duration tradeoff.}
+\caption{Repeated-split interaction-count and error-rate tradeoff. Durations are reported in Table~\ref{tab:k_results}.}
 \label{fig:k_tradeoff}
 \end{figure}
 
@@ -1128,7 +1167,8 @@ Duration (s) & Zero-FP Splits \\
 
 Table~\ref{tab:feature_ablation} and Fig.~\ref{fig:feature_ablation} show
 that the complete target-relative representation improved CNN--GRU AUC and FAR
-relative to raw channels, but raw channels achieved a slightly lower EER.
+relative to raw channels, but raw channels achieved lower EER and FRR
+(25.00\% versus 30.00\% FRR for the full representation).
 Consequently, H3 produced mixed evidence rather than a uniform improvement.
 
 \begin{table}[t]
@@ -1164,11 +1204,17 @@ browser and device labels were unavailable.
 A post-hoc grouping of all 121 full-representation summary coefficients makes
 the same pattern explicit (Table~\ref{tab:feature_group_influence}).
 Timing/click features have the largest group mean absolute coefficient, while
-the raw-plus-spatial-and-kinematic ablation has slightly worse AUC, FRR, and
+the raw-plus-spatial-and-kinematic ablation has worse AUC, FRR, and
 EER than raw channels alone. Thus, adding differentiated channels does not uniformly help;
 higher-order kinematic variables may add acquisition noise as well as identity
 signal. These coefficient magnitudes are descriptive and correlated features
 can share or exchange weight, so they are not causal importance scores.
+This post-hoc coefficient taxonomy is distinct from the temporal-channel
+taxonomy in Table~\ref{tab:sequence_features}: names containing velocity,
+speed, acceleration, or jerk are grouped as kinematic, including angular
+velocity. Timing/click terms are assigned first; the remaining coefficients
+are spatial/geometric/target terms. This yields 15, 47, and 59 coefficients,
+respectively, without changing the model inputs.
 
 \begin{table}[t]
 \centering
@@ -1185,13 +1231,13 @@ Spatial/geometric/target & 59 & 0.393 & 0.982 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{feature_influence_logistic.png}
-\caption{Mean absolute standardized logistic coefficients across repeated
-splits. Error bars show split variation.}
+\includegraphics[width=0.85\textwidth]{feature_influence_logistic.png}
+\caption{Mean absolute standardized logistic coefficients across 300 fitted
+user models (10 verifiers across 30 splits). Error bars show interquartile ranges.}
 \label{fig:feature_influence}
-\end{figure}
+\end{figure*}
 
 \subsection{Additional Enrollment and Feature-Quality Experiments}
 \label{sec:reviewer_experiments}
@@ -1243,7 +1289,7 @@ GRU-only & All (23--25) & 0.79 & 49.21 & 3.70 & 42.86--57.14 \\
 \end{tabular}
 \end{table*}
 
-The corrected classical comparison uses the same distributional summary rule
+The common-summary classical comparison uses the same distributional summary rule
 in both arms. With 108 full-channel summaries, mean strict FAR/FRR and EER are
 0.71\%/40.56\% and 1.15\%; with 76 low-order summaries, they are
 1.01\%/48.33\% and 1.72\%. Removing the designated higher-order channels does
@@ -1267,6 +1313,10 @@ Full-feature and coordinate-only results differ in representation, so the
 contrast cannot identify a unique source of predictive signal. Explicit
 timing, engineered kinematics, acquisition conditions, and optimization remain
 plausible contributors. No cross-sample mutual-information claim is made.
+The ordered coordinate-only baselines are themselves weak: mean AUC is
+50.59\% for GRU-only and 56.64\% for CNN--GRU. This limits the sensitivity of
+the order test; lack of improvement is not evidence that temporal information
+is absent from cursor behavior.
 
 \begin{table*}[t]
 \centering
@@ -1295,9 +1345,9 @@ Table~\ref{tab:split_comparison} compares the full-feature CNN--GRU at seed 42
 using every individual movement score, with validation-EER thresholds.
 There is no $K$-movement aggregation: this is not the first-movement-only
 $K=1$ attempt protocol. The comparison did not show the expected inflation
-from random sample-level splitting. The session-separated evaluation yielded an
+from random movement-level splitting. The session-separated evaluation yielded an
 AUC of 88.90\%, FAR of 16.33\%, FRR of 19.67\%, and EER of 16.56\%. The random
-sample-level evaluation yielded an AUC of 85.96\%, FAR of 20.71\%, FRR of
+movement-level evaluation yielded an AUC of 85.96\%, FAR of 20.71\%, FRR of
 19.00\%, and EER of 17.19\%. H4 was therefore rejected on this dataset.
 This outcome does not make random splitting methodologically preferable;
 session separation remains the stronger protection against related-sample
@@ -1313,7 +1363,7 @@ Scores, No $K$-Movement Aggregation (\%)}
 Split & AUC & FAR & FRR & EER \\
 \midrule
 Session-separated & 88.90 & 16.33 & 19.67 & 16.56 \\
-Random sample-level & 85.96 & 20.71 & 19.00 & 17.19 \\
+Random movement-level & 85.96 & 20.71 & 19.00 & 17.19 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1329,7 +1379,7 @@ balanced accuracy was 90.38\%.
 
 \begin{table*}[t]
 \centering
-\caption{Seed-42 $K=5$ Operating-Point Comparison (\%)}
+\caption{Seed-42 $K=5$ Operating-Point Comparison (\%). Accuracy and Balanced Accuracy Are Pooled; FAR and FRR Are Macro.}
 \label{tab:operating_points}
 \begin{tabular}{lccccrrrr}
 \toprule
@@ -1360,6 +1410,37 @@ must not be treated as a validated population FAR bound.
 Likewise, ROC--AUC measures ranking across thresholds and cannot establish a
 deployment-grade rare-event FAR from this sample size.
 
+\subsection{Previously Unseen Impostor Control}
+\label{sec:unseen_control}
+
+For each ordered genuine/impostor identity pair across session-split seeds
+0, 1, and 2, a logistic verifier was refitted after excluding the impostor
+identity from training, preprocessing, and validation. Its test sessions and
+the genuine user's test sessions were identical to the matched known-impostor
+condition. This yields 270 paired evaluations, using 30 known-impostor fits
+and 270 identity-excluded fits. Full 121-value inputs, $K=5$, and strict
+validation calibration were fixed before fitting. Table~\ref{tab:unseen_control}
+reports equally weighted pair means; ranges are over the three split means.
+The increased FAR and reduced AUC show why the main known-impostor results
+cannot be generalized to unseen people. This control reuses the same small
+cohort, is logistic-only, and is not an external population validation.
+
+\begin{table}[t]
+\centering
+\caption{Matched Known and Excluded Impostors: Mean (Split Range), Percent}
+\label{tab:unseen_control}
+\begin{tabular}{lcc}
+\toprule
+Metric & Known & Excluded \\
+\midrule
+Strict FAR & 0.99 (0.00--2.96) & 4.07 (1.85--5.74) \\
+Strict FRR & 32.78 (21.67--45.00) & 33.77 (27.04--43.15) \\
+Test ROC EER & 1.30 (0.00--2.22) & 4.60 (3.52--6.02) \\
+ROC--AUC & 99.05 (98.40--100) & 95.86 (94.44--96.73) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Answers to the Research Questions}
 
 Table~\ref{tab:rq_outcomes} consolidates the answers. The hybrid-superiority
@@ -1379,12 +1460,12 @@ evidence.
 \textbf{Item} & \textbf{Outcome} & \textbf{Evidence} \\
 \midrule
 RQ1/H1 & Rejected & GRU-only EER 4.01\%; CNN--GRU EER 7.56\% \\
-RQ2/H2 & Partial & More movements help repeated means; neural result is nonmonotonic \\
-RQ3/H3 & Mixed & Full features improve AUC/FAR but not EER \\
+RQ2/H2 & Metric-specific & $K=5$ improves EER/FAR over $K=1$; neural FRR worsens \\
+RQ3/H3 & Mixed & Full features improve AUC/FAR, but worsen EER/FRR \\
 RQ4 & Confirmed tradeoff & Strict thresholds lower FAR while increasing FRR \\
 RQ5 & Not stable & $K=5$ FAR 0.00--2.14\%; FRR 13.33--58.33\% \\
 RQ6 & Not established & Hardware, device, DPI, browser labels unavailable \\
-H4 & Rejected here & Random sample-level metrics were not better \\
+H4 & Rejected here & Random movement-level metrics were not better \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1480,6 +1561,9 @@ establish superiority, especially given NeuroCursor's high strict FRR and
 restricted cohort. LT-AMouse values come from Table III of
 \cite{wang2025Mouse}: Balabit F1 94.65\%, AUC 97.73\%, and EER 6.14\%.
 Its abstract instead labels 94.65\% as AUC; we use the more detailed table.
+The Antal--Egyed-Zsigmond row reports their Table 10 scenario B with 20
+actions, not their best result: their reported 0.92 AUC uses a separate
+session-based protocol with varying numbers of actions.
 
 \subsection{Security, Usability, and External Validation}
 
@@ -1525,11 +1609,11 @@ capacity fixed within each architecture. They show no consistent chronological
 advantage and do not measure mutual information. Even coordinate geometry can
 contain plausible trajectory structure. Between-architecture capacity,
 optimization behavior, and broader feature interactions remain unresolved.
-The corrected classical ablation isolates the channel-group change from
+The common-summary classical ablation isolates the channel-group change from
 removal of the 13 derived summaries, but correlated predictors still prevent
 causal attribution to an individual derivative.
 
-Participant recruitment is not documented in the analysis file.
+Recruitment context is author-reported rather than encoded per session.
 Hardware, input-device type (mouse versus trackpad),
 DPI, sensitivity, browser, handedness, fatigue, injury, and environmental
 labels were unavailable, preventing cross-device analysis and leaving
@@ -1543,17 +1627,17 @@ required for confirmatory evaluation.
 
 Behavioral biometrics should be treated as a sensitive modality because they may reflect distinctive patterns of user interaction. A practical system should minimize unnecessary data collection, store only the data required for authentication, protect stored templates, and provide clear notice to users.
 
-Ethics committee approval was not required under relevant laws and institutional
-guidelines. The acquisition instrument records cursor coordinates, timestamps,
-and mouse-button state inside a bounded browser canvas during a randomized
-point-and-click task. It does not collect names, demographic attributes, device
-fingerprints, or free text, and participants are represented only by anonymized
-labels. Supervising faculty at The University of Texas at Dallas reviewed the
-acquisition code and determined that the activity did not involve identifiable
-private information and therefore did not meet the definition of human-subjects
-research under 45 CFR 46.102(e). Participants were informed of the task and
-intended publication, gave verbal consent immediately before participation,
-could stop at any time, and were not linked to a separate consent record.
+The authors report receiving verbal guidance from Hamid Rouhani after his
+review of institutional guidelines and the acquisition code and consultation
+with his supervisor. No written UTD OHSP/IRB determination or exemption has
+been provided for this manuscript; verbal guidance is not presented as formal
+IRB approval. Written institutional clarification remains necessary before
+submission. Participants were informed about the research and intended
+publication and consented to participation. Collection occurred online and in
+UTD ECSS room 2.415 during July 1--31, 2026. The instrument records cursor
+coordinates, timestamps, and button state in a bounded canvas, using anonymized
+labels. Anonymization does not by itself establish exemption, particularly
+because the analysis seeks to distinguish individuals from their behavior.
 
 \section{Conclusion}
 
@@ -1566,10 +1650,10 @@ High FRR and split variability preclude deployment claims. CNN--GRU did not
 outperform GRU-only or the strongest classical models and is not recommended
 on this evidence.
 
-The added controls show training-scale sensitivity but no stable enrollment
+The controlled experiments show training-scale sensitivity but no stable enrollment
 minimum under the stated criterion; coordinate-only order controls show no
 consistent chronological advantage or mutual-information evidence. Removing
-higher-order channels did not improve the corrected classical ablation's mean
+higher-order channels did not improve the common-summary classical ablation's mean
 metrics. These negative results constrain the interpretation rather than
 justify a preferred architecture. An untouched external cohort, longitudinal
 and cross-device measurements, dependence-aware uncertainty, and deliberate
@@ -1646,10 +1730,40 @@ Repeated-split robustness &
 Results &
 \texttt{sensitivity} \\
 
-Strengthened reviewer controls &
+Controlled experiments &
 Enrollment and temporal controls &
-\texttt{reviewer\_replicated\_controls.py} \\
+\texttt{controlled\_experiments.py} \\
 
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:descriptive_statistics} provides the per-verifier statistics for
+the seed-42 CNN--GRU $K=5$ validation-EER configuration. Intervals are 95\%
+class-stratified bootstrap AUC intervals and exact binomial FAR/FRR intervals.
+Very few genuine attempts produce wide or degenerate intervals. A non-estimable
+$d$ reflects insufficient within-class variance/sample support, not infinite
+population separation. All values are descriptive under the dependence
+limitations in Section VI-I.
+
+\begin{table*}[t]
+\centering
+\caption{Conditional Descriptive Statistics: Seed-42 CNN--GRU, $K=5$}
+\label{tab:descriptive_statistics}
+\begin{tabular}{lccccc}
+\toprule
+Verifier & Permutation $p$ & Cohen's $d$ & AUC interval (\%) & FAR interval (\%) & FRR interval (\%) \\
+\midrule
+001 & 0.00040 & -- & 100.00--100.00 & 0.00--14.82 & 9.43--99.16 \\
+002 & 0.00780 & 1.549 & 73.91--100.00 & 0.11--21.95 & 9.43--99.16 \\
+003 & 0.07429 & 1.058 & 54.17--100.00 & 9.77--46.71 & 1.26--98.74 \\
+004 & 0.00300 & -- & 100.00--100.00 & 0.00--14.25 & 1.26--98.74 \\
+005 & 0.00020 & 6.130 & 100.00--100.00 & 0.00--14.82 & 0.00--70.76 \\
+006 & 0.00270 & 1.626 & 85.51--100.00 & 4.95--38.78 & 0.00--70.76 \\
+007 & 0.00100 & 4.979 & 100.00--100.00 & 0.11--21.95 & 0.00--70.76 \\
+008 & 0.00050 & 3.570 & 91.30--100.00 & 0.00--14.82 & 0.84--90.57 \\
+009 & 0.07829 & -- & 88.00--100.00 & 14.95--53.50 & 0.00--97.50 \\
+010 & 0.00090 & 8.687 & 100.00--100.00 & 0.00--14.82 & 0.84--90.57 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1694,6 +1808,12 @@ support for data loading and initial data-ingestion workflows.
 All authors reviewed the completed work, approved the final manuscript, and
 accept responsibility for their respective contributions.
 
+\section*{Funding}
+This research received no funding.
+
+\section*{Competing Interests}
+The authors declare no competing interests.
+
 \section*{Acknowledgment}
 The authors sincerely thank Dr. Jeyakesavan Veerasamy, Dr. Anurag Nagar, and
 Hamid Rouhani for their research guidance and mentorship.
@@ -1714,10 +1834,8 @@ references, and final submitted text.
 
 \bibitem{nistBiometrics}
 National Institute of Standards and Technology,
-``Biometrics,''
-\emph{Computer Security Resource Center Glossary}.
-[Online]. Available: \url{https://csrc.nist.gov/glossary/term/Biometrics}.
-Accessed: Jul. 2026.
+\emph{Digital Identity Guidelines: Authentication and Authenticator Management},
+NIST SP 800-63B-4, Jul. 2025, doi: 10.6028/NIST.SP.800-63B-4.
 
 \bibitem{khanMouseSurvey}
 S. Khan, C. Devlen, M. Manno, and D. Hou,

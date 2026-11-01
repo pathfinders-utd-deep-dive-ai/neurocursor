@@ -24,7 +24,8 @@ We thank the editor and reviewers. The revision shortens the manuscript,
 clarifies model inputs, adds enrollment, feature-quality, and temporal-order
 controls, and reports CNN--GRU as a negative result. It distinguishes measured
 performance from unsupported enrollment, mutual-information, and deployment
-claims. Locations below refer to the revised manuscript's sections and tables.
+claims. Locations below refer to the revised manuscript's sections, tables,
+and printed page numbers.
 
 \begin{center}
 \begin{tabular}{p{0.29\textwidth}p{0.62\textwidth}}
@@ -54,7 +55,7 @@ controls for both networks across three splits plus an invariant comparator. \\
 \section*{Reviewer 1}
 
 \subsection*{Comment 1: Introduction and Related Work are repetitive}
-\location{Sections I--II; Table I}
+\location{Sections I--II, pp. 1--2; Table I, p. 3}
 The reviewer observed that both sections repeatedly motivate mouse-based
 authentication and the CNN/GRU architecture, and asked that Related Work focus
 on differences from prior systems.
@@ -62,7 +63,8 @@ on differences from prior systems.
 \response{We agree. The earlier structure repeated the same motivation and
 architecture rationale. We rewrote both sections. The Introduction now states
 the problem, protocol, primary result, research questions, and four concise
-contributions without subsections or mathematical preliminaries. Related Work
+contributions without standalone subsections or mathematical preliminaries;
+two compact run-in labels identify the hypotheses and contributions. Related Work
 now compares task design, data, representation, strength, and limitation rather
 than re-explaining the proposed model.}
 
@@ -81,7 +83,7 @@ are discussed alongside the restored published BeCAPTCHA-Mouse article.
 The section states that the CNN--GRU architecture is not the novelty.}
 
 \subsection*{Comment 2: Defined features and actual model inputs are unclear}
-\location{Section V; Tables II--IV; Section VI-K for code/data access}
+\location{Section V and Table II, p. 5; Tables III--IV, p. 6; Section VI-K, p. 8, for code/data access}
 The reviewer requested a summary of the features supplied to the neural models
 and the statistics used by the classical models.
 
@@ -109,7 +111,7 @@ interpolation can shift the apparent press time. Summary path efficiency is
 also distinguished from the clipped running-efficiency channel.
 
 \subsection*{Comment 3: Additional experiments should explain model and feature behavior}
-\location{Sections VI-G and VII-E--F; Tables XII--XIV}
+\location{Section VI-G, pp. 7--8; Sections VII-E--F, pp. 9--12; Tables XII--XIV, pp. 11--13}
 The reviewer noted that GRU-only and logistic regression outperform CNN--GRU
 and that the full feature set is not consistently best, and suggested analyses
 of data availability and noise-sensitive features.
@@ -119,8 +121,10 @@ winner. We added a reproducible post-hoc grouping of all 121 standardized
 logistic coefficients across the 30 refitted splits. Timing/click features have
 the largest group mean absolute coefficient (0.796), followed by kinematic
 (0.463) and spatial/geometric/target features (0.393). We also emphasize that
-raw plus spatial and kinematic features have slightly worse AUC, FRR, and EER
-than raw channels in the fixed CNN--GRU ablation. This provides evidence consistent with
+raw plus spatial and kinematic features have worse AUC, FRR, and EER
+than raw channels in the fixed CNN--GRU ablation (FRR 33.33\% versus 25.00\%).
+Full features also worsen FRR to 30.00\%, despite improving AUC/FAR.
+This provides evidence consistent with
 noise-sensitive differentiation, while explicitly avoiding causal claims.}
 
 \change{The grouped coefficient analysis remains descriptive. We strengthened
@@ -140,7 +144,7 @@ improve these mean metrics under the common summary rule.
 \section*{Reviewer 2}
 
 \subsection*{Comment 1: The Introduction is overly long and the contributions are hard to identify}
-\location{Section I, including the four-item contribution list}
+\location{Section I, pp. 1--2, including the four-item contribution list}
 
 \response{We agree. The Introduction was rewritten from four subsections into
 a compact narrative. It now reports the primary repeated-split result early and
@@ -148,7 +152,7 @@ ends with four numbered contributions. Repeated explanations of passwords,
 biometrics, trajectory equations, and CNN/GRU roles were removed.}
 
 \subsection*{Comment 2: Related Work is fragmented, verbose, and unclear about recent work}
-\location{Section II; Table I; updated bibliography}
+\location{Section II, p. 2; Table I, p. 3; bibliography, pp. 16--17}
 
 \response{We agree. Related Work is now a single comparative narrative with no
 architecture equations and a ten-row positioning table. The revision states
@@ -167,7 +171,7 @@ from human-identity verification. LT-AMouse is cited as arXiv v2 because the
 verified record does not identify a journal publication.
 
 \subsection*{Comment 3: Does training-data scale affect accuracy, and what is the minimum enrollment data?}
-\location{Sections VI-G and VII-F; Table XIII}
+\location{Section VI-G, pp. 7--8; Section VII-F, pp. 11--12; Table XIII, p. 13}
 
 \response{We added exact-budget learning curves for logistic regression,
 CNN--GRU, and GRU-only across seeds 0, 1, and 2. The fixed eligible cohort
@@ -192,7 +196,7 @@ minimum was demonstrated within the tested range; a population enrollment
 recommendation still requires larger longitudinal data.}
 
 \subsection*{Comment 4: What justifies retaining CNN--GRU after H1 is rejected?}
-\location{Sections V, VII-B, VIII-A, and IX; Table VIII}
+\location{Section V, p. 5; Section VII-B, p. 9; Section VIII-A, p. 13; Section IX, p. 15; Table VIII, p. 10}
 
 \response{Nothing in the present dataset justifies choosing CNN--GRU over
 GRU-only. We revised the manuscript accordingly. The hybrid is included only
@@ -207,7 +211,7 @@ classical models are also stronger, and that the present evidence does not
 support retaining the hybrid.}
 
 \subsection*{Comment 5: Does the model capture mutual information across sampling points rather than acceleration-like features?}
-\location{Sections VI-G and VII-F; Table XIV; Section VIII-D}
+\location{Section VI-G, pp. 7--8; Section VII-F, pp. 11--12; Table XIV, p. 13; Section VIII-D, p. 14}
 
 \response{Architecture alone does not demonstrate cross-sample mutual
 information. The strengthened controls exclude elapsed time, inter-event time,
@@ -230,7 +234,35 @@ tests assess functional order sensitivity, not a numerical mutual-information
 estimate. The stronger claim is removed. Geometry, sample density and successive
 position differences may retain implicit motion/acquisition information;
 removing explicit channels is not complete removal of such cues. Reuse of
-the development cohort also remains a limitation.}
+the development cohort also remains a limitation. The ordered coordinate-only
+baselines have mean AUC 50.59\% (GRU-only) and 56.64\% (CNN--GRU), limiting
+the sensitivity of this test; it cannot establish absence of temporal signal.}
+
+\section*{Additional reporting and validation clarifications}
+\location{Sections VI-A--E, pp. 5--7; VI-I--K, p. 8; VII-I, p. 12; Table XVII and VIII-E, p. 14; Tables XX--XXI and declarations, pp. 15--16}
+The revised methodology specifies every classical model's fixed
+hyperparameters, the absence of classical hyperparameter tuning, the distinction
+between validation-EER model comparisons and the primary strict-logistic
+analysis, macro versus pooled aggregation, and descriptive test-ROC EER.
+It documents the anisotropic canvas normalization and its geometric
+limitations, and separates the coefficient-group taxonomy from the temporal
+channel taxonomy. Archived permutation, effect-size, and interval results are
+now reported in the appendix, with their dependence limitations.
+
+The main results concern held-out sessions from known impostor identities.
+A matched logistic identity-exclusion control across three splits and 270
+ordered identity-pair evaluations excludes the held identity from training,
+preprocessing, and validation. At $K=5$, mean strict FAR rises from 0.99\%
+to 4.07\%, FRR from 32.78\% to 33.77\%, and test-ROC EER from 1.30\% to
+4.60\%; AUC decreases from 99.05\% to 95.86\%. These are same-cohort
+exploratory results, not external validation.
+
+Collection dates, recruitment settings, informed participation, funding, and
+competing interests now reflect author confirmations. The unsupported formal
+ethics-exemption claim has been removed. The manuscript distinguishes reported
+verbal guidance from an institutional written OHSP/IRB determination, which
+has not been supplied. That institutional clarification remains outstanding
+before submission; this letter does not claim that it has been obtained.
 
 
 
