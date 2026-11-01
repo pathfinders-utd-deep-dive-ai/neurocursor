@@ -47,7 +47,8 @@ We compare a candidate convolutional neural network--gated recurrent unit
 (CNN--GRU), CNN-only and GRU-only networks, five classical classifiers, three
 primary feature sets, and decisions formed from one, three, or five movements. The
 evaluable cohort contains 10 anonymized identities, 266 sessions, and 1,330
-movements; sessions are isolated across training, validation, and test subsets,
+movements; the main evaluation uses known impostor identities, with sessions
+isolated across training, validation, and test subsets,
 and user-specific thresholds are calibrated only on validation data. Across 30
 fixed session-separated splits, the strict full-feature logistic verifier at
 $K=5$ achieves mean pooled balanced accuracy of 82.82\%, mean macro false
@@ -1020,7 +1021,7 @@ shows the joint FAR/FRR variation rather than a single favorable operating point
 \begin{table*}[t]
 \centering
 \caption{Repeated Session-Split Sensitivity for the Strict Logistic Verifier
-at $K=5$}
+at $K=5$. Accuracy Measures Are Pooled; FAR, FRR, AUC, and EER Are Macro.}
 \label{tab:repeated_results}
 \begin{tabular}{lccccc}
 \toprule
@@ -1142,7 +1143,7 @@ to 30.00\% between $K=1$ and $K=5$.
 
 \begin{table*}[t]
 \centering
-\caption{Repeated-Split Interaction-Count Tradeoff}
+\caption{Repeated-Split Interaction-Count Tradeoff. Balanced Accuracy Is Pooled; FAR, FRR, and EER Are Macro.}
 \label{tab:k_results}
 \begin{tabular}{ccccccc}
 \toprule

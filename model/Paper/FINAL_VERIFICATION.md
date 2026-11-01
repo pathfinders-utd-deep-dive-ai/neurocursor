@@ -11,6 +11,11 @@
 
 ## Checks completed
 
+- Final pass repeated the regression and evidence audits, rechecked primary
+  publication records, package checksums, source/PDF equality, response locations,
+  and page numbers. Clarified known-impostor scope in the abstract and pooled
+  versus macro aggregation in the repeated-results table captions.
+
 - Read both original reviewer reports and checked the corresponding responses.
 - All 17 pipeline/control regression tests pass, including every table/figure
   being referenced outside its float and clean run-in heading punctuation.
