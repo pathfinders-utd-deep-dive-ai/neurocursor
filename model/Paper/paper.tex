@@ -72,37 +72,29 @@ mouse dynamics, spatiotemporal feature learning, user authentication
 
 Mouse dynamics can supplement credential-based authentication by measuring
 how a person moves and clicks \cite{nistBiometrics,khanMouseSurvey}.
-Existing engineered-feature, convolutional, recurrent, and hybrid systems
-already establish this modality \cite{antalFejer2020,wang2025Mouse}.
-The contribution is neither a new biometric modality nor a new CNN--GRU
-architecture.
+NeuroCursor evaluates a short randomized target-acquisition challenge, not a
+new biometric modality or neural architecture. A decision combines the first
+$K\in\{1,3,5\}$ trajectories, with target-relative features representing the
+varying movement directions and distances.
 
-NeuroCursor instead evaluates a brief randomized target-acquisition challenge.
-The user moves to and clicks each target; a decision combines
-$K\in\{1,3,5\}$ recorded trajectories. Randomization varies direction and
-distance while enabling target-relative measurements. We ask whether these
-few movements support \emph{supplemental} identity verification.
-
-The cohort contains 10 identities, 266 sessions, and 1,330 movements. We compare
-three neural models, five classical classifiers, and three feature sets using
-session-separated splits and validation-only threshold calibration. Across
-30 splits, strict logistic verification at $K=5$ yields mean macro FAR 0.63\%
-and FRR 35.89\%: low observed false acceptance comes with substantial legitimate
-user rejection. GRU-only and several classical models outperform CNN--GRU on
-key metrics; the hybrid is a tested candidate, not the recommended model.
+We compare three neural models, five classical classifiers, and three feature
+sets on 10 identities, 266 sessions, and 1,330 movements, using session-separated
+splits and validation-only calibration. Across 30 splits, strict logistic
+verification at $K=5$ yields mean macro FAR 0.63\% and FRR 35.89\%: low
+observed false acceptance comes with substantial genuine-user rejection.
+GRU-only and several classical models outperform CNN--GRU on key metrics;
+the hybrid is a tested candidate, not the recommended model.
 
 \paragraph{Research questions and hypotheses}
-The experiments ask whether (RQ1) CNN--GRU improves on neural and classical
-baselines; (RQ2) combining one, three, or five movements changes the
-security--usability tradeoff; (RQ3) engineered and target-relative channels add
-value beyond raw channels; (RQ4) validation-calibrated thresholds shift FAR and
-FRR; (RQ5) results remain stable across session-separated splits; and (RQ6)
-acquisition conditions could confound the measured signal. We test four
-directional hypotheses: CNN--GRU will have lower EER than CNN-only and GRU-only
+We ask whether (RQ1) CNN--GRU improves on the baselines; (RQ2) movement count
+changes the security--usability tradeoff; (RQ3) engineered features improve on
+raw channels; (RQ4) threshold policy shifts FAR/FRR; (RQ5) performance is stable
+across session splits; and (RQ6) acquisition conditions could confound the
+signal. The directional hypotheses are: CNN--GRU has lower EER than CNN-only and GRU-only
 (H1); $K=5$ will improve verification over $K=1$ (H2); the full feature set will
 outperform raw channels (H3); and session separation will be more difficult than
 random movement-level splitting (H4). Negative and mixed outcomes are reported
-without relabeling the hypotheses after inspection.
+without relabeling these hypotheses after inspection.
 
 \paragraph{Contributions}
 This work contributes:
@@ -119,50 +111,37 @@ This work contributes:
 
 \section{Related Work}
 
-Mouse-dynamics studies differ in collection task, representation, classifier,
-and evaluation protocol. Limited public data, inconsistent protocols, and
-hardware variation complicate comparison \cite{khanMouseSurvey}.
-Antal and Fej\'er used fixed-size Balabit sequences and DFL transfer learning
-with a CNN \cite{antalFejer2020}; Antal and Egyed-Zsigmond studied continuous
-intrusion detection \cite{antalEgyed2019}. These passive-data protocols differ
-from a deliberate target-acquisition challenge.
+Mouse-dynamics comparisons are limited by differences in tasks, public data,
+protocols, and hardware \cite{khanMouseSurvey}. Antal and Fej\'er used
+fixed-size Balabit sequences and DFL transfer learning with a CNN
+\cite{antalFejer2020}; Antal and Egyed-Zsigmond studied continuous intrusion
+detection \cite{antalEgyed2019}. Both differ from a deliberate short challenge.
 
-Recent work addresses complementary weaknesses. Dave \textit{et al.} compare
-mouse authentication in high- and low-intensity games, exposing task context
-as an evaluation dimension rather than studying a fixed short challenge
-\cite{dave2024Clicks}. Kuric \textit{et al.} show that mouse configuration
-alters common metrics and downstream predictions \cite{kuricMouseCredibility}.
-Wang \textit{et al.}'s LT-AMouse combines 1D-ResNet and GRU with density-based
-data-volume analysis and approximate-entropy segment selection on Balabit and
-DFL \cite{wang2025Mouse}. Its data-sufficiency and attack analyses are broader
-than ours, including segment-length sensitivity and public-dataset coverage. We cite the verified arXiv v2 record; no journal publication is
-identified in that record.
+Dave \textit{et al.} contrast high- and low-intensity gaming tasks
+\cite{dave2024Clicks}, while Kuric \textit{et al.} demonstrate mouse-configuration
+confounds \cite{kuricMouseCredibility}. LT-AMouse combines 1D-ResNet--GRU with
+data-volume and segment-length analyses on Balabit and DFL
+\cite{wang2025Mouse}. Its data-sufficiency, segment-length, and attack analyses
+and public-dataset coverage are broader than ours; the cited arXiv v2 record
+does not identify a journal publication.
 
-Newer architectures broaden both representation and evaluation. Jin and Liao
-use trajectory embeddings and a shared classifier for authentication and
-CAPTCHA-farm identity-inconsistency detection, reducing the need for separate
-per-user classifiers \cite{jin2025Similarity}. Tao \textit{et al.} combine
-switching LSTM, mixed depthwise convolution, and personalized isolation
-forests, with evaluation on Balabit and SapiMouse \cite{tao2026Spatiotemporal}.
-Sasikumar and Nagarajan combine a Transformer--CNN with federated learning,
-differential privacy, and robustness tests \cite{sasikumar2026Privacy}.
-These studies address scalability, temporal/spatial representation, or privacy
-more directly than NeuroCursor, but use different tasks and decision units;
-their reported metrics are not head-to-head comparisons with five-target
-verification.
+Jin and Liao use trajectory embeddings and a shared classifier for
+authentication and CAPTCHA-farm identity-inconsistency detection
+\cite{jin2025Similarity}. Tao \textit{et al.} combine switching LSTM, mixed
+depthwise convolution, and personalized isolation forests on Balabit and
+SapiMouse \cite{tao2026Spatiotemporal}. Sasikumar and Nagarajan evaluate a
+Transformer--CNN with federated learning, differential privacy, and robustness
+tests \cite{sasikumar2026Privacy}. These address scalability, representation,
+or privacy, but their tasks and decision units prevent direct comparison
+with five-target verification.
 
-Bot detection must also be distinguished from claimed-user verification.
-Acien \textit{et al.}'s BeCAPTCHA-Mouse uses neuromotor features and synthetic
-trajectories to distinguish people from bots \cite{acien2022BeCAPTCHA}.
-It is directly relevant to trajectory modeling and synthetic attacks, but
-human-versus-bot accuracy does not establish human identity separation.
-Commercial descriptions similarly show operational interest without enough
-public detail to reproduce identity thresholds
+BeCAPTCHA-Mouse uses neuromotor features and synthetic trajectories for bot
+detection, not separation of human identities \cite{acien2022BeCAPTCHA}.
+Commercial descriptions lack sufficient public detail to reproduce thresholds
 \cite{graboxyContinuous,graboxyMFA,googleRecaptchaV3}.
-Table~\ref{tab:related_work_positioning} summarizes these distinctions.
-NeuroCursor contributes a session-isolated, short randomized challenge with
-explicit calibration, classical comparators, and reported negative results,
-not a new biometric modality or a demonstrated need for CNN--GRU.
+Table~\ref{tab:related_work_positioning} compares each study's strengths and
+limitations. NeuroCursor instead evaluates a session-isolated short challenge
+with explicit calibration, classical comparators, and reported negative results.
 
 \begin{table*}[t]
 \centering

@@ -1,0 +1,36 @@
+DRAFT FOR AUTHOR REVIEW — NOT FOR UPLOAD UNTIL ETHICS STATUS IS RESOLVED
+
+November 1, 2026
+
+Re: Revised manuscript HCCOM-D-26-00263
+NeuroCursor: A Behavioral Biometric Framework for Mouse-Based User Authentication
+
+Dear Editor,
+
+Please find our revised manuscript and point-by-point responses to both
+reviewers. The revision shortens the Introduction and Related Work, clarifies
+neural and classical inputs, specifies model settings and threshold policies,
+and reports exact-budget enrollment, feature-quality, temporal-order, and
+identity-exclusion controls. We retain CNN-GRU as a tested negative result,
+not a recommended model, and remove unsupported mutual-information claims.
+
+The main repeated-split logistic evaluation uses held-out sessions from known
+impostor identities. Its mean ROC-AUC is 98.78%, but strict calibration yields
+35.89% mean macro FRR. A separate matched identity-exclusion control reveals
+worse rejection of previously unseen impostor identities. The manuscript
+reports these limitations rather than claiming deployment readiness.
+
+We include a marked manuscript, editable sources, corrected highlights, and
+the reviewer responses. The authors report no funding and no competing
+interests. The AI-assisted development and writing disclosure is retained.
+
+AUTHOR ACTION BEFORE UPLOAD: Written institutional clarification of the study's
+OHSP/IRB status remains outstanding. Resolve that status, replace the pending
+wording in the manuscript and response letter with the documented determination,
+and confirm all-coauthor approval and current preprint/originality disclosures.
+Do not remove this hold merely to make the letter appear submission-ready.
+
+Sincerely,
+Shaurya Saxena
+Corresponding author
+shaurya.saxena090@gmail.com

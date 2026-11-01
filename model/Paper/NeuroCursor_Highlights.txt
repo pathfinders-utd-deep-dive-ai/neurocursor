@@ -1,0 +1,7 @@
+Highlights
+
+- NeuroCursor evaluates a randomized five-movement identity challenge.
+- Five movements take a mean 4.43 seconds in the repeated-split evaluation.
+- Strict logistic verification yields 98.78% mean AUC across 30 splits.
+- CNN-GRU does not outperform GRU-only on the fixed neural comparison.
+- Unseen-impostor and enrollment controls expose limits to generalization.

@@ -5,11 +5,20 @@
 - Clean manuscript: 17 pages, 21 tables, eight figures.
 - Point-by-point response: five pages, all eight original reviewer comments,
   plus follow-up reporting clarifications and manuscript page references.
-- Marked review copy: 25 pages, compared with the originally supplied main.tex.
+- Marked review copy: 24 pages, compared with the archived originally supplied main.tex.
   Selected tables are marked as whole blocks to prevent broken diff layouts.
 - Editable Overleaf source and complete revision package.
 
 ## Checks completed
+
+- Final concision pass reduced the Introduction from 336 to 283 words (15.8%)
+  and Related Work from 335 to 216 words (35.5%), using whitespace counts of
+  their narrative source blocks. All hypotheses, four contributions, recent
+  comparative coverage, results, and the AI disclosure were retained.
+- Corrected editable highlights replace an unsupported temporal-learning claim.
+  RESUBMISSION_CHECKLIST.md distinguishes completed files from institutional,
+  coauthor, and portal attestations. A revision-cover-letter draft is explicitly
+  held for author review rather than asserting unresolved approvals.
 
 - Final pass repeated the regression and evidence audits, rechecked primary
   publication records, package checksums, source/PDF equality, response locations,

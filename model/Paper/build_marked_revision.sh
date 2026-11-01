@@ -4,6 +4,7 @@
 set -euo pipefail
 original=${1:?Original manuscript .tex path required}
 output=${2:?Absolute marked-output .tex path required}
+[[ -s "$original" ]] || { echo "Original manuscript source is missing or empty: $original" >&2; exit 1; }
 cd "$(dirname "$0")"
 latexdiff --graphics-markup=none --math-markup=0 \
   --disable-citation-markup --type=CFONT --exclude-safecmd=label \
