@@ -886,6 +886,13 @@ In the fixed seed-42 CNN--GRU analysis, we compare genuine and impostor scores f
 
 For the direct model evaluations, movement-count studies, feature-ablation tests, and split comparisons, we used a pseudorandom seed of 42 to ensure consistency. The robustness analysis reported results for every seed in a fixed grid from 0 to 29, with the verifier refitted for each split. This grid was established internally for the sensitivity analysis and was not externally preregistered. Preprocessing statistics were derived exclusively from the training subset and archived as part of the experimental record. These artifacts document feature names, sequence lengths, split assignments, training means, standard deviations, model configurations, and user-specific thresholds. The record also includes confusion counts and the resulting performance metrics. For the primary neural evaluation, the software environment consisted of TensorFlow 2.16.2, scikit-learn 1.6.1, and NumPy 1.26.4 running on an ARM64 CPU architecture.
 
+OpenAI Codex, accessed through the ChatGPT desktop interface, was used during
+software development to assist with a small number of engineered features and
+the $K=1$, $K=3$, and $K=5$ evaluation workflows. The authors specified,
+reviewed, and empirically verified those extensions; the tool did not replace
+the authors' model selection, statistical interpretation, or responsibility
+for the reported results.
+
 \section{Results}
 
 \subsection{Primary Repeated-Split Performance}
@@ -1550,18 +1557,15 @@ accept responsibility for their respective contributions.
 The authors sincerely thank Dr. Jeyakesavan Veerasamy, Dr. Anurag Nagar, and
 Hamid Rouhani for their research guidance and mentorship.
 
-\section*{AI-Assisted Development Disclosure}
+\section*{Declaration of Generative AI and AI-Assisted Technologies in the
+Manuscript Preparation Process}
 
-The initial conception of NeuroCursor, the data-acquisition framework, and the
-selection of the CNN--GRU candidate arose from the authors' independent
-research. The core implementation and experimental methodology were completed
-by the authors before automated assistance was introduced. OpenAI Codex,
-accessed through the ChatGPT desktop interface using the GPT-5.6 Sol model, was
-subsequently used in a limited supplementary capacity to assist with a small
-number of engineered features and the $K=1$, $K=3$, and $K=5$ evaluation
-workflows \cite{openaiCodexModels}. The authors specified, reviewed, and
-empirically verified those extensions, independently interpreted the results,
-and retain responsibility for the manuscript and its conclusions.
+During the preparation of this work, the authors used OpenAI Codex through the
+ChatGPT desktop interface to improve language and organization, perform
+cross-document consistency checks, and assist with manuscript revision. After
+using this service, the authors reviewed and edited the content as needed,
+verified the claims and references, and take full responsibility for the
+content of the publication.
 
 \FloatBarrier
 
@@ -1636,14 +1640,6 @@ Google,
 [Online]. Available:
 \url{https://developers.google.com/recaptcha/docs/v3}.
 Accessed: Jul. 2026.
-
-\bibitem{openaiCodexModels}
-OpenAI,
-``Models,''
-\emph{ChatGPT Learn}.
-[Online]. Available:
-\url{https://learn.chatgpt.com/docs/models}.
-Accessed: Jul. 30, 2026.
 
 \bibitem{fawcettROC}
 T. Fawcett,
