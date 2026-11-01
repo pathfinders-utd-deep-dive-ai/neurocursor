@@ -46,7 +46,7 @@ Enrollment sufficiency & Clarifies that three sessions is a split-eligibility
 rule, not a stable minimum; adds exact-budget learning curves for three model
 families on a fixed eligible cohort across three splits. \\
 Temporal dependence & Removes any implication that mutual information was
-demonstrated; adds timing-free ordered, permuted, and reversed coordinate
+demonstrated; adds ordered, permuted, and reversed coordinate-only
 controls for both networks across three splits plus an invariant comparator. \\
 \bottomrule
 \end{tabular}
@@ -193,10 +193,12 @@ and reset seeds improve reproducibility. All 21 conditions and split variation
 are reported. CNN--GRU's shuffled-minus-ordered EER differences are
 $-15.43$, $+1.08$, and $+15.47$ percentage points across the three splits.
 GRU-only EER improves after shuffling in all three splits. There is therefore
-no consistent chronological advantage in these timing-free inputs. These
+no consistent chronological advantage in these coordinate-only inputs. These
 tests assess functional order sensitivity, not a numerical mutual-information
-estimate. The stronger claim is removed; geometric trajectory structure and
-reuse of the development cohort remain limitations.}
+estimate. The stronger claim is removed. Geometry, sample density and successive
+position differences may retain implicit motion/acquisition information;
+removing explicit channels is not complete removal of such cues. Reuse of
+the development cohort also remains a limitation.}
 
 \subsection*{Comment 6: Major revision is required}
 

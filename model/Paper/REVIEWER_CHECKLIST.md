@@ -4,7 +4,7 @@
 | --- | --- |
 | R1.1: Remove overlap between Introduction and Related Work | Both sections rewritten; Related Work compares task, inputs, strengths, and limitations in the positioning table. |
 | R1.2: State exact inputs and classical summary statistics | Temporal channel table plus exact input table: 5/17/27 primary channels, 19-channel added control; classical dimensions 20/68/121/76. Mean, standard deviation, minimum, maximum and all 13 extra summaries explicitly identified. |
-| R1.3: Explain model/feature behavior using more experiments | Strengthened grid: 45 enrollment, 6 corrected classical feature-quality, and 21 timing-free temporal configurations. All three split seeds and all conditions retained. |
+| R1.3: Explain model/feature behavior using more experiments | Strengthened grid: 45 enrollment, 6 corrected classical feature-quality, and 21 coordinate-only temporal configurations. All three split seeds and all conditions retained. |
 | R2.1: Shorten Introduction and clarify contributions | Compact narrative with four numbered contributions and no introductory equations. |
 | R2.2: Consolidate Related Work and explain recent work | Single comparative narrative and positioning table; explicit LT-AMouse and device-confounding comparisons. |
 | R2.3: Training scale and minimum stable enrollment | Fixed seven-identity eligible cohort; exact nested 1/5/10/20/all-session budgets for logistic, CNN-GRU, and GRU-only, across three splits. Holdouts fixed. An explicit study-specific error/stability criterion is evaluated; no universal population minimum is implied. |
@@ -21,9 +21,16 @@ Initial reviewer runs remain archived separately in
 All 72 configurations passed independent reconstruction of session counts and split
 isolation from the source data, metric aggregation, exact nested budgets,
 dataset fingerprint, permutation/reversal invariants, and twelve regression
-tests. Citations/references resolve, and all 18 manuscript pages and four
+tests. Citations/references resolve, and all 19 manuscript pages and four
 response pages were rendered and visually inspected. The AI-Assisted
 Development section is byte-identical to its pre-change version.
+
+Final wording audit also aligned the discrete EER definition with the code,
+identified canvas-normalized derivative units and training-only scaling,
+documented the non-conservative resampled summary estimators, and qualified
+test isolation per fit rather than claiming untouched confirmatory evaluation.
+Coordinate-only controls are not described as eliminating all implicit timing
+or acquisition information. All 64 labels and 16 cited bibliography keys resolve.
 
 Scope: the strengthened learning curves and temporal controls cover three
 overlapping splits. Enrollment covers seven eligible identities and temporal

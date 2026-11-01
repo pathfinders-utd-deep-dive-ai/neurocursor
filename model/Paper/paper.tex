@@ -457,7 +457,8 @@ may indicate overshoot or corrective motion.
 
 \subsection{Normalization and Sequence Preparation}
 
-Because screen resolution, sampling rate, and trajectory length may vary, the recorded data must be normalized before training. Spatial coordinates may be normalized by the screen width and height:
+The implementation first normalizes cursor and target coordinates using the
+recorded canvas width and height:
 
 \begin{equation}
 x_i'=\frac{x_i}{W},
@@ -466,8 +467,13 @@ y_i'=\frac{y_i}{H},
 \label{eq:spatial_normalization}
 \end{equation}
 
-where $W$ and $H$ denote screen width and screen height. Temporal features
-may be standardized using the training-set mean and standard deviation:
+where $W$ and $H$ denote canvas dimensions ($1400\times600$ for this cohort),
+not independently measured physical display dimensions. Displacements,
+velocities, accelerations, jerk, and target-relative quantities are computed
+from these normalized coordinates; elapsed time is expressed in seconds.
+The feature-extraction equations use this normalized coordinate convention in
+the implementation. After interpolation, all selected sequence channels are
+standardized using training-set means and standard deviations:
 
 \begin{equation}
 z
@@ -475,6 +481,10 @@ z
 \frac{x-\mu_{\mathrm{train}}}{\sigma_{\mathrm{train}}}.
 \label{eq:zscore_normalization}
 \end{equation}
+
+Standard deviations below $10^{-7}$ are replaced by one to avoid division by
+near-zero values. Classical summary vectors are standardized separately using
+only their training subset.
 
 Trajectories consist of different numbers of recorded cursor samples because movement duration and browser event frequency vary between interactions. NeuroCursor handles such variation by linearly interpolating each feature channel to a fixed sequence length of $T=128$ steps. The same interpolation process is applied to training, validation, testing, and authentication samples. Padding, masking, and variable-length recurrent processing are not used in the final implemented model.
 
@@ -544,6 +554,16 @@ mean and maximum speed, mean and maximum acceleration, pause duration, click
 timing, acceleration energy, jerk energy, and dimensionless jerk. Consequently,
 the full neural and classical inputs contain the same source channels but are
 not the same mathematical representation.
+
+The implementation computes these additional movement summaries after channel
+interpolation to 128 steps. Path length sums the resampled displacement
+magnitudes; acceleration/jerk energies sum squared resampled magnitudes
+weighted by resampled inter-event intervals. These discrete estimators need
+not equal quantities recomputed directly from the raw event stream:
+interpolated displacement and interval channels are not necessarily
+conservative under summation. Their names describe implemented estimators,
+not exact recovery of physical path length or continuous-time energy. This
+also leaves sensitivity to original event density and acquisition conditions.
 
 \begin{table*}[t]
 \centering
@@ -724,7 +744,7 @@ The primary splitting strategy allocates roughly 75\% of the sessions for each i
 
 \subsection{Threshold Calibration}
 
-The operating threshold for each claimed user is selected exclusively using the validation set. In the primary configuration, the threshold is chosen at the validation operating point at which the false acceptance rate and false rejection rate are approximately equal. After calibration is completed, the threshold is frozen and applied without any modification to the held-out test scores. The test set therefore does not influence hyperparameter selection, model training, early stopping, or threshold calibration.
+The operating threshold for each claimed user is selected exclusively using the validation set. In the primary configuration, the threshold is chosen at the validation operating point at which the false acceptance rate and false rejection rate are approximately equal. After calibration, the threshold is frozen and applied without modification to test scores. Within each fit, test labels are not used for preprocessing, parameter updates, early stopping, or threshold calibration. This procedural isolation does not make the overall study an untouched confirmation: earlier test comparisons informed subsequent development analyses, as disclosed below.
 
 We evaluated a second, security-focused policy in a separate analysis. For each claimed identity, we defined the strict threshold as the lowest validation-set threshold that resulted in zero observed false accepts; when multiple thresholds met this criterion, we selected the one with the lower false rejection rate. The threshold was then frozen before test evaluation. Achieving zero observed false accepts on the validation set is a finite-sample calibration rule and should not be interpreted as a guarantee of zero false accepts in a larger population.
 
@@ -736,7 +756,7 @@ The evaluation framework maintains a clear distinction between individual moveme
 
 Each claimed identity is subjected to evaluation through a dedicated one-versus-rest verification framework. Within the verifier specifically assigned to user $u$, attempts originating from $u$ are categorized as genuine, while attempts from all other identities are classified as impostor instances. Consequently, a single physical test attempt contributes a genuine comparison to its associated verifier and serves as an impostor comparison for every remaining verifier. This structural design accounts for the substantial numerical imbalance between impostor and genuine comparisons within the pooled decision set. Furthermore, this distribution explains why standard accuracy metrics may appear deceptively high even in the presence of a significant false rejection rate.
 
-Strict evaluation isolation was enforced during both the data-splitting and threshold-selection phases. To maintain integrity, all movements within a single session were kept together and assigned to the same training, validation, or test subset. Training data was used solely for estimating preprocessing statistics and fitting the model parameters, while the validation set was reserved for early stopping and calibrating user-specific thresholds. The test observations were only analyzed after all these decisions had been finalized and locked in. This sequential process ensures that the resulting test labels and scores do not play a role in determining the system's operating threshold.
+Within each configuration, all movements from a session stay together in one subset. Training data estimates preprocessing statistics and model parameters; validation data controls early stopping and user-specific thresholds. Parameters and thresholds are frozen before that configuration's test evaluation. Test scores do not determine its deployed threshold, although inspecting development comparisons can influence later research choices. The repeated holdouts and added controls therefore remain exploratory analyses of reused data.
 
 The $K=1$, $K=3$, and $K=5$ conditions all follow the same chronological aggregation rule, ensuring consistency across the evaluation. This setup is designed to measure how incorporating more movements from an authentication attempt affects performance, rather than picking the best movements after the fact. Any attempts that do not meet the minimum number of valid movements required for a specific $K$ value are simply excluded, adhering to the established interaction-count protocol.
 
@@ -831,7 +851,10 @@ input dimensions, parameter counts, and training settings are unchanged.
 A logistic comparator receives the eight order-invariant coordinate summaries.
 These controls test order sensitivity, not mutual information. Path geometry
 may still convey plausible trajectory structure even when explicit time cues
-are absent.
+are absent. Sample density and successive position differences can also
+encode motion and event-delivery information. The control removes explicit
+timing and derivative channels; it does not eliminate every implicit
+kinematic or acquisition cue.
 
 For the classical feature-quality control, both full and low-order inputs use
 only mean, standard deviation, minimum, and maximum per channel. Neither arm
@@ -893,14 +916,16 @@ False rejection rate is
 \label{eq:frr}
 \end{equation}
 
-The equal error rate is the operating point at which FAR and FRR are equal
-or approximately equal:
+The implementation approximates equal error rate on the discrete ROC
+threshold grid $\mathcal{T}_{\mathrm{ROC}}$ by selecting the closest FAR/FRR
+pair and averaging the two rates:
 \begin{equation}
-\mathrm{EER}
-=
-\mathrm{FAR}(\tau^{*})
-=
-\mathrm{FRR}(\tau^{*}).
+\begin{aligned}
+\tau^* &= \arg\min_{\tau\in\mathcal{T}_{\mathrm{ROC}}}
+|\mathrm{FAR}(\tau)-\mathrm{FRR}(\tau)|,\\
+\widehat{\mathrm{EER}} &= \tfrac12\left[
+\mathrm{FAR}(\tau^*)+\mathrm{FRR}(\tau^*)\right].
+\end{aligned}
 \label{eq:eer}
 \end{equation}
 
@@ -1199,7 +1224,7 @@ not improve these mean metrics even after eliminating the derived-summary
 confound. This remains a channel-group ablation with correlated predictors,
 rather than causal attribution to an individual derivative.
 
-The timing-free temporal controls in Table~\ref{tab:order_controls} provide
+The coordinate-only temporal controls in Table~\ref{tab:order_controls} provide
 no consistent evidence that chronological coordinate order improves identity
 verification. For CNN--GRU, the shuffled-minus-ordered EER differences across
 seeds 0, 1, and 2 are $-15.43$, $+1.08$, and $+15.47$ percentage points;
@@ -1560,8 +1585,8 @@ varied materially across splits, and CNN--GRU failed to outperform GRU-only or
 the strongest classical models. We therefore do not recommend retaining the
 hybrid on the present evidence. The exact-budget enrollment curves across all
 three model families show training-scale sensitivity, but no tested budget
-meets the fixed study-specific usability/stability criterion. Timing-free
-coordinate-only controls across three
+meets the fixed study-specific usability/stability criterion. Coordinate-only
+controls without explicit timing channels across three
 splits show no consistent chronological advantage, while the corrected classical
 feature ablation does not improve mean performance after higher-order channel
 removal. These controls do not establish cross-sample mutual information.
