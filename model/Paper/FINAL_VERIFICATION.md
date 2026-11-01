@@ -37,7 +37,11 @@
   and recomputed split means/ranges. Summary preprocessing is training-only.
 - Verified 5/17/27 channel and 20/68/121 classical-input counts, CNN output
   32 × 64, target-center semantics, vector jerk, and coefficient group counts.
-- Preserved the current AI development-and-writing disclosure byte-for-byte.
+- Restored the original manuscript's AI-Assisted Development Disclosure
+  byte-for-byte at the user's explicit request. This replaces the consolidated
+  disclosure used in the preceding technical revision. The historical account
+  is author-provided and is not independently authenticated by the audit.
+- The user explicitly confirmed approval by all four coauthors.
 - All three PDFs built without unresolved references, duplicate labels, or
   overfull text boxes. Every rendered page was visually inspected; the enlarged
   coefficient figure has readable labels and a corrected IQR caption.
@@ -54,5 +58,9 @@ study, and deliberate-attack study were not performed; their limits are stated.
 
 No written institutional OHSP/IRB determination has been supplied. The paper
 truthfully describes author-reported verbal guidance and does not claim formal
-approval/exemption. Obtain written institutional clarification and all-coauthor
-approval before resubmission. No further email contact is authorized.
+approval/exemption. Obtain written institutional clarification before
+resubmission; all four coauthors' approval has been confirmed. No further email
+contact is authorized. Final journal-policy/portal requirements still need checking.
+The restored original AI disclosure does not describe the manuscript-revision
+and additional reviewer-analysis assistance used here; preservation at the
+authors' request is not certification of disclosure completeness.

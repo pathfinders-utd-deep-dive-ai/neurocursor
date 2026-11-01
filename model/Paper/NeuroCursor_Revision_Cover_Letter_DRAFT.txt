@@ -22,12 +22,13 @@ reports these limitations rather than claiming deployment readiness.
 
 We include a marked manuscript, editable sources, corrected highlights, and
 the reviewer responses. The authors report no funding and no competing
-interests. The AI-assisted development and writing disclosure is retained.
+interests. All four coauthors' approval has been confirmed. The original
+AI-Assisted Development Disclosure is retained at the authors' request.
 
 AUTHOR ACTION BEFORE UPLOAD: Written institutional clarification of the study's
 OHSP/IRB status remains outstanding. Resolve that status, replace the pending
 wording in the manuscript and response letter with the documented determination,
-and confirm all-coauthor approval and current preprint/originality disclosures.
+and confirm current preprint/originality disclosures.
 Do not remove this hold merely to make the letter appear submission-ready.
 
 Sincerely,

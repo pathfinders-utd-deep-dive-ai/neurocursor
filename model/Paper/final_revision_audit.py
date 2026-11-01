@@ -17,9 +17,9 @@ from model import model as p, reporting
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_HASH = 'ef5df46c0f3c02bf458084e435079c4911026d81cea36f391823ec63f0570a95'
-# Updated with the user's explicit 2026-11-01 request to disclose writing,
-# response-letter, and additional-analysis assistance as well as coding.
-DISCLOSURE_HASH = '670a3343fdcc542b285a2745a15dce2fc96b76fb6791a5ccb4543a4fcc47918e'
+# Updated with the user's explicit request to restore the originally supplied
+# disclosure verbatim. This verifies text identity, not historical truth.
+DISCLOSURE_HASH = '92eaffe9de83f2cfc3e247322fefdb3fbffa5025813935649aa3e8357514931f'
 
 
 def check(condition, message):

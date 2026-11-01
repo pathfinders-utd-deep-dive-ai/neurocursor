@@ -4,6 +4,11 @@ The technical revision is not a substitute for author approval of factual
 declarations. See SUBMISSION_STATUS.md for the latest confirmations and the
 outstanding written institutional ethics clarification. The following earlier
 questions are retained as a historical record, not current unresolved facts.
+The user has since confirmed approval by all four coauthors and requested
+verbatim restoration of the original AI-Assisted Development Disclosure.
+The current text-identity audit does not authenticate that disclosure's
+historical claims; the statements below about its earlier replacement are
+historical notes, not the current manuscript state.
 
 1. Who collected the participant records, how participants were recruited,
    and who supervised collection. The analysis file does not establish these

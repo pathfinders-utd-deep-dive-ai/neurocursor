@@ -1,5 +1,10 @@
 # Reviewer and resubmission traceability
 
+Latest author instruction: the original manuscript's AI-Assisted Development
+Disclosure is restored verbatim, superseding the consolidated writing disclosure
+described in earlier entries below. The user confirms approval by all four
+coauthors. Written institutional ethics clarification remains outstanding.
+
 ## Latest pre-submission audit (supersedes older status below)
 
 - Added matched identity-exclusion logistic control: 270 pairs, three splits,

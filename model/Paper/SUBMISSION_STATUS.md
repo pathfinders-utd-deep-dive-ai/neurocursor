@@ -15,5 +15,13 @@ Hamid is authorized. A request had already been sent before the stop instruction
 and the user was informed; no additional email will be sent.
 
 This update supersedes items 1–2 and the funding/interest question in
-AUTHOR_CONFIRMATIONS.md. All coauthors must approve the text and data-sharing
-statement. The manuscript package excludes participant data and model weights.
+AUTHOR_CONFIRMATIONS.md. The user has now explicitly confirmed approval by all
+four coauthors. At the user's request, the original manuscript's AI-Assisted
+Development Disclosure is restored verbatim. Its historical factual claims,
+including the exact model name, remain author-provided rather than independently
+established by this audit. The manuscript package excludes participant data and
+model weights. Written institutional ethics clarification remains outstanding.
+The restored disclosure does not describe the manuscript-revision and additional
+reviewer-analysis assistance used in this chat. It is preserved as requested,
+not certified as a complete account of AI use in the revision. Authors should
+resolve disclosure accuracy and the journal's policy before uploading.
