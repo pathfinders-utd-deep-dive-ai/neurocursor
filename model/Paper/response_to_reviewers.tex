@@ -79,10 +79,10 @@ the neural and classical models use different mathematical representations of
 the same source channels. The revision now states this distinction explicitly.}
 
 \change{The new ``Exact Inputs Used by Model Family'' table reports: raw,
-$d=5$, neural $128\times5$, classical 20 values; raw plus kinematic, $d=17$,
-neural $128\times17$, classical 68 values; and full, $d=25$, neural
-$128\times25$, classical 113 values. Classical vectors contain mean, standard
-deviation, minimum, and maximum for every selected channel. The full vector
+$d=5$, neural $128\times5$, classical 20 values; raw plus spatial and
+kinematic, $d=17$, neural $128\times17$, classical 68 values; and full,
+$d=27$, neural $128\times27$, classical 121 values. Classical vectors contain
+mean, standard deviation, minimum, and maximum for every selected channel. The full vector
 also contains 13 derived statistics: duration, path length, start-to-target
 distance, path efficiency, mean/maximum speed, mean/maximum acceleration,
 pause duration, click timing, acceleration energy, jerk energy, and
@@ -99,8 +99,8 @@ winner. We added a reproducible post-hoc grouping of all 121 standardized
 logistic coefficients across the 30 refitted splits. Timing/click features have
 the largest group mean absolute coefficient (0.796), followed by kinematic
 (0.463) and spatial/geometric/target features (0.393). We also emphasize that
-raw plus kinematic features have slightly worse AUC, FRR, and EER than raw
-channels in the fixed CNN--GRU ablation. This provides evidence consistent with
+raw plus spatial and kinematic features have slightly worse AUC, FRR, and EER
+than raw channels in the fixed CNN--GRU ablation. This provides evidence consistent with
 noise-sensitive differentiation, while explicitly avoiding causal claims.}
 
 \change{The Feature Ablation subsection now includes the grouped analysis and

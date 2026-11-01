@@ -47,8 +47,13 @@ MODEL_LABELS = {
     "knn__full": "KNN",
     "gradient-boosting__full": "Gradient boosting",
     "cnn-gru__raw": "Raw",
-    "cnn-gru__raw-kinematic": "Raw + kinematic",
+    "cnn-gru__raw-kinematic": "Raw + spatial + kinematic",
     "cnn-gru__full__sample-split": "Random sample-level",
+}
+FEATURE_SET_LABELS = {
+    "cnn-gru__raw": "Raw",
+    "cnn-gru__raw-kinematic": "Raw + spatial + kinematic",
+    "cnn-gru__full": "Full representation",
 }
 COLORS = ("#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6")
 
@@ -1182,7 +1187,7 @@ def generate_report(
         metrics = aggregate_k(configurations[name])
         ablation_rows.append(
             {
-                "Features": MODEL_LABELS[name],
+                "Features": FEATURE_SET_LABELS[name],
                 "ROC-AUC": percent(metrics["roc_auc"]),
                 "FAR": percent(metrics["far"]),
                 "FRR": percent(metrics["frr"]),
@@ -1286,7 +1291,8 @@ def generate_report(
         {
             "Group": "Target-relative",
             "Features": (
-                "target displacement x/y, distance, closure rate, "
+                "running path efficiency, target displacement x/y, "
+                "distance, closure rate, "
                 "heading error, cross-track error"
             ),
         },
@@ -1315,7 +1321,10 @@ def generate_report(
         {"Category": "Classical baseline", "Configuration": "k-nearest neighbors"},
         {"Category": "Classical baseline", "Configuration": "Gradient boosting"},
         {"Category": "Feature ablation", "Configuration": "Raw channels"},
-        {"Category": "Feature ablation", "Configuration": "Raw + kinematic"},
+        {
+            "Category": "Feature ablation",
+            "Configuration": "Raw + spatial + kinematic",
+        },
         {"Category": "Feature ablation", "Configuration": "Full target-relative"},
     ]
     training_rows = [
@@ -1585,6 +1594,12 @@ def generate_report(
         ablation_names,
         "Seed 42 CNN–GRU feature ablation at K=5",
         figures / "feature_ablation.png",
+        display_labels=[
+            FEATURE_SET_LABELS[name].replace(
+                " + kinematic", " +\nkinematic"
+            )
+            for name in ablation_names
+        ],
     )
     plot_comparison(
         configurations,
@@ -1917,7 +1932,7 @@ Raw participant data, per-attempt scores, and trained weights are intentionally 
             str(k): aggregate_k(primary, k) for k in (1, 3, 5)
         },
         "feature_ablations": {
-            MODEL_LABELS[name]: aggregate_k(configurations[name])
+            FEATURE_SET_LABELS[name]: aggregate_k(configurations[name])
             for name in ablation_names
         },
         "split_comparison_movement_level": {

@@ -113,7 +113,7 @@ without relabeling the hypotheses after inspection.
 \paragraph{Contributions.}
 This work contributes:
 \begin{enumerate}
-    \item a randomized five-target challenge and a 25-channel,
+    \item a randomized five-target challenge and a 27-channel,
     target-relative representation for short-form cursor verification;
     \item a session-isolated evaluation that distinguishes movement scores,
     $K$-movement decisions, validation calibration, and held-out testing;
@@ -189,7 +189,7 @@ Uses long/passive public datasets rather than a five-target challenge \\
 
 NeuroCursor &
 Randomized point-and-click challenge; 10 identities and 266 sessions &
-25 temporal channels; neural and 113-value classical representations &
+27 temporal channels; neural and 121-value classical representations &
 Session-isolated $K=1,3,5$ decisions and target-relative analysis &
 Small cohort; no device labels, longitudinal external cohort, or direct
 enrollment-size sweep \\
@@ -517,7 +517,7 @@ The complete sequence representation contains normalized cursor coordinates, ela
 \centering
 \caption{NeuroCursor Temporal Feature Channels}
 \label{tab:sequence_features}
-\begin{tabular}{ll}
+\begin{tabular}{@{}lp{5.0cm}@{}}
 \toprule
 \textbf{Group} & \textbf{Features} \\
 \midrule
@@ -530,7 +530,7 @@ $v_x,v_y,v,a_x,a_y,a,j_x,j_y,j$ \\
 Geometric &
 heading, angular velocity, curvature \\
 Target-relative &
-$d_x,d_y,d,c$, heading error, cross-track error \\
+running path efficiency, $d_x,d_y,d,c$, heading error, cross-track error \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -545,7 +545,7 @@ timing, acceleration energy, jerk energy, and dimensionless jerk. Consequently,
 the full neural and classical inputs contain the same source channels but are
 not the same mathematical representation.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \caption{Exact Inputs Used by Model Family}
 \label{tab:model_inputs}
@@ -554,11 +554,11 @@ not the same mathematical representation.
 \textbf{Feature set} & $d$ & \textbf{Neural input} & \textbf{Classical input} \\
 \midrule
 Raw & 5 & $128\times5$ & $4d=20$ values \\
-Raw + kinematic & 17 & $128\times17$ & $4d=68$ values \\
-Full & 25 & $128\times25$ & $4d+13=113$ values \\
+Raw + spatial + kinematic & 17 & $128\times17$ & $4d=68$ values \\
+Full & 27 & $128\times27$ & $4d+13=121$ values \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Implemented Network Configuration}
 
@@ -762,7 +762,7 @@ Classical baseline & Random forest \\
 Classical baseline & $k$-nearest neighbors \\
 Classical baseline & Gradient boosting \\
 Feature ablation & Raw channels only \\
-Feature ablation & Raw plus kinematic channels \\
+Feature ablation & Raw plus spatial and kinematic channels \\
 Feature ablation & Full target-relative representation \\
 \bottomrule
 \end{tabular}
@@ -771,7 +771,9 @@ Feature ablation & Full target-relative representation \\
 \begin{itemize}
     \item \textbf{Classical baselines:} logistic regression, support-vector machine, random forest, $k$-nearest neighbors, and gradient boosting.
     \item \textbf{Neural baselines:} CNN-only and GRU-only architectures.
-    \item \textbf{Feature ablations:} raw coordinates only, raw coordinates with kinematics, and raw coordinates with both kinematic and target-relative features.
+    \item \textbf{Feature ablations:} the five raw channels; raw, spatial,
+    and kinematic channels; and the full raw, spatial, kinematic, geometric,
+    and target-relative representation.
 \end{itemize}
 
 \subsection{Interaction-Count Evaluation}
@@ -1052,7 +1054,7 @@ Consequently, H3 produced mixed evidence rather than a uniform improvement.
 Features & AUC & FAR & FRR & EER \\
 \midrule
 Raw & 95.77 & 13.11 & 25.00 & 7.00 \\
-Raw + kinematic & 95.72 & 12.07 & 33.33 & 7.64 \\
+Raw + spatial + kinematic & 95.72 & 12.07 & 33.33 & 7.64 \\
 Full representation & 96.13 & 8.31 & 30.00 & 7.56 \\
 \bottomrule
 \end{tabular}
@@ -1075,8 +1077,8 @@ browser and device labels were unavailable.
 A post-hoc grouping of all 121 full-representation summary coefficients makes
 the same pattern explicit (Table~\ref{tab:feature_group_influence}).
 Timing/click features have the largest group mean absolute coefficient, while
-the raw-plus-kinematic ablation has slightly worse AUC, FRR, and EER than raw
-channels alone. Thus, adding differentiated channels does not uniformly help;
+the raw-plus-spatial-and-kinematic ablation has slightly worse AUC, FRR, and
+EER than raw channels alone. Thus, adding differentiated channels does not uniformly help;
 higher-order kinematic variables may add acquisition noise as well as identity
 signal. These coefficient magnitudes are descriptive and correlated features
 can share or exchange weight, so they are not causal importance scores.
@@ -1642,30 +1644,6 @@ OpenAI,
 [Online]. Available:
 \url{https://learn.chatgpt.com/docs/models}.
 Accessed: Jul. 30, 2026.
-
-\bibitem{acien2020BeCAPTCHA}
-A. Acien, A. Morales, J. Fierrez, and R. Vera-Rodriguez,
-``BeCAPTCHA-Mouse: Synthetic mouse trajectories and improved bot detection,''
-\emph{arXiv preprint arXiv:2005.00890}, 2020.
-
-\bibitem{foumaniTimeSeriesSurvey}
-N. M. Foumani, L. Miller, C. W. Tan, G. I. Webb, G. Forestier, and M. Salehi,
-``Deep learning for time series classification and extrinsic regression:
-A current survey,''
-\emph{ACM Computing Surveys}, 2024.
-
-\bibitem{elsayedGRUFCN}
-N. Elsayed, A. S. Maida, and M. Bayoumi,
-``Deep gated recurrent and convolutional network hybrid model for univariate
-time series classification,''
-\emph{International Journal of Advanced Computer Science and Applications},
-vol. 10, no. 5, 2019.
-
-\bibitem{bangCNNGRU}
-J.-S. Bang and S.-W. Lee,
-``Motor imagery classification based on CNN-GRU network with spatio-temporal
-feature representation,''
-\emph{arXiv preprint arXiv:2107.07062}, 2021.
 
 \bibitem{fawcettROC}
 T. Fawcett,
