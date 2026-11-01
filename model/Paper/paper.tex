@@ -69,8 +69,9 @@ mouse dynamics, spatiotemporal feature learning, user authentication
 Mouse dynamics can supplement credential-based authentication by measuring
 how a person moves and clicks \cite{nistBiometrics,khanMouseSurvey}.
 Existing engineered-feature, convolutional, recurrent, and hybrid systems
-already establish this modality \cite{antalFejer2020,wang2025Mouse}; neither
-mouse biometrics nor CNN--GRU is new here.
+already establish this modality \cite{antalFejer2020,wang2025Mouse}.
+The contribution is neither a new biometric modality nor a new CNN--GRU
+architecture.
 
 NeuroCursor instead evaluates a brief randomized target-acquisition challenge.
 The user moves to and clicks each target; a decision combines
@@ -86,7 +87,7 @@ and FRR 35.89\%: low observed false acceptance comes with substantial legitimate
 user rejection. GRU-only and several classical models outperform CNN--GRU on
 key metrics; the hybrid is a tested candidate, not the recommended model.
 
-\paragraph{Research questions and hypotheses.}
+\paragraph{Research questions and hypotheses}
 The experiments ask whether (RQ1) CNN--GRU improves on neural and classical
 baselines; (RQ2) combining one, three, or five movements changes the
 security--usability tradeoff; (RQ3) engineered and target-relative channels add
@@ -99,7 +100,7 @@ outperform raw channels (H3); and session separation will be more difficult than
 random movement-level splitting (H4). Negative and mixed outcomes are reported
 without relabeling the hypotheses after inspection.
 
-\paragraph{Contributions.}
+\paragraph{Contributions}
 This work contributes:
 \begin{enumerate}
     \item a randomized five-target challenge and a 27-channel,
@@ -289,7 +290,9 @@ For each claimed user $u$, NeuroCursor receives a challenge sequence $\mathcal{Q
 
 \subsection{Spatial and Temporal Features}
 
-Spatial and temporal features describe the geometry and timing of cursor movements. These include total duration, path length, straight-line distance, average velocity, maximum velocity, average acceleration, pause duration, and click timing. The total movement duration is
+Spatial and temporal features describe cursor geometry and timing: duration,
+path length, straight-line distance, mean and maximum speed, mean acceleration
+magnitude, pause duration, and click timing. Total movement duration is
 
 \begin{equation}
 D = t_T - t_1.
@@ -569,7 +572,7 @@ running-efficiency channel, this summary is not clipped to $[0,1]$.
 Raw & 5 & $128\times5$ & $4d=20$ values \\
 Raw + spatial + kinematic & 17 & $128\times17$ & $4d=68$ values \\
 Full & 27 & $128\times27$ & $4d+13=121$ values \\
-Added low-order control & 19 & $128\times19$ & $4d=76$ values \\
+Low-order summary control & 19 & -- & $4d=76$ values \\
 Position-only order control & 2 & $128\times2$ & $4d=8$ values \\
 Full distribution-only control & 27 & -- & $4d=108$ values \\
 \bottomrule
@@ -795,9 +798,10 @@ with at least 27 complete sessions can each supply 20 training sessions after
 the validation/test holdouts. This cohort contains 217 sessions and 1,085
 movements; each test attempt supplies one genuine and six impostor comparisons.
 This fixed cohort is used for every budget.
-Within each split, validation/test sessions remain unchanged and independently
-ordered training sessions form nested budgets of exactly 1, 5, 10, 20, and all
-available sessions per identity. Each session supplies five movements. Both
+Within each split, validation and test sessions remain unchanged. A fixed
+random ordering of each identity's training sessions defines nested budgets
+of exactly 1, 5, 10, 20, and all available sessions per identity.
+Each session supplies five movements. Both
 genuine and impostor training pools change, so this tests cohort-wide training
 scale rather than isolating genuine enrollment from background-data quantity.
 The seven-identity results are not directly comparable to ten-identity primary
@@ -832,8 +836,9 @@ only mean, standard deviation, minimum, and maximum per channel. Neither arm
 receives the 13 extra derived statistics. Removing acceleration, jerk, angular
 velocity, and curvature therefore changes 108 summaries to 76 while preserving
 the same summary rule for every retained channel. Deterministic TensorFlow
-operations are enabled, one intra/inter-operation thread is used, and each
-condition resets its seed. The strengthened grid contains 72 configurations;
+operations are enabled, intra- and inter-operation parallelism are each set
+to one thread, and the random seed is reset before each condition.
+The strengthened grid contains 72 configurations;
 all outcomes and actual session counts are archived. These are retrospective
 development experiments on reused data, not independent confirmation.
 
@@ -936,8 +941,8 @@ distribution, rather than the most favorable individual seed. In every split,
 the full-feature logistic verifier was refitted and user-specific thresholds
 were calibrated for zero empirical validation false accepts. At $K=5$, mean
 pooled balanced accuracy was 82.82\%, mean macro FAR was 0.63\%, mean macro
-FRR was 35.89\%, and mean macro ROC--AUC was 98.78\%. Only 8 of 30 splits
-observed zero test false accepts.
+FRR was 35.89\%, and mean macro ROC--AUC was 98.78\%. Zero test false
+acceptances occurred in only 8 of 30 splits.
 
 \begin{table*}[t]
 \centering
@@ -1018,9 +1023,9 @@ verifiers.}
 \subsection{Classical Baselines}
 
 The classical models were competitive with and sometimes stronger than the
-neural architectures. Logistic regression produced the strongest ordinary
-accuracy/FAR snapshot, while random forest and gradient boosting achieved low
-EER at their balanced thresholds. These rows are descriptive comparisons:
+neural architectures. Logistic regression had the highest ordinary accuracy
+and lowest FAR in this fixed classical comparison; random forest and gradient
+boosting achieved low ROC-derived EER. These rows are descriptive comparisons:
 multiple seed-42 test configurations had been inspected during report
 development, so none is presented as an untouched selected winner.
 
@@ -1158,11 +1163,11 @@ and 0.79\%/39.68\% for GRU-only. Their all-available-session FRRs are
 31.75\%, 47.62\%, and 49.21\%, respectively. The extra sessions therefore
 do not uniformly improve the validation-calibrated operating point.
 
-No tested budget meets the prespecified study-specific usability/stability
+No tested budget meets the prespecified study-specific usability and stability
 criterion for any of the three model families. The answer to the enrollment
 question is consequently a negative empirical finding: this cohort and fitting
 regime do not demonstrate a usable stable minimum within the tested range.
-The full training budget is 23--25 sessions per identity. Split ranges and
+The all-available training budget is 23--25 sessions per identity. Split ranges and
 per-user results are archived, and the three overlapping holdouts remain
 development sensitivity analyses rather than independent population evidence.
 
@@ -1315,7 +1320,7 @@ Table~\ref{tab:rq_outcomes} consolidates the answers. The hybrid-superiority
 hypothesis is rejected; movement-count and feature effects are mixed, while
 the strict threshold produces the expected false-accept/false-reject tradeoff.
 Neither split stability nor device robustness is established. The additional
-controls likewise establish no usable stable enrollment minimum and provide
+controls likewise do not establish a usable stable enrollment minimum and provide
 no consistent chronological advantage or cross-sample mutual-information
 evidence.
 

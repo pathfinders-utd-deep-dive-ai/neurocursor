@@ -20,7 +20,7 @@ Initial reviewer runs remain archived separately in
 
 All 72 configurations passed independent reconstruction of session counts and split
 isolation from the source data, metric aggregation, exact nested budgets,
-dataset fingerprint, permutation/reversal invariants, and fifteen regression
+dataset fingerprint, permutation/reversal invariants, and sixteen regression
 tests. Citations/references resolve, and all 15 manuscript pages and four
 response pages were rendered and visually inspected. The AI-Assisted
 Development section is byte-identical to its pre-change version.
@@ -55,15 +55,25 @@ document references, and the protected disclosure hash. It does not rerun
 neural fitting or certify participant provenance, consent, or population validity.
 
 Final concision pass: the previous 19-page revision is reduced to 15 pages,
-with approximately 27% fewer visible-text words. Introduction source-word count
+with approximately 27% fewer visible-text words. During that pass, Introduction source-word count
 falls from 469 to 332; Related Work from 600 to 472 (including its unchanged
-comparison table). All 19 retained table environments are byte-identical to
-the pre-concision revision. The removed table only repeated future-validation
+comparison table). All 19 retained table environments were unchanged during
+that pass. The removed table only repeated future-validation
 requirements now summarized in prose. Redundant feature/evaluation explanations
 and overlapping deployment sections are consolidated; three generic neural
 representation equations are replaced by exact implemented baseline details.
 Experimental input definitions, all empirical tables, critical uncertainty
 caveats, reviewer-requested controls, and the protected AI disclosure remain.
+
+Final copyedit removes author-supplied periods from both IEEE run-in headings,
+preventing the template's automatic colon from producing `.:`. A regression
+test now checks every run-in heading. Terminology distinguishes speed from
+vector velocity, ROC-derived EER from calibrated operating-point rates, and
+the randomized training-session order from statistical independence. The
+low-order input-table row is clarified as a classical summary control, not an
+additional neural experiment. No performance-table values have changed.
+All eight primary model types and the canonical implementation remain included;
+the publication package intentionally excludes trained weights and private data.
 
 Scope: the strengthened learning curves and temporal controls cover three
 overlapping splits. Enrollment covers seven eligible identities and temporal

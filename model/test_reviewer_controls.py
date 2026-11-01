@@ -1,11 +1,20 @@
 """Regression checks for the confounds targeted by reviewer controls."""
 import unittest
+import re
+from pathlib import Path
 import numpy as np
 from model import model as p
 from model.Paper.reviewer_experiments import permute_time
 
 
 class ReviewerControlTests(unittest.TestCase):
+    def test_run_in_headings_do_not_duplicate_template_punctuation(self):
+        source=(Path(__file__).parent/'Paper'/'paper.tex').read_text()
+        headings=re.findall(r'\\(?:paragraph|subparagraph)\*?\{([^{}]+)\}',source)
+        self.assertGreaterEqual(len(headings),2)
+        for heading in headings:
+            self.assertIsNone(re.search(r'[.:;!?]\s*$',heading),heading)
+
     def summary_fixture(self):
         names=p.FULL_FEATURE_NAMES
         x=np.zeros((1,11,len(names)),dtype=np.float32)
