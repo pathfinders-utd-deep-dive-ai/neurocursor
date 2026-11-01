@@ -21,7 +21,7 @@ Initial reviewer runs remain archived separately in
 All 72 configurations passed independent reconstruction of session counts and split
 isolation from the source data, metric aggregation, exact nested budgets,
 dataset fingerprint, permutation/reversal invariants, and fifteen regression
-tests. Citations/references resolve, and all 19 manuscript pages and four
+tests. Citations/references resolve, and all 15 manuscript pages and four
 response pages were rendered and visually inspected. The AI-Assisted
 Development section is byte-identical to its pre-change version.
 
@@ -30,7 +30,7 @@ identified canvas-normalized derivative units and training-only scaling,
 documented the non-conservative resampled summary estimators, and qualified
 test isolation per fit rather than claiming untouched confirmatory evaluation.
 Coordinate-only controls are not described as eliminating all implicit timing
-or acquisition information. All 64 labels and 16 cited bibliography keys resolve.
+or acquisition information. All 60 labels and 16 cited bibliography keys resolve.
 
 The subsequent audit corrected all three additional findings: the pooled
 binomial FAR bound is explicitly illustrative under independence and common
@@ -53,6 +53,17 @@ metric identities, ROC/AUC/EER consistency, threshold provenance, source session
 membership, nested exact training budgets, all 43 archived evidence hashes,
 document references, and the protected disclosure hash. It does not rerun
 neural fitting or certify participant provenance, consent, or population validity.
+
+Final concision pass: the previous 19-page revision is reduced to 15 pages,
+with approximately 27% fewer visible-text words. Introduction source-word count
+falls from 469 to 332; Related Work from 600 to 472 (including its unchanged
+comparison table). All 19 retained table environments are byte-identical to
+the pre-concision revision. The removed table only repeated future-validation
+requirements now summarized in prose. Redundant feature/evaluation explanations
+and overlapping deployment sections are consolidated; three generic neural
+representation equations are replaced by exact implemented baseline details.
+Experimental input definitions, all empirical tables, critical uncertainty
+caveats, reviewer-requested controls, and the protected AI disclosure remain.
 
 Scope: the strengthened learning curves and temporal controls cover three
 overlapping splits. Enrollment covers seven eligible identities and temporal

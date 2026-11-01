@@ -19,14 +19,11 @@
 \begin{document}
 \maketitle
 
-We thank the editor and reviewers for the careful and constructive evaluation.
-We substantially revised the manuscript rather than defending claims that the
-current evidence cannot support. The revision shortens the Introduction,
-reorganizes Related Work around direct comparisons, states the exact input to
-every model family, adds an explanatory feature-group analysis, treats the
-CNN--GRU as a rejected candidate rather than a retained system choice, and
-explicitly delimits what the study establishes about enrollment size and
-temporal dependence. The principal changes are summarized below.
+We thank the editor and reviewers. The revision shortens the manuscript,
+clarifies model inputs, adds enrollment, feature-quality, and temporal-order
+controls, and reports CNN--GRU as a negative result. It distinguishes measured
+performance from unsupported enrollment, mutual-information, and deployment
+claims. Changes and responses follow.
 
 \begin{center}
 \begin{tabular}{p{0.29\textwidth}p{0.62\textwidth}}
@@ -34,7 +31,8 @@ temporal dependence. The principal changes are summarized below.
 \textbf{Issue} & \textbf{Major revision} \\
 \midrule
 Length and repetition & Rewrote the Introduction and Related Work; removed
-duplicated architecture motivation and equations from Related Work. \\
+duplicated architecture motivation and equations from Related Work; consolidated
+repeated feature, evaluation, and deployment explanations throughout. \\
 Model inputs & Added exact neural tensor and classical vector dimensions,
 including all 13 derived classical statistics. \\
 Model interpretation & Added grouped coefficient analysis and a more cautious
@@ -65,6 +63,12 @@ the problem, protocol, primary result, research questions, and four concise
 contributions without subsections or mathematical preliminaries. Related Work
 now compares task design, data, representation, strength, and limitation rather
 than re-explaining the proposed model.}
+
+We also removed redundant prose beyond those sections: feature caveats and
+evaluation-unit definitions are consolidated; generic CNN/GRU equations are
+replaced by the implemented architecture and baseline differences; overlapping
+security, deployment, and future-validation subsections are merged. The input
+tables, empirical results, and essential statistical limitations are retained.
 
 \change{The revised Related Work includes Table~I, ``Positioning Relative to
 Representative Mouse-Dynamics Studies,'' which directly contrasts Antal and
@@ -219,18 +223,12 @@ from the archived result bundle.}
 
 \section*{Final verification}
 
-We recompiled and visually inspected the revised manuscript and this response.
-We also checked every numerical value against the archived result files,
-verified that all cross-references resolve, confirmed that no new performance
-result was asserted without a reproducible source, and confirmed that every
-review comment is mapped to a manuscript change above.
-
-The final statistical audit also qualifies the illustrative 1.2721\% binomial
-FAR bound. The 234 impostor decisions reuse 26 physical attempts across
-verifiers and are not established independent, common-probability trials.
-The manuscript no longer presents the nominal bound as validated population
-coverage; its bootstrap and permutation summaries are also identified as not
-participant-cluster adjusted. These qualifications do not change the observed
-confusion counts or descriptive performance metrics.
+We rebuilt and visually inspected both documents, checked numerical results
+against archived evidence, resolved all references, and mapped every comment
+to a revision. The illustrative 1.2721\% FAR bound is explicitly conditional:
+234 decisions reuse 26 attempts, so independence and common error probability
+are not established. Bootstrap and permutation summaries are likewise not
+participant-cluster adjusted. Observed counts and descriptive metrics are
+unchanged.
 
 \end{document}

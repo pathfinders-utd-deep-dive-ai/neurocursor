@@ -66,36 +66,25 @@ mouse dynamics, spatiotemporal feature learning, user authentication
 
 \section{Introduction}
 
-Passwords and possession factors verify a credential, but they do not directly
-verify that the person controlling a session is the enrolled user. Behavioral
-biometrics can supplement those factors by measuring how a person interacts
-with an ordinary input device. Mouse dynamics is one such modality: trajectories
-can encode timing, speed, acceleration, curvature, pauses, corrections, target
-approach, and click behavior \cite{nistBiometrics,khanMouseSurvey}. Prior work
-has already established mouse-based verification using engineered features,
-convolutional networks, recurrent networks, and hybrid architectures
-\cite{antalFejer2020,wang2025Mouse}. NeuroCursor therefore does not claim a new
-biometric modality or a new CNN--GRU architecture.
+Mouse dynamics can supplement credential-based authentication by measuring
+how a person moves and clicks \cite{nistBiometrics,khanMouseSurvey}.
+Existing engineered-feature, convolutional, recurrent, and hybrid systems
+already establish this modality \cite{antalFejer2020,wang2025Mouse}; neither
+mouse biometrics nor CNN--GRU is new here.
 
-This study instead evaluates a short, deliberate challenge. A target appears at
-a randomized screen location, the user moves to it and clicks, and the system
-records the resulting trajectory. Randomizing direction and distance discourages
-memorization of a single path and permits target-relative measurements. An
-authentication decision combines $K\in\{1,3,5\}$ movements. The central question
-is whether this small amount of interaction contains enough identity-specific
-signal to support \emph{supplemental} verification.
+NeuroCursor instead evaluates a brief randomized target-acquisition challenge.
+The user moves to and clicks each target; a decision combines
+$K\in\{1,3,5\}$ recorded trajectories. Randomization varies direction and
+distance while enabling target-relative measurements. We ask whether these
+few movements support \emph{supplemental} identity verification.
 
-The evaluable dataset contains 10 anonymized identities, 266 sessions, and
-1,330 movements. All movements from a session remain in the same training,
-validation, or test subset. User-specific thresholds are calibrated on
-validation data and then frozen for testing. We compare a candidate CNN--GRU,
-CNN-only and GRU-only networks, five classical classifiers, three primary feature sets,
-and 30 fixed session-separated splits. The repeated-split strict logistic
-verifier at $K=5$ achieves mean pooled balanced accuracy of 82.82\%, mean macro
-FAR of 0.63\%, mean macro FRR of 35.89\%, and mean macro ROC--AUC of 98.78\%.
-Only 8 of 30 splits have zero observed false accepts. The GRU-only network and
-several classical baselines outperform the CNN--GRU on key metrics, so the
-hybrid is retained only as a tested candidate, not as the recommended model.
+The cohort contains 10 identities, 266 sessions, and 1,330 movements. We compare
+three neural models, five classical classifiers, and three feature sets using
+session-separated splits and validation-only threshold calibration. Across
+30 splits, strict logistic verification at $K=5$ yields mean macro FAR 0.63\%
+and FRR 35.89\%: low observed false acceptance comes with substantial legitimate
+user rejection. GRU-only and several classical models outperform CNN--GRU on
+key metrics; the hybrid is a tested candidate, not the recommended model.
 
 \paragraph{Research questions and hypotheses.}
 The experiments ask whether (RQ1) CNN--GRU improves on neural and classical
@@ -125,22 +114,14 @@ This work contributes:
 
 \section{Related Work}
 
-Mouse-dynamics research spans continuous monitoring during ordinary computer
-use and discrete challenge-response tasks. The field includes statistical
-summaries, handcrafted kinematic features, and models that learn directly from
-event sequences. Khan \textit{et al.} organize this literature by collection
-task, feature representation, classifier, fusion strategy, and evaluation
-protocol, while emphasizing limited public data, inconsistent protocols, and
-hardware variation \cite{khanMouseSurvey}. These differences prevent a metric
-reported on one dataset from being treated as a direct comparison on another.
+Mouse-dynamics studies differ in collection task, representation, classifier,
+and evaluation protocol. Limited public data, inconsistent protocols, and
+hardware variation complicate comparison \cite{khanMouseSurvey}.
 
-Early deep-learning studies showed that raw or minimally processed trajectories
-could support authentication. Antal and Fej\'er evaluated a CNN on fixed-size
-mouse sequences from Balabit and used DFL for transfer learning
-\cite{antalFejer2020}. Antal and Egyed-Zsigmond studied intrusion detection with
-mouse dynamics \cite{antalEgyed2019}. These studies establish the feasibility of
-learned representations, but they use passive or differently segmented
-interaction data rather than NeuroCursor's randomized target-acquisition task.
+Antal and Fej\'er used fixed-size Balabit sequences and DFL transfer learning
+with a CNN \cite{antalFejer2020}; Antal and Egyed-Zsigmond studied continuous
+intrusion detection \cite{antalEgyed2019}. Their passive or differently
+segmented data differ from NeuroCursor's randomized target task.
 
 Recent work also exposes two limitations directly relevant here. Kuric
 \textit{et al.} found that mouse configuration can alter many commonly used
@@ -204,15 +185,11 @@ to reproduce their identity-verification models or thresholds. Bot detection is
 also a different task: distinguishing automation from people does not establish
 that two human users can be reliably separated.
 
-The remaining research gap is thus not the existence of mouse biometrics or of
-a CNN--recurrent hybrid. It is the transparent evaluation of a brief randomized
-challenge under strict session separation, with explicit threshold calibration,
-interaction-count tradeoffs, classical baselines, and negative results. This
-paper addresses that narrower gap. It does not claim that the CNN--GRU is
-empirically necessary, that the learned representation measures mutual
-information across time, or that three enrollment sessions constitute a stable
-operational minimum; those questions require controls described in
-Sections~\ref{sec:scope_controls} and~\ref{sec:limitations}.
+Our contribution is the evaluation of a brief randomized challenge with
+session isolation, explicit calibration, classical comparators, and negative
+results (Table~\ref{tab:related_work_positioning}). Enrollment and order controls
+address, but do not establish, a stable enrollment minimum or learned mutual
+information (Sections~\ref{sec:scope_controls} and~\ref{sec:limitations}).
 
 \section{NeuroCursor System Design}
 
@@ -419,7 +396,10 @@ J^{*}
 where $D$ is the duration of the movement and $\widehat{L}$ is the discrete path
 length. Larger values indicate less smooth movement.
 
-Temporal derivatives are estimated numerically from the timestamps recorded during data acquisition. To maintain computational stability, samples with negative timestamp differences are rejected, while zero or negligible positive intervals are replaced with a fixed numerical constant to mitigate unstable or anomalous velocity, acceleration, and jerk values. The current data-processing pipeline differentiates the raw coordinates directly; no trajectory-smoothing or noise-reduction technique is applied before this stage.
+Derivatives use recorded timestamps and unsmoothed, canvas-normalized
+coordinates. Negative timestamp differences are rejected; zero or negligible
+positive intervals are replaced by $10^{-8}$ s. This numerical safeguard does
+not remove differentiation noise.
 
 \subsection{Target-Relative Features}
 
@@ -507,15 +487,16 @@ and $c$ indexes the feature channel.
 
 \subsection{Feature Semantics and Sources of Variation}
 
-The comprehensive feature representation was deliberately engineered to preserve a series of complementary descriptions of every cursor movement, rather than reducing user behavior to a solitary summary metric. Normalized cursor coordinates serve to retain the specific observed shape and the spatial location of each trajectory, whereas metrics for displacement and cumulative path progress are utilized to describe how the movement evolves in relation to its initial starting position. The kinematic channels further characterize the specific rate and the underlying smoothness of the motion by incorporating velocity, acceleration, jerk, heading, angular velocity, and curvature. In addition to these, target-relative channels provide a separate and distinct description of the manner in which the cursor approaches the intended destination. As a result, even two trajectories that happen to terminate at the same target can be effectively differentiated by their specific timing, path efficiency, mid-course directional corrections, overshoot behavior, and their particular deceleration profiles.
-
-Target-relative features play a critical role given that every NeuroCursor challenge involves randomized target placement. If the representation relied solely on absolute screen coordinates, the specific location of the target could potentially overshadow other behavioral data. By incorporating target displacement, distance, closure rate, target-heading error, and cross-track error, the system is able to describe the movement in the direct context of the active task. While these channels may not ensure total invariance to target geometry, they provide the model with essential data to differentiate the intended movement from the specific way it was performed. This allows the model to analyze behavioral traits more effectively by accounting for the spatial variation introduced by the randomized nature of the targets.
-
-It is necessary to approach the interpretation of differential features with a certain level of caution. Metrics such as velocity, acceleration, jerk, angular velocity, and curvature are derived directly from the sampled coordinates and their corresponding timestamps. Because of this, factors like irregular event delivery, extremely short intervals between samples, or the effects of coordinate quantization can directly impact the accuracy of these estimated values. While the preprocessing pipeline is designed to reject negative timestamp differences and replace negligible intervals with a fixed numerical constant, it does not involve trajectory smoothing prior to differentiation. As a result, higher-order channels might inadvertently reflect a combination of genuine behavioral data and acquisition-related noise. This is a significant distinction, as a model might successfully leverage a statistically predictive channel without that channel necessarily representing an intrinsic or stable behavioral trait of the participant.
-
-Applying linear interpolation to reach a fixed length of $T=128$ steps allows all trajectories to be organized into a uniform tensor shape while maintaining their original chronological order. It is important to clarify that this interpolation does not generate new independent data points; rather, it evaluates the existing recorded channels at a common set of normalized positions in the sequence. Because movement duration and inter-sample timing are still included as explicit features, the resampling process is not designed to strip away all temporal data. However, resampling can potentially modify very brief local patterns, particularly in cases where the original trajectory was composed of a limited number of events. For these reasons, the fixed-length representation is best viewed as a practical approximation for modeling purposes, rather than a perfect, lossless reconstruction of the raw event stream from the browser.
-
-By incorporating raw, kinematic, geometric, and target-relative channels, the experimental ablations can determine if adding more detailed representations actually leads to better verification results. That said, just because a feature has predictive value does not mean it has a clear causal or physiological basis. The influence of certain features might stem from actual motor behavior, but it could just as easily come from the geometry of the task, how the browser schedules events, the specific device setup, or some combination of all these elements. This is a particularly important caveat here since we did not have access to metadata regarding hardware, browser types, DPI settings, or cursor sensitivity for this specific group of participants.
+Coordinates describe trajectory location and shape; spatial and kinematic
+channels describe progress and motion; target-relative channels describe
+approach to the requested destination. None guarantees invariance to task
+geometry or acquisition conditions. Differentiation without smoothing can
+amplify quantization and irregular event timing. Interpolation preserves
+sample order but can alter brief patterns and does not create independent
+observations. Because elapsed and inter-event times remain explicit channels,
+resampling does not remove timing information. Predictive features therefore
+need not reflect stable physiological traits; the ablations test predictive
+utility, not causality.
 
 \section{Candidate Neural Architectures}
 
@@ -632,48 +613,15 @@ Dense & 1 unit & Sigmoid \\
 \end{tabular}
 \end{table}
 
-\subsection{Convolutional Feature Extraction}
+\subsection{Neural Baselines and Output}
 
-The convolutional component learns localized temporal movement patterns from short segments of the recorded trajectory. These patterns may include rapid acceleration, directional correction, pauses, and deceleration near the target. If $\mathbf{X}$ is the input sequence, the convolutional block produces an intermediate representation
-
-\begin{equation}
-\mathbf{H}^{\mathrm{CNN}}
-=
-f_{\mathrm{CNN}}(\mathbf{X};\theta_{\mathrm{CNN}}),
-\label{eq:cnn_representation}
-\end{equation}
-
-where $\theta_{\mathrm{CNN}}$ denotes the convolutional parameters.
-
-\subsection{Temporal Modeling with GRU}
-
-The GRU component processes the ordered convolutional representation and models how local movement patterns evolve over time:
-
-\begin{equation}
-\mathbf{H}^{\mathrm{GRU}}
-=
-f_{\mathrm{GRU}}
-\left(
-\mathbf{H}^{\mathrm{CNN}};
-\theta_{\mathrm{GRU}}
-\right).
-\label{eq:gru_representation}
-\end{equation}
-
-The final hidden representation is passed to a classifier to yield a
-verification score:
-
-\begin{equation}
-s(\mathbf{X},u)
-=
-\sigma
-\left(
-\mathbf{w}^{\top}\mathbf{h}_{T}
-+
-b
-\right).
-\label{eq:model_score}
-\end{equation}
+The CNN--GRU feeds the convolutional sequence to a 64-unit GRU with dropout
+0.20. All neural models use the same 32-unit ReLU dense head, dropout 0.30,
+and a one-unit sigmoid output. CNN-only replaces the GRU with global average
+pooling; GRU-only applies the same GRU directly to the input sequence.
+These are component-removal baselines, not parameter-matched architectures.
+The sigmoid output is a verifier score, not a demonstrated calibrated
+probability of genuine identity.
 
 \subsection{Training Objective}
 
@@ -715,7 +663,13 @@ belonging to class $c$.
 
 \subsection{Dataset Construction}
 
-The original dataset provided for this study consisted of 49 anonymized identity labels associated with 951 recorded sessions. However, 683 of these sessions used an older legacy schema that omitted the target and movement fields required for the comprehensive representation developed in this paper. After those sessions were excluded, the remaining full-schema subset comprised 268 sessions spanning 11 identities. Because one identity provided only two eligible sessions, it was impossible to establish distinct training, validation, and test sets. Consequently, the final evaluation cohort included 10 identities, 266 sessions, and 1,330 cursor movements, corresponding to 266 authentication attempts. Each eligible attempt comprised exactly five movements performed in chronological order.
+Of 951 supplied sessions from 49 identity labels, 683 used a legacy schema
+without required target/movement fields. The full-schema subset contained
+268 sessions from 11 identities. Excluding one identity with only two sessions
+left 10 identities, 266 sessions, and 1,330 movements
+(Table~\ref{tab:cohort_construction}). Each eligible session is one attempt
+containing five chronologically ordered movements. Eligibility used schema
+completeness and session counts, not model performance.
 
 \begin{table}[t]
 \centering
@@ -732,7 +686,11 @@ Final evaluation cohort & 10 & 266 \\
 \end{tabular}
 \end{table}
 
-Determination of eligibility was based solely on the completeness of the data schema and the history of each session, rather than any assessment of model performance. A comprehensive integrity audit confirmed the absence of duplicate composite movement identifiers, exact duplicate samples, and missing identifiers for either sessions or attempts; additionally, no overlaps of sessions between evaluation splits were detected. While these internal consistency checks are essential, they do not provide independent verification of participant provenance or the overall authenticity of the data collection process. Furthermore, important contextual variables, such as the specific hardware, pointing device characteristics, DPI settings, sensitivity levels, and browser labels, were not available for analysis.
+Integrity checks found no duplicate composite movement identifiers, exact
+duplicate samples, missing session/attempt identifiers, or session overlap
+across subsets. These checks do not authenticate participants or collection
+provenance. Hardware, pointing-device, DPI, sensitivity, and browser labels
+were unavailable.
 
 For each claimed user, genuine samples are formed from that specific user's authentication attempts. Impostor samples are obtained by comparing attempts from other users against the claimed user's biometric profile. This produces a binary verification dataset:
 
@@ -750,9 +708,13 @@ NeuroCursor trains a separate binary verification model for each enrolled user. 
 
 \subsection{Training, Validation, and Test Splits}
 
-To prevent leakage, the primary evaluation uses trial- or session-separated splits. Samples from the same collection session do not appear in both the training and test sets. A random sample-level split is reported only as a secondary comparison to illustrate how leakage can inflate estimates of the authentication model's performance.
-
-The primary splitting strategy allocates roughly 75\% of the sessions for each identity to training, 15\% to validation, and 10\% to testing, ensuring that every movement within a session remains in the same subset to prevent data leakage. A fixed split using seed 42 was established for the initial model comparison. In a separate sensitivity analysis, the entire classical pipeline was refitted for every seed in a consecutive grid from 0 to 29. These 30 repeated holdout experiments used the same ten-user cohort to quantify variation across splits; they do not constitute independent external replications. Random splitting at the individual-sample level was reserved exclusively for the experiment labeled as the leakage-comparison baseline.
+For each identity, roughly 75\% of sessions are allocated to training,
+15\% to validation, and 10\% to testing; every movement from a session stays
+together. Seed 42 defines the fixed model comparison. The complete classical
+pipeline is refitted for each seed from 0 to 29 to measure split sensitivity
+on the same cohort, not external replication. Random movement-level splitting
+is used only in the secondary split-comparison baseline; it did not improve
+the reported metrics here.
 
 \subsection{Threshold Calibration}
 
@@ -764,17 +726,20 @@ The validation-EER policy is the primary standard used for the seed-42 neural-mo
 
 \subsection{Decision Construction and Evaluation Isolation}
 
-The evaluation framework maintains a clear distinction between individual movements, sessions, authentication attempts, and user-specific verification decisions. A movement is defined as a single point-and-click trajectory, which serves as the fundamental input for the trained classifier. A session comprises the five chronologically ordered movements recorded during one specific authentication attempt. For a given interaction-count configuration $K$, the system averages the first $K$ valid movement scores from that attempt to generate a single attempt-level result. It is important to note that no movement is selected for inclusion based on its predicted score or its eventual impact on the classification outcome.
+A movement is one point-and-click trajectory; each eligible session contains
+one five-movement attempt. The first $K$ chronological valid movements form
+an attempt score (Eq.~\ref{eq:aggregate_score}); scores never determine which
+movements are selected. Each physical attempt contributes one genuine
+comparison and $U-1$ impostor comparisons across $U$ verifiers, producing a
+9:1 impostor/genuine decision ratio here.
 
-Each claimed identity is subjected to evaluation through a dedicated one-versus-rest verification framework. Within the verifier specifically assigned to user $u$, attempts originating from $u$ are categorized as genuine, while attempts from all other identities are classified as impostor instances. Consequently, a single physical test attempt contributes a genuine comparison to its associated verifier and serves as an impostor comparison for every remaining verifier. This structural design accounts for the substantial numerical imbalance between impostor and genuine comparisons within the pooled decision set. Furthermore, this distribution explains why standard accuracy metrics may appear deceptively high even in the presence of a significant false rejection rate.
-
-Within each configuration, all movements from a session stay together in one subset. Training data estimates preprocessing statistics and model parameters; validation data controls early stopping and user-specific thresholds. Parameters and thresholds are frozen before that configuration's test evaluation. Test scores do not determine its deployed threshold, although inspecting development comparisons can influence later research choices. The repeated holdouts and added controls therefore remain exploratory analyses of reused data.
-
-The $K=1$, $K=3$, and $K=5$ conditions all follow the same chronological aggregation rule, ensuring consistency across the evaluation. This setup is designed to measure how incorporating more movements from an authentication attempt affects performance, rather than picking the best movements after the fact. Any attempts that do not meet the minimum number of valid movements required for a specific $K$ value are simply excluded, adhering to the established interaction-count protocol.
-
-Macro and pooled results are both useful because they address different aspects of the system's performance. Macro metrics give equal weight to every user-specific verifier, which stops any single identity with a lot of data from skewing the final average. Pooled metrics, on the other hand, are calculated by adding up all the hits and misses across all users, treating every individual decision as equal. We've kept both sets of results because looking at the gaps between them can highlight imbalances or differences between users that a single number might otherwise hide.
-
-For the repeated-split analysis, the entire verification pipeline was refitted from scratch for each individual seed. This involved rebuilding the session-separated subsets, recalculating the preprocessing parameters, training each user-specific verifier, and setting the thresholds based on validation data before finally testing the locked-in pipeline. Since the same group of participants was used for all 30 splits, the resulting data shows how sensitive the results are to how the data is partitioned, rather than being a true replication across a different population.
+Macro metrics average verifiers equally; pooled metrics use summed confusion
+counts. All movements from a session stay together. Within each fit, training
+data determine preprocessing and parameters, validation data determine early
+stopping and thresholds, and the frozen pipeline is evaluated on test data.
+The full pipeline is refitted for every sensitivity split. Reused participants
+and test-informed development make these exploratory partition-sensitivity
+analyses, not independent confirmation.
 
 \subsection{Baselines and Ablation Studies}
 
@@ -803,13 +768,7 @@ Feature ablation & Full target-relative representation \\
 \end{tabular}
 \end{table}
 
-\begin{itemize}
-    \item \textbf{Classical baselines:} logistic regression, support-vector machine, random forest, $k$-nearest neighbors, and gradient boosting.
-    \item \textbf{Neural baselines:} CNN-only and GRU-only architectures.
-    \item \textbf{Feature ablations:} the five raw channels; raw, spatial,
-    and kinematic channels; and the full raw, spatial, kinematic, geometric,
-    and target-relative representation.
-\end{itemize}
+
 
 \subsection{Interaction-Count Evaluation}
 
@@ -1383,24 +1342,26 @@ H4 & Rejected here & Random sample-level metrics were not better \\
 
 \subsection{Interpretation of Results}
 
-The most compelling evidence provided by this study is derived from the comprehensive distribution across 30 distinct data splits rather than the isolated and relatively favorable results obtained from the seed-42 strict logistic configuration. Although a mean macro ROC--AUC of 98.78\% indicates a robust capacity for identity ranking, the mean macro FRR of 35.89\%---with substantial variation from 13.33\% to 58.33\%---shows that the strict operating point remains unstable and would likely cause significant friction for legitimate users. Therefore, these results substantiate the potential of mouse dynamics as a supplemental authentication signal but indicate that the technology is not currently suitable for deployment as a primary or standalone security factor.
+The 30-split distribution is more informative than the favorable seed-42
+snapshot. High mean ROC--AUC (98.78\%) coexists with mean FRR 35.89\%
+(range 13.33--58.33\%), indicating strong ranking but an unstable strict
+operating point. This supports further study of supplemental verification,
+not standalone deployment.
 
-Contrary to the initial hypothesis, CNN--GRU superiority was not realized. In
-the fixed neural comparison, GRU-only had lower FAR, FRR, and EER, while several
-classical configurations were also stronger. The available sample therefore
-does not support the extra convolutional stage: local filters may be redundant
-with the engineered channels, and the larger hybrid may be harder to estimate
-from this cohort. The added learning curve and feature-removal controls support
-data and feature sensitivity. The order controls hold capacity fixed within
-each architecture; they do not isolate capacity differences between architectures. For the present
-data, CNN--GRU is an evaluated negative result rather than a retained system
-choice. Interaction-count and feature-ablation experiments are likewise mixed,
-and the paper reports those outcomes rather than selecting only the most
-favorable model, feature subset, or split.
+The results do not justify choosing CNN--GRU over GRU-only or the strongest
+classical models. Redundant local filters and greater estimation difficulty
+are plausible explanations, not established causes. Learning curves and
+feature-removal controls demonstrate sensitivity to data and representation;
+order controls hold capacity fixed within architecture but do not isolate
+between-architecture capacity or optimization effects. Mixed and negative
+outcomes are retained rather than selecting a favorable model or split.
 
 \subsection{Comparison with Prior Mouse-Dynamics Results}
 
-Table~\ref{tab:prior_work_comparison} presents the findings from NeuroCursor alongside a selection of established results in the field of mouse-dynamics authentication. It is important to note that these figures are intended to offer numerical context rather than serve as a definitive ranking. The reason is that comparing them directly is difficult due to the wide variety of methodologies used across different studies. Specifically, researchers often employ different datasets and interaction tasks, while the lengths of decision units and the strategies for constructing negative samples also vary. Furthermore, differences in class balance, data split procedures, and the specific methods used for threshold calibration mean that these results exist within their own distinct experimental frameworks.
+Table~\ref{tab:prior_work_comparison} provides context, not a ranking:
+studies differ in datasets, tasks, decision units, class balance, splitting,
+and threshold calibration. A superiority claim would require a common
+head-to-head protocol.
 
 \begin{table*}[t]
 \centering
@@ -1463,116 +1424,35 @@ $^{*}$ The NeuroCursor FAR and FRR are calculated at the strict operating point 
 \end{minipage}
 \end{table*}
 
-In terms of numerical performance, the mean ROC--AUC of 98.78\% achieved by NeuroCursor is comparable to the 98.00\% AUC reported by Antal and Fej\'er and the 97.73\% AUC cited for LT-AMouse. Although the mean EER for NeuroCursor (1.49\%) appears lower than the EER values associated with these external configurations, such differences should not be viewed as definitive evidence of statistical superiority. NeuroCursor uses a restricted, randomized challenge and a specific ten-identity cohort, whereas the benchmark studies rely on fundamentally different datasets and evaluation frameworks. Additionally, the strict operating point for NeuroCursor resulted in a mean FRR of 35.89\%, highlighting a notable usability tradeoff despite the strong classification metrics. Ultimately, a rigorous claim of superiority would require a head-to-head evaluation in which all systems are tested using identical data splits, decision units, and calibration procedures.
+The apparent AUC/EER advantage over some external configurations does not
+establish superiority, especially given NeuroCursor's high strict FRR and
+restricted cohort. LT-AMouse values come from Table III of
+\cite{wang2025Mouse}: Balabit F1 94.65\%, AUC 97.73\%, and EER 6.14\%.
+Its abstract instead labels 94.65\% as AUC; we use the more detailed table.
 
-The reported metrics for LT-AMouse are derived from Table III of \cite{wang2025Mouse}, which provides Balabit F1, AUC, and EER values of 94.65\%, 97.73\%, and 6.14\%, respectively. Although the abstract of that study identifies 94.65\% as the Balabit AUC, the more granular data from the comparison table are used here to identify the source of these values precisely.
+\subsection{Security, Usability, and External Validation}
 
-\subsection{Security and Usability Implications}
+The evaluated impostors are other enrolled participants, not deliberate
+attackers. Replay, synthetic event injection, informed imitation, and browser
+manipulation were not tested. No resistance to those attacks is claimed.
+A low behavioral score should therefore trigger an established step-up factor,
+not irreversible denial of access \cite{nistBiometrics,deutschmannContinuousAuthentication}.
 
-NeuroCursor is most appropriately categorized as a supplemental authentication signal within a multilayered security framework. In practice, a low behavioral score could trigger step-up authentication rather than an immediate denial of access. Increasing the number of movements $K$ improved the repeated strict-verifier averages, but the mean challenge duration increased from 0.98 s at $K=1$ to 4.43 s at $K=5$. Furthermore, a stricter threshold reduced FAR while increasing FRR. Consequently, a deployment threshold must account for the threat model, accessibility requirements, account-recovery costs, and the relative operational consequences of false acceptance and false rejection.
+More movements improved repeated strict-verifier averages but increased mean
+challenge duration from 0.98 s at $K=1$ to 4.43 s at $K=5$.
+Thresholds must balance false acceptance, false rejection, accessibility, and
+recovery costs. A pilot should measure acquisition/enrollment failures, retries,
+completion time, and participant/device-specific errors; authenticate template
+updates independently and provide a conventional recovery path.
 
-\subsection{Threat Model and Operational Scope}
-
-The present evaluation focuses on verifying claimed identities against typical human impostors. In this context, an impostor sample is simply a real cursor trajectory from one participant that is tested against a different user's verifier. This setup is meant to see if the natural differences in how people move their cursors are enough to tell them apart. It is important to note, however, that this doesn't prove the system can stop a determined attacker who might record and replay a user's movements, inject fake events, mimic someone's style, or mess with the browser and device settings.
-
-The repeated strict-logistic macro FAR describes errors within this cohort and
-its testing conditions, not a population security guarantee. Zero observed
-false accepts does not establish zero population FAR. The seed-42 snapshot's
-1.2721\% illustrative binomial upper bound additionally assumes independent,
-common-probability decisions, which is not established when physical attempts
-are reused across verifiers. Rare-event claims require substantially more
-external trials and an analysis that addresses participant, session, and
-verifier dependence \cite{isoBiometricTesting}.
-
-\begin{table*}[t]
-\centering
-\caption{Threat-Model Coverage and Residual Validation Requirements}
-\label{tab:threat_model_coverage}
-\begin{tabular}{@{}p{3.1cm}p{5.6cm}p{6.3cm}@{}}
-\toprule
-\textbf{Threat or Variation} &
-\textbf{Coverage in the Present Study} &
-\textbf{Required Future Validation} \\
-\midrule
-Ordinary human impostor &
-Attempts from other enrolled identities are evaluated against each claimed
-identity's verifier. &
-Evaluate a larger external cohort with identities that were not involved in
-model development or report preparation. \\
-
-Related-sample leakage &
-All movements from one session remain within the same training, validation, or
-test subset. &
-Conduct longitudinal evaluation with collection periods separated by days,
-weeks, or months. \\
-
-Split sensitivity &
-The complete strict-logistic pipeline is refitted across the fixed seed grid
-from 0 to 29. &
-Confirm the observed distribution using a preregistered protocol and an
-untouched replication cohort. \\
-
-Replay or event injection &
-Not represented in the supplied dataset. &
-Test recorded-event replay, synthetic pointer injection, timestamp
-manipulation, and browser-level automation. \\
-
-Deliberate behavioral imitation &
-Not represented in the supplied dataset. &
-Collect informed imitation attempts after adversaries observe examples of an
-enrolled user's trajectories. \\
-
-Device and environment variation &
-Hardware, input-device, DPI, sensitivity, and browser labels are unavailable. &
-Collect controlled cross-device and cross-browser sessions with complete
-acquisition metadata. \\
-
-Rare-event false acceptance &
-Observed through the available impostor decisions and reported with a finite-
-sample upper bound. &
-Perform high-volume impostor testing sufficient to estimate the intended
-deployment FAR with an appropriate confidence bound. \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-A practical deployment should therefore situate NeuroCursor within a multi-layered authentication framework. A high verification score may serve as corroborating evidence for a claimed identity, whereas a low or indeterminate score could necessitate the invocation of a secondary authentication factor. Such an architecture ensures that a probabilistic behavioral measurement is not treated as an irrevocable access decision. Furthermore, this design provides a robust mechanism for accommodating legitimate behavioral variances resulting from fatigue, injury, temporary impairment, unfamiliar hardware configurations, or fluctuations in environmental conditions.
-
-Operational evaluation must additionally consider accessibility and differential performance across user populations. A singular, global interaction design may not provide equivalent usability for participants with varying motor abilities, different pointing devices, or disparate levels of task familiarity. While user-specific thresholds partially mitigate differences in score distributions, they do not serve as a substitute for dedicated accessibility research. Consequently, future deployment-oriented studies should report rates of enrollment and verification failure, task completion times, and error distributions across relevant user and device demographics in conjunction with aggregate biometric metrics.
-
-\subsection{Proposed External Validation Protocol}
-
-A confirmatory evaluation should be finalized prior to any further model selection or threshold adjustments. Such a study must recruit an external cohort consisting of participants, sessions, and behavioral samples that were entirely absent during the initial development of NeuroCursor. Before data acquisition commences, investigators should preregister the intended sample size, criteria for inclusion and exclusion, session architecture, movement-count configurations, the primary operating point, and the comprehensive statistical analysis plan. Furthermore, cohort size should be determined by an a priori power analysis, and all biometric testing and reporting should adhere strictly to the established principles of ISO/IEC 19795-1 \cite{cohenPower,isoBiometricTesting}.
-
-Data collection should systematically document the pointing device, operating system, browser, display resolution, cursor sensitivity, and—where available—DPI, along with participant handedness and relevant accessibility conditions. To ensure the evaluation assesses longitudinal stability rather than short-term repetition, each participant should complete multiple sessions distributed over several days or weeks. Furthermore, the protocol should incorporate controlled cross-device and cross-browser sessions. All samples derived from a single participant session must be maintained within the same data split, and the final test cohort must remain inaccessible until the feature set, model configuration, aggregation rules, and calibration procedures have been finalized and locked.
-
-The external evaluation should distinguish ordinary human impostors from
-deliberate adversarial attacks. Dedicated test sets should examine replayed
-trajectories, synthetic event injection, and informed imitation after an
-attacker observes representative movements. Rare-event FAR claims need more
-external trials and uncertainty estimates appropriate to the sampling design.
-Exact binomial bounds are appropriate only when independent,
-common-probability trials are justified; reused attempts and repeated sessions
-instead require explicit dependence-aware analysis. Zero observed false accepts
-must not be reported as proof of zero population risk \cite{clopperPearson}.
-
-Performance reporting should encompass ROC--AUC, EER, FAR, FRR, accuracy, balanced accuracy, and confusion counts at the prespecified operating point. Results must be presented both in aggregate and disaggregated by participant, session, device category, and movement count. Furthermore, confidence intervals and bootstrap estimates should accompany the principal metrics where appropriate \cite{efronBootstrap}. Adherence to this protocol would provide a substantially stronger basis for assessing generalization, usability, and security, thereby positioning the present study as an exploratory development evaluation rather than as definitive confirmatory evidence.
-
-\subsection{Operational Deployment Decision Framework}
-
-A deployment-oriented iteration of NeuroCursor necessitates an explicit decision policy to complement its classification capabilities. The verification system should not automatically translate every low-confidence score into an immediate denial of access. Instead, the application architecture should define at least three distinct outcomes: provisional acceptance for scores exceeding a high-confidence threshold; step-up authentication for scores residing within a predefined uncertainty region; and rejection or temporary restriction only when both behavioral evidence and an independent security signal justify such a response. This tripartite structure preserves the supplemental role of behavioral biometrics and mitigates the risk that ordinary variation in a legitimate user's movement triggers an irreversible access decision \cite{nistBiometrics,deutschmannContinuousAuthentication}.
-
-Threshold selection should be informed by the operational costs associated with false acceptance and false rejection, rather than a single global performance statistic. For instance, financial or administrative systems may assign a higher cost to unauthorized access, whereas educational or low-risk applications may prioritize continuity of service. The chosen policy must therefore document the validation population, the score-aggregation rule, the threshold-calibration objective, the permitted number of retries, and the specific authentication factor invoked following an indeterminate result. These parameters must be finalized using only training and validation data; the held-out test cohort should be reserved for a single final assessment. Reporting multiple post hoc test thresholds should be avoided, as it obscures the intended operating point and overstates statistical certainty.
-
-Enrollment and template maintenance procedures require a strictly defined lifecycle to ensure system integrity. The initial enrollment phase must incorporate multiple sessions and a robust quality-assurance check designed to identify incomplete trajectories, extreme timing artifacts, or insufficient behavioral coverage. If the resulting template fails to satisfy predetermined quality criteria, the system should document a failure-to-enroll outcome rather than programmatically constructing an unreliable verifier. Subsequent template updates should be restricted to instances where the user has completed a session authenticated via an independent factor. Furthermore, each update should be versioned so that abrupt score degradation, suspected compromise, or device migration can trigger a formal review or rollback. Finally, implementing a fixed expiration or reevaluation interval would prevent an outdated template from being treated as a permanently representative model of user behavior.
-
-Operational monitoring should distinguish model error from acquisition failure and user-interface failure. Recommended measures include failure-to-enroll rate, failure-to-acquire rate, retry frequency, challenge-completion time, step-up frequency, recovery success, and the distribution of scores across supported devices. These outcomes should be examined by participant and device category, subject to appropriate privacy protections, because an acceptable aggregate average can conceal severe difficulty for a subset of users. Monitoring should also detect sustained score drift without automatically labeling that drift as malicious; injury, fatigue, unfamiliar hardware, and accessibility-related changes may produce legitimate departures from an earlier template.
-
-The deployment architecture should minimize retained behavioral data, encrypt stored templates, restrict access to raw trajectories, and maintain auditable records of model and threshold versions. Users should receive clear notice that cursor behavior contributes to authentication and should retain access to a conventional recovery mechanism. Evaluation of the complete policy—not merely the classifier—would align the reported biometric metrics with the practical reliability, security, accessibility, and accountability requirements of a real authentication system \cite{isoBiometricTesting}.
-
-The implementation of a staged deployment strategy should prioritize a meticulously monitored pilot phase, eschewing immediate, organization-wide integration in favor of a controlled rollout. To ensure operational integrity, the system must incorporate predefined cessation criteria that mandate the suspension of the verification framework whenever empirical metrics—such as false-rejection rates, recovery failures, or sustained score drift—exceed the specific tolerance thresholds established during validation.
-
-Finally, the administrative responsibility for evaluating these alerts must be clearly assigned to qualified personnel prior to the initiation of the deployment. Maintaining robust human oversight is of paramount importance when behavioral evidence influences account accessibility; this is because automated monitoring protocols currently lack the nuanced discernment required to reliably differentiate between a malicious security compromise and legitimate, non-adversarial shifts in a user's physical or environmental circumstances.
+Confirmation requires an untouched external cohort and a preregistered
+sampling and analysis plan \cite{isoBiometricTesting}. Collect longitudinal,
+cross-device/browser sessions with acquisition metadata and dedicated replay,
+injection, and imitation trials. Freeze models and thresholds before testing,
+and report user/session-aware uncertainty rather than treating reused verifier
+decisions as independent trials. Rare-event FAR claims need substantially more
+impostor trials than this study provides. Privacy, template protection, and
+accessibility must be evaluated alongside classifier performance.
 
 \subsection{Limitations}
 \label{sec:limitations}
@@ -1626,26 +1506,22 @@ could stop at any time, and were not linked to a separate consent record.
 
 \section{Conclusion}
 
-This paper presents NeuroCursor, a behavioral biometric verification framework based on randomized mouse-movement challenges. The system records cursor trajectories during users' point-and-click interactions, represents the trajectories as multivariate time series, and evaluates whether user-specific movement patterns can support authentication. We present NeuroCursor not as the first mouse-dynamics authentication system or the first CNN--GRU approach, but as an experimental study of a short randomized protocol, target-relative feature representation, interaction-count tradeoffs, and session-aware evaluation.
+NeuroCursor evaluates short randomized cursor challenges as a supplemental
+identity signal. Across 30 session-separated splits, strict full-feature
+logistic verification at $K=5$ achieved mean pooled balanced accuracy 82.82\%,
+macro FAR 0.63\%, macro FRR 35.89\%, and macro ROC--AUC 98.78\%.
+High FRR and split variability preclude deployment claims. CNN--GRU did not
+outperform GRU-only or the strongest classical models and is not recommended
+on this evidence.
 
-Across 30 fixed splits, the strict full-feature logistic verifier at $K=5$
-achieved mean pooled balanced accuracy of 82.82\%, mean macro FAR of 0.63\%,
-mean macro FRR of 35.89\%, and mean macro ROC--AUC of 98.78\%. Performance
-varied materially across splits, and CNN--GRU failed to outperform GRU-only or
-the strongest classical models. We therefore do not recommend retaining the
-hybrid on the present evidence. The exact-budget enrollment curves across all
-three model families show training-scale sensitivity, but no tested budget
-meets the fixed study-specific usability/stability criterion. Coordinate-only
-controls without explicit timing channels across three
-splits show no consistent chronological advantage, while the corrected classical
-feature ablation does not improve mean performance after higher-order channel
-removal. These controls do not establish cross-sample mutual information.
-NeuroCursor remains an exploratory framework
-for supplemental verification, not a deployment-ready replacement for an
-established factor. Confirmatory work requires an untouched external cohort,
-replicated enrollment and sequence-order controls, longitudinal and
-cross-device metadata, rare-event impostor trials, accessibility analysis, and
-explicit replay and imitation attacks.
+The added controls show training-scale sensitivity but no stable enrollment
+minimum under the stated criterion; coordinate-only order controls show no
+consistent chronological advantage or mutual-information evidence. Removing
+higher-order channels did not improve the corrected classical ablation's mean
+metrics. These negative results constrain the interpretation rather than
+justify a preferred architecture. An untouched external cohort, longitudinal
+and cross-device measurements, dependence-aware uncertainty, and deliberate
+attack trials are needed before operational use.
 
 \FloatBarrier
 
